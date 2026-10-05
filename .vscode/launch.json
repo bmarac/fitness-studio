@@ -1,0 +1,27 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Flutter: Fitness Studio Mobile",
+      "request": "launch",
+      "type": "dart",
+      "cwd": "${workspaceFolder}/mobile/fitness_studio_mobile",
+      "program": "lib/main.dart",
+      "toolArgs": [
+        "--dart-define=API_BASE_URL=http://localhost:5146",
+        "--dart-define=CURRENT_MEMBER_ID=1"
+      ]
+    },
+    {
+      "name": "Flutter: Fitness Studio Mobile (Android Emulator)",
+      "request": "launch",
+      "type": "dart",
+      "cwd": "${workspaceFolder}/mobile/fitness_studio_mobile",
+      "program": "lib/main.dart",
+      "toolArgs": [
+        "--dart-define=API_BASE_URL=http://10.0.2.2:5146",
+        "--dart-define=CURRENT_MEMBER_ID=1"
+      ]
+    }
+  ]
+}

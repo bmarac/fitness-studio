@@ -1,0 +1,319 @@
+@FitnessStudio.Api_HostAddress = http://localhost:5146
+
+GET {{FitnessStudio.Api_HostAddress}}/api/profile
+Authorization: Bearer {{accessToken}}
+Accept: application/json
+
+###
+
+GET {{FitnessStudio.Api_HostAddress}}/api/measurement-parameters
+Authorization: Bearer {{accessToken}}
+Accept: application/json
+
+###
+
+POST {{FitnessStudio.Api_HostAddress}}/api/measurement-parameters
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "code": "hip_cm",
+  "name": "Opseg bokova",
+  "unit": "cm",
+  "valueType": "decimal",
+  "source": "manual",
+  "calculationType": null,
+  "minValue": 20,
+  "maxValue": 300,
+  "decimalPlaces": 1,
+  "sortOrder": 80,
+  "status": "active"
+}
+
+###
+
+PUT {{FitnessStudio.Api_HostAddress}}/api/measurement-parameters/1
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Visina",
+  "unit": "cm",
+  "valueType": "decimal",
+  "source": "manual",
+  "calculationType": null,
+  "minValue": 50,
+  "maxValue": 250,
+  "decimalPlaces": 1,
+  "sortOrder": 10,
+  "status": "active"
+}
+
+###
+
+DELETE {{FitnessStudio.Api_HostAddress}}/api/measurement-parameters/1
+Authorization: Bearer {{accessToken}}
+
+###
+
+GET {{FitnessStudio.Api_HostAddress}}/api/members/1/measurements
+Authorization: Bearer {{accessToken}}
+Accept: application/json
+
+###
+
+GET {{FitnessStudio.Api_HostAddress}}/api/members/1/measurements/latest
+Authorization: Bearer {{accessToken}}
+Accept: application/json
+
+###
+
+POST {{FitnessStudio.Api_HostAddress}}/api/members/1/measurements
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "measuredAt": "2026-09-26T10:00:00Z",
+  "note": "Mjesecno mjerenje",
+  "values": [
+    { "parameterId": 1, "value": 170.0 },
+    { "parameterId": 2, "value": 68.0 },
+    { "parameterId": 4, "value": 79.5 }
+  ]
+}
+
+###
+
+GET {{FitnessStudio.Api_HostAddress}}/api/members
+Accept: application/json
+
+###
+
+GET {{FitnessStudio.Api_HostAddress}}/api/members/1
+Accept: application/json
+
+###
+
+POST {{FitnessStudio.Api_HostAddress}}/api/members
+Content-Type: application/json
+
+{
+  "firstName": "Ana",
+  "lastName": "Horvat",
+  "email": "ana.horvat@example.com",
+  "phone": "+385 91 123 4567",
+  "dateOfBirth": "1992-04-15",
+  "status": "active"
+}
+
+###
+
+PUT {{FitnessStudio.Api_HostAddress}}/api/members/1
+Content-Type: application/json
+
+{
+  "firstName": "Ana",
+  "lastName": "Horvat",
+  "email": "ana.horvat@example.com",
+  "phone": "+385 91 123 4567",
+  "dateOfBirth": "1992-04-15",
+  "status": "paused"
+}
+
+###
+
+DELETE {{FitnessStudio.Api_HostAddress}}/api/members/1
+Accept: application/json
+
+###
+
+GET {{FitnessStudio.Api_HostAddress}}/api/trainers
+Accept: application/json
+
+###
+
+GET {{FitnessStudio.Api_HostAddress}}/api/trainers/1
+Accept: application/json
+
+###
+
+POST {{FitnessStudio.Api_HostAddress}}/api/trainers
+Content-Type: application/json
+
+{
+  "firstName": "Ivan",
+  "lastName": "Kovac",
+  "email": "ivan.kovac@example.com",
+  "phone": "+385 91 234 5678",
+  "bio": "Functional training and HIIT coach.",
+  "status": "active"
+}
+
+###
+
+PUT {{FitnessStudio.Api_HostAddress}}/api/trainers/1
+Content-Type: application/json
+
+{
+  "firstName": "Ivan",
+  "lastName": "Kovac",
+  "email": "ivan.kovac@example.com",
+  "phone": "+385 91 234 5678",
+  "bio": "Functional training, HIIT, and mobility coach.",
+  "status": "inactive"
+}
+
+###
+
+DELETE {{FitnessStudio.Api_HostAddress}}/api/trainers/1
+Accept: application/json
+
+###
+
+GET {{FitnessStudio.Api_HostAddress}}/api/class-types
+Accept: application/json
+
+###
+
+GET {{FitnessStudio.Api_HostAddress}}/api/class-types/1
+Accept: application/json
+
+###
+
+POST {{FitnessStudio.Api_HostAddress}}/api/class-types
+Content-Type: application/json
+
+{
+  "name": "HIIT",
+  "description": "High-intensity interval training.",
+  "defaultDurationMinutes": 45,
+  "defaultCapacity": 16,
+  "difficultyLevel": "intermediate",
+  "status": "active"
+}
+
+###
+
+PUT {{FitnessStudio.Api_HostAddress}}/api/class-types/1
+Content-Type: application/json
+
+{
+  "name": "HIIT",
+  "description": "High-intensity interval training with strength blocks.",
+  "defaultDurationMinutes": 50,
+  "defaultCapacity": 14,
+  "difficultyLevel": "advanced",
+  "status": "active"
+}
+
+###
+
+DELETE {{FitnessStudio.Api_HostAddress}}/api/class-types/1
+Accept: application/json
+
+###
+
+GET {{FitnessStudio.Api_HostAddress}}/api/class-sessions
+Accept: application/json
+
+###
+
+GET {{FitnessStudio.Api_HostAddress}}/api/class-sessions/mine
+Authorization: Bearer {{accessToken}}
+Accept: application/json
+
+###
+
+GET {{FitnessStudio.Api_HostAddress}}/api/class-sessions/1
+Accept: application/json
+
+###
+
+POST {{FitnessStudio.Api_HostAddress}}/api/class-sessions
+Content-Type: application/json
+
+{
+  "classTypeId": 1,
+  "trainerId": 1,
+  "startsAt": "2026-09-15T17:00:00Z",
+  "endsAt": "2026-09-15T17:45:00Z",
+  "capacity": 16,
+  "status": "scheduled"
+}
+
+###
+
+PUT {{FitnessStudio.Api_HostAddress}}/api/class-sessions/1
+Content-Type: application/json
+
+{
+  "classTypeId": 1,
+  "trainerId": 1,
+  "startsAt": "2026-09-15T18:00:00Z",
+  "endsAt": "2026-09-15T18:50:00Z",
+  "capacity": 14,
+  "status": "scheduled"
+}
+
+###
+
+PATCH {{FitnessStudio.Api_HostAddress}}/api/class-sessions/1/cancel
+Authorization: Bearer {{accessToken}}
+
+###
+
+DELETE {{FitnessStudio.Api_HostAddress}}/api/class-sessions/1
+Accept: application/json
+
+###
+
+GET {{FitnessStudio.Api_HostAddress}}/api/bookings
+Accept: application/json
+
+###
+
+GET {{FitnessStudio.Api_HostAddress}}/api/bookings?classSessionId=1
+Authorization: Bearer {{accessToken}}
+Accept: application/json
+
+###
+
+GET {{FitnessStudio.Api_HostAddress}}/api/bookings/1
+Accept: application/json
+
+###
+
+POST {{FitnessStudio.Api_HostAddress}}/api/bookings
+Content-Type: application/json
+
+{
+  "memberId": 1,
+  "classSessionId": 1
+}
+
+###
+
+PATCH {{FitnessStudio.Api_HostAddress}}/api/bookings/1/status
+Content-Type: application/json
+
+{
+  "status": "attended"
+}
+
+###
+
+DELETE {{FitnessStudio.Api_HostAddress}}/api/bookings/1
+Authorization: Bearer {{accessToken}}
+Accept: application/json
+
+###
+
+PATCH {{FitnessStudio.Api_HostAddress}}/api/member-fixed-schedules/1/cancel
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "effectiveFrom": "2026-09-28"
+}
+
+###

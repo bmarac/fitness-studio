@@ -1,0 +1,3 @@
+namespace FitnessStudio.Api.Dtos.RecurringClassSchedules;
+
+public class UpdateRecurringClassScheduleRequest : CreateRecurringClassScheduleRequest;
