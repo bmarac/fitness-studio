@@ -29,6 +29,13 @@ tokova pokrece se iz korijena repozitorija:
 ./scripts/verify-fresh-stack.sh
 ```
 
+Manji vertikalni test rezervacije, od Flutter data sloja preko stvarnog API-ja
+do privremene PostgreSQL baze, pokrece se rucno:
+
+```bash
+./scripts/verify-fresh-stack.sh booking-client
+```
+
 Backend i Flutter testovi, LCOV izvjestaji te coverage pragovi pokrecu se jednom
 naredbom:
 

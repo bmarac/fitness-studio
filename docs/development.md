@@ -75,6 +75,21 @@ netaknuta. Ako je port zauzet, moze se zadati drugi:
 FITNESS_STUDIO_VERIFY_API_PORT=55147 ./scripts/verify-fresh-stack.sh
 ```
 
+Za manju vertikalnu provjeru rezervacija kroz Flutter data/domain sloj, stvarni
+API i privremenu PostgreSQL bazu koristi se:
+
+```bash
+./scripts/verify-fresh-stack.sh booking-client
+```
+
+Ovaj nacin prijavljuje demo clana, ucitava rezervacije i povezani termin,
+otkazuje rezervaciju, stvara zamjensku rezervaciju te ponovnim citanjem
+potvrduje obje promjene iz baze. Dodatni pokusaj rezervacije potvrduje konflikt
+kada clan dosegne ogranicenje svojeg plana. Test je
+namjerno izvan standardnog `test/` direktorija: ne pokrece se uz `flutter test`,
+ne ulazi u coverage baseline i zasad se izvodi samo rucno. Za njega su dodatno
+potrebni Flutter/Dart alati dostupni u `PATH` varijabli.
+
 ## API
 
 ```bash

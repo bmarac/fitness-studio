@@ -3,6 +3,18 @@
 set -eu
 
 repository_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+verification_mode="${1:-full}"
+if [ "$#" -gt 1 ]; then
+  echo "Usage: $0 [booking-client]" >&2
+  exit 2
+fi
+case "$verification_mode" in
+  full|booking-client) ;;
+  *)
+    echo "Usage: $0 [booking-client]" >&2
+    exit 2
+    ;;
+esac
 container_name="fitness_studio_postgres_verify_$$"
 postgres_password="fitness_verify"
 postgres_database="fitness_studio_verify"
@@ -78,6 +90,9 @@ require_command curl
 require_command docker
 require_command dotnet
 require_command jq
+if [ "$verification_mode" = "booking-client" ]; then
+  require_command dart
+fi
 
 echo "Starting isolated PostgreSQL container..."
 docker run \
@@ -167,6 +182,18 @@ until curl \
   fi
   sleep 1
 done
+
+if [ "$verification_mode" = "booking-client" ]; then
+  echo "Verifying the Flutter booking client against the fresh stack..."
+  (
+    cd "$repository_root/mobile/fitness_studio_mobile"
+    FITNESS_STUDIO_TEST_API_BASE_URL="$api_base_url" \
+      dart test integration_test/booking_stack_test.dart
+  ) || fail "Flutter booking client verification failed"
+
+  echo "Fresh-stack booking client verification passed."
+  exit 0
+fi
 
 echo "Verifying demo accounts and studio isolation..."
 filip_token=$(login 'filip.saric@stayfitjoyful.demo')
