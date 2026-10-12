@@ -54,4 +54,19 @@ public class MemberMembershipsController : ControllerBase
         var result = await _service.DeleteMembershipAsync(id);
         return result.Status == ServiceResultStatus.Success ? NoContent() : this.ToActionResult(result);
     }
+
+    [Authorize(Roles = AuthRoles.Admin)]
+    [HttpPut("{id:long}/billing")]
+    public async Task<ActionResult<SetMembershipBillingResponse>> SetBilling(long id, SetMembershipBillingRequest request)
+    {
+        var result = await _service.SetBillingAsync(id, request);
+        return result.Status == ServiceResultStatus.Success ? Ok(result.Value) : this.ToActionResult(result);
+    }
+
+    [HttpPut("{id:long}/end")]
+    public async Task<IActionResult> EndMembership(long id, EndMembershipRequest request)
+    {
+        var result = await _service.EndMembershipAsync(id, request);
+        return result.Status == ServiceResultStatus.Success ? NoContent() : this.ToActionResult(result);
+    }
 }

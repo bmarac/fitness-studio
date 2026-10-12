@@ -9,12 +9,12 @@ namespace FitnessStudio.Api.Services.Profile;
 
 public class ProfileService : IProfileService
 {
-    private readonly IBookingsService _bookingsService;
     private readonly ICurrentUserContext _currentUser;
     private readonly IMemberFixedSchedulesService _fixedSchedulesService;
     private readonly IMemberMembershipsService _membershipsService;
     private readonly IMembersService _membersService;
     private readonly IMembershipPlansService _plansService;
+    private readonly IMembershipBookingPolicy _membershipBookingPolicy;
     private readonly IStudiosService _studiosService;
     private readonly ITrainersService _trainersService;
 
@@ -26,7 +26,7 @@ public class ProfileService : IProfileService
         IMemberMembershipsService membershipsService,
         IMembershipPlansService plansService,
         IMemberFixedSchedulesService fixedSchedulesService,
-        IBookingsService bookingsService)
+        IMembershipBookingPolicy membershipBookingPolicy)
     {
         _currentUser = currentUser;
         _studiosService = studiosService;
@@ -35,7 +35,7 @@ public class ProfileService : IProfileService
         _membershipsService = membershipsService;
         _plansService = plansService;
         _fixedSchedulesService = fixedSchedulesService;
-        _bookingsService = bookingsService;
+        _membershipBookingPolicy = membershipBookingPolicy;
     }
 
     public async Task<ServiceResult<ProfileResponse>> GetProfileAsync()
@@ -87,13 +87,13 @@ public class ProfileService : IProfileService
 
             if (plan.SessionLimit.HasValue && plan.SessionLimitPeriod is not null)
             {
-                var today = GetStudioToday(studioResult.Value!.Timezone);
-                var period = GetUsagePeriod(currentMembership, plan.SessionLimitPeriod, today);
-                var used = await _bookingsService.GetCurrentMemberUsageAsync(period.StartsOn, period.EndsOn);
+                var entitlement = await _membershipBookingPolicy.EvaluateAsync(
+                    currentMembership.MemberId,
+                    DateTime.UtcNow);
                 usage = new ProfileUsageResponse(
-                    period.StartsOn,
-                    period.EndsOn,
-                    used,
+                    entitlement.PeriodStartsOn!.Value,
+                    entitlement.PeriodEndsOn!.Value,
+                    entitlement.Used,
                     plan.SessionLimit.Value,
                     plan.SessionLimitPeriod);
             }
@@ -125,48 +125,11 @@ public class ProfileService : IProfileService
             plan.Description,
             membership.StartsOn,
             membership.EndsOn,
-            membership.Status,
+            membership.IsActive,
             plan.SessionLimit,
             plan.SessionLimitPeriod,
             plan.PriceAmount,
             plan.Currency);
-    }
-
-    private static (DateOnly StartsOn, DateOnly EndsOn) GetUsagePeriod(
-        MemberMembershipResponse membership,
-        string period,
-        DateOnly today)
-    {
-        var calculated = period switch
-        {
-            "week" => GetWeek(today),
-            "month" => GetMonth(today),
-            "membership" => (membership.StartsOn, membership.EndsOn),
-            _ => throw new InvalidOperationException($"Unsupported membership limit period '{period}'.")
-        };
-
-        return (
-            calculated.Item1 < membership.StartsOn ? membership.StartsOn : calculated.Item1,
-            calculated.Item2 > membership.EndsOn ? membership.EndsOn : calculated.Item2);
-    }
-
-    private static (DateOnly, DateOnly) GetWeek(DateOnly today)
-    {
-        var daysSinceMonday = ((int)today.DayOfWeek + 6) % 7;
-        var startsOn = today.AddDays(-daysSinceMonday);
-        return (startsOn, startsOn.AddDays(6));
-    }
-
-    private static (DateOnly, DateOnly) GetMonth(DateOnly today)
-    {
-        var startsOn = new DateOnly(today.Year, today.Month, 1);
-        return (startsOn, startsOn.AddMonths(1).AddDays(-1));
-    }
-
-    private static DateOnly GetStudioToday(string timezoneId)
-    {
-        var timezone = TimeZoneInfo.FindSystemTimeZoneById(timezoneId);
-        return DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, timezone));
     }
 
     private static ServiceResult<ProfileResponse> ToProfileFailure<TSource>(ServiceResult<TSource> source)

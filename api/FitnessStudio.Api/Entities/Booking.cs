@@ -17,6 +17,8 @@ public partial class Booking
 
     public DateTime? CancelledAt { get; set; }
 
+    public string? CancellationReason { get; set; }
+
     public DateTime? AttendedAt { get; set; }
 
     public DateTime CreatedAt { get; set; }

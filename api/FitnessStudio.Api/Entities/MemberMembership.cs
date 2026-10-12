@@ -13,9 +13,11 @@ public partial class MemberMembership
 
     public DateOnly StartsOn { get; set; }
 
-    public DateOnly EndsOn { get; set; }
+    public DateOnly? EndsOn { get; set; }
 
-    public string Status { get; set; } = null!;
+    public DateOnly? BillingStartsOn { get; set; }
+
+    public DateOnly? NextBillingOn { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
@@ -26,6 +28,8 @@ public partial class MemberMembership
     public virtual Member Member { get; set; } = null!;
 
     public virtual MembershipPlan MembershipPlan { get; set; } = null!;
+
+    public virtual ICollection<MembershipPaymentObligation> PaymentObligations { get; set; } = new List<MembershipPaymentObligation>();
 
     public virtual Studio Studio { get; set; } = null!;
 }

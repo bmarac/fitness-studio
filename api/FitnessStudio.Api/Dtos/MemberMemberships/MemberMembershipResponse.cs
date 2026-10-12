@@ -7,5 +7,7 @@ public record MemberMembershipResponse(
     long MembershipPlanId,
     string MembershipPlanName,
     DateOnly StartsOn,
-    DateOnly EndsOn,
-    string Status);
+    DateOnly? EndsOn,
+    DateOnly? BillingStartsOn,
+    DateOnly? NextBillingOn,
+    bool IsActive);

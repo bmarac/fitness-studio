@@ -142,15 +142,15 @@ INSERT INTO member_memberships (
   membership_plan_id,
   starts_on,
   ends_on,
-  status
+  next_billing_on
 )
 SELECT
   members.studio_id,
   members.id,
   plans.id,
   CURRENT_DATE - 7,
-  CURRENT_DATE + 22,
-  'active'
+  NULL,
+  NULL
 FROM membership_data
 JOIN members ON members.email = membership_data.email
 JOIN membership_plans AS plans

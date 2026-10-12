@@ -5,6 +5,7 @@ using FitnessStudio.Api.Domain.Auth;
 using FitnessStudio.Api.Domain.Bookings;
 using FitnessStudio.Api.Domain.ClassSessions;
 using FitnessStudio.Api.Domain.Members;
+using FitnessStudio.Api.Domain.Memberships;
 using FitnessStudio.Api.Dtos.Bookings;
 using FitnessStudio.Api.Entities;
 using FitnessStudio.Api.Services.Interfaces;
@@ -18,15 +19,18 @@ public class BookingsService : IBookingsService
     private readonly ICurrentUserContext _currentUser;
     private readonly FitnessStudioDbContext _dbContext;
     private readonly IMapper _mapper;
+    private readonly IMembershipBookingPolicy _membershipBookingPolicy;
 
     public BookingsService(
         FitnessStudioDbContext dbContext,
         IMapper mapper,
-        ICurrentUserContext currentUser)
+        ICurrentUserContext currentUser,
+        IMembershipBookingPolicy membershipBookingPolicy)
     {
         _dbContext = dbContext;
         _mapper = mapper;
         _currentUser = currentUser;
+        _membershipBookingPolicy = membershipBookingPolicy;
         _configurationProvider = mapper.ConfigurationProvider;
     }
 
@@ -45,35 +49,6 @@ public class BookingsService : IBookingsService
             .OrderByDescending(booking => booking.BookedAt)
             .ProjectTo<BookingResponse>(_configurationProvider)
             .ToListAsync();
-    }
-
-    public async Task<int> GetCurrentMemberUsageAsync(DateOnly startsOn, DateOnly endsOn)
-    {
-        if (!_currentUser.MemberId.HasValue)
-        {
-            return 0;
-        }
-
-        var timezoneId = await _dbContext.Studios
-            .Where(studio => studio.Id == _currentUser.StudioId)
-            .Select(studio => studio.Timezone)
-            .SingleAsync();
-        var timezone = TimeZoneInfo.FindSystemTimeZoneById(timezoneId);
-        var startsAtUtc = TimeZoneInfo.ConvertTimeToUtc(
-            startsOn.ToDateTime(TimeOnly.MinValue, DateTimeKind.Unspecified),
-            timezone);
-        var endsAtUtcExclusive = TimeZoneInfo.ConvertTimeToUtc(
-            endsOn.AddDays(1).ToDateTime(TimeOnly.MinValue, DateTimeKind.Unspecified),
-            timezone);
-
-        return await _dbContext.Bookings.CountAsync(booking =>
-            booking.StudioId == _currentUser.StudioId
-            && booking.MemberId == _currentUser.MemberId.Value
-            && (booking.Status == BookingStatuses.Booked
-                || booking.Status == BookingStatuses.Attended
-                || booking.Status == BookingStatuses.NoShow)
-            && booking.ClassSession.StartsAt >= startsAtUtc
-            && booking.ClassSession.StartsAt < endsAtUtcExclusive);
     }
 
     public async Task<ServiceResult<List<BookingResponse>>> GetBookingsByClassSessionIdAsync(
@@ -174,6 +149,9 @@ public class BookingsService : IBookingsService
             ? GetCurrentMemberId()
             : request.MemberId;
 
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync();
+        await _membershipBookingPolicy.AcquireMemberLockAsync(memberId);
+
         var validationResult = await ValidateBookingCanBeCreatedAsync(memberId, request.ClassSessionId);
 
         if (validationResult.Status != ServiceResultStatus.Success)
@@ -205,11 +183,14 @@ public class BookingsService : IBookingsService
                 "This member already has an active booking for this class session.");
         }
 
+        await transaction.CommitAsync();
+
         return await GetBookingAsync(booking.Id);
     }
 
     public async Task<ServiceResult> UpdateBookingStatusAsync(long id, UpdateBookingStatusRequest request)
     {
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync();
         var booking = await _dbContext.Bookings
             .Include(booking => booking.ClassSession)
             .FirstOrDefaultAsync(booking =>
@@ -233,6 +214,8 @@ public class BookingsService : IBookingsService
                 "Trainers can update attendance only for their own class sessions.");
         }
 
+        await _membershipBookingPolicy.AcquireMemberLockAsync(booking.MemberId);
+
         var status = NormalizeValue(request.Status);
 
         if (status == BookingStatuses.Booked)
@@ -242,6 +225,20 @@ public class BookingsService : IBookingsService
             if (capacityResult.Status != ServiceResultStatus.Success)
             {
                 return capacityResult;
+            }
+        }
+
+        if (BookingStatuses.CapacityCounting.Contains(status)
+            && !BookingStatuses.CapacityCounting.Contains(booking.Status))
+        {
+            var membershipResult = await _membershipBookingPolicy.EvaluateAsync(
+                booking.MemberId,
+                booking.ClassSession.StartsAt,
+                booking.Id);
+
+            if (!membershipResult.IsAllowed)
+            {
+                return ToMembershipFailure(membershipResult);
             }
         }
 
@@ -257,6 +254,8 @@ public class BookingsService : IBookingsService
                 "Booking status cannot be updated.",
                 "This status change conflicts with existing booking rules.");
         }
+
+        await transaction.CommitAsync();
 
         return ServiceResult.Success();
     }
@@ -289,6 +288,14 @@ public class BookingsService : IBookingsService
                 "Trainers can cancel bookings only for their own class sessions.");
         }
 
+        if (isOwner && !isAdmin && !isAssignedTrainer
+            && !CanMemberCancel(booking, DateTime.UtcNow))
+        {
+            return ServiceResult.Conflict(
+                "Booking cannot be cancelled.",
+                "Members can cancel only an active booking for a future scheduled class session.");
+        }
+
         if (booking.Status == BookingStatuses.Cancelled)
         {
             return ServiceResult.Success();
@@ -298,6 +305,14 @@ public class BookingsService : IBookingsService
         await _dbContext.SaveChangesAsync();
 
         return ServiceResult.Success();
+    }
+
+    internal static bool CanMemberCancel(Booking booking, DateTime utcNow)
+    {
+        return (booking.Status == BookingStatuses.Booked
+                || booking.Status == BookingStatuses.Waitlisted)
+            && booking.ClassSession.Status == ClassSessionStatuses.Scheduled
+            && booking.ClassSession.StartsAt > utcNow;
     }
 
     private async Task<ServiceResult> ValidateBookingCanBeCreatedAsync(long memberId, long classSessionId)
@@ -355,7 +370,30 @@ public class BookingsService : IBookingsService
                 "This member already has an active booking for this class session.");
         }
 
+        var membershipResult = await _membershipBookingPolicy.EvaluateAsync(
+            memberId,
+            classSession.StartsAt);
+
+        if (!membershipResult.IsAllowed)
+        {
+            return ToMembershipFailure(membershipResult);
+        }
+
         return await ValidateBookingCapacityAsync(classSessionId);
+    }
+
+    private static ServiceResult ToMembershipFailure(MembershipBookingDecision decision)
+    {
+        return decision.Status switch
+        {
+            MembershipBookingDecisionStatus.MissingMembership => ServiceResult.Conflict(
+                "Membership is required.",
+                "This member does not have a membership that covers the selected class session date."),
+            MembershipBookingDecisionStatus.LimitReached => ServiceResult.Conflict(
+                "Membership session limit reached.",
+                "This member has reached the session limit for the selected membership period."),
+            _ => ServiceResult.Success()
+        };
     }
 
     private async Task<ServiceResult> ValidateBookingCapacityAsync(long classSessionId, long? ignoredBookingId = null)

@@ -27,6 +27,10 @@ public partial class AppUser
 
     public virtual ICollection<AppUserRole> AppUserRoles { get; set; } = new List<AppUserRole>();
 
+    public virtual ICollection<AppNotification> AppNotifications { get; set; } = new List<AppNotification>();
+
+    public virtual ICollection<AppUserDeviceToken> DeviceTokens { get; set; } = new List<AppUserDeviceToken>();
+
     public virtual Member? Member { get; set; }
 
     public virtual ICollection<MemberMeasurement> MemberMeasurements { get; set; } = new List<MemberMeasurement>();

@@ -19,6 +19,10 @@ public partial class Studio
 
     public virtual ICollection<AppUser> AppUsers { get; set; } = new List<AppUser>();
 
+    public virtual ICollection<AppNotification> AppNotifications { get; set; } = new List<AppNotification>();
+
+    public virtual ICollection<MembershipPaymentObligation> MembershipPaymentObligations { get; set; } = new List<MembershipPaymentObligation>();
+
     public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 
     public virtual ICollection<ClassSession> ClassSessions { get; set; } = new List<ClassSession>();

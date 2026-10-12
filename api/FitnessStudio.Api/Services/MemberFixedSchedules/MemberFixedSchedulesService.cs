@@ -248,6 +248,7 @@ public class MemberFixedSchedulesService : IMemberFixedSchedulesService
         {
             booking.Status = BookingStatuses.Cancelled;
             booking.CancelledAt = now;
+            booking.CancellationReason = "fixed_assignment";
             booking.UpdatedAt = now;
         }
 

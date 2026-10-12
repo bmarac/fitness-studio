@@ -2,6 +2,7 @@ using FitnessStudio.Api.Data;
 using FitnessStudio.Api.Domain.Auth;
 using FitnessStudio.Api.Dtos.MemberMemberships;
 using FitnessStudio.Api.Entities;
+using FitnessStudio.Api.Services.MembershipPayments;
 using FitnessStudio.Api.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,16 +10,18 @@ namespace FitnessStudio.Api.Services.MemberMemberships;
 
 public class MemberMembershipsService : IMemberMembershipsService
 {
-    private static readonly HashSet<string> AllowedStatuses =
-        ["active", "expired", "paused", "cancelled"];
-
     private readonly ICurrentUserContext _currentUser;
     private readonly FitnessStudioDbContext _dbContext;
+    private readonly IPaymentSettingsService _paymentSettingsService;
 
-    public MemberMembershipsService(FitnessStudioDbContext dbContext, ICurrentUserContext currentUser)
+    public MemberMembershipsService(
+        FitnessStudioDbContext dbContext,
+        ICurrentUserContext currentUser,
+        IPaymentSettingsService paymentSettingsService)
     {
         _dbContext = dbContext;
         _currentUser = currentUser;
+        _paymentSettingsService = paymentSettingsService;
     }
 
     public Task<List<MemberMembershipResponse>> GetMembershipsAsync()
@@ -42,9 +45,8 @@ public class MemberMembershipsService : IMemberMembershipsService
                 .Where(membership =>
                     membership.StudioId == _currentUser.StudioId
                     && membership.MemberId == _currentUser.MemberId.Value
-                    && membership.Status == "active"
                     && membership.StartsOn <= today
-                    && membership.EndsOn >= today)
+                    && (!membership.EndsOn.HasValue || membership.EndsOn.Value > today))
                 .OrderByDescending(membership => membership.StartsOn))
             .FirstOrDefaultAsync();
     }
@@ -81,7 +83,8 @@ public class MemberMembershipsService : IMemberMembershipsService
             MembershipPlanId = request.MembershipPlanId,
             StartsOn = request.StartsOn,
             EndsOn = request.EndsOn,
-            Status = Normalize(request.Status),
+            BillingStartsOn = request.NextBillingOn ?? request.StartsOn,
+            NextBillingOn = request.NextBillingOn ?? request.StartsOn,
             CreatedAt = now,
             UpdatedAt = now
         };
@@ -109,12 +112,19 @@ public class MemberMembershipsService : IMemberMembershipsService
         {
             return validationResult;
         }
+        if (membership.BillingStartsOn is { } billingStart
+            && (billingStart < request.StartsOn
+                || request.EndsOn.HasValue && billingStart >= request.EndsOn.Value))
+        {
+            return ServiceResult.Conflict(
+                "Invalid membership dates.",
+                "The membership period must continue to contain the billing start date.");
+        }
 
         membership.MemberId = request.MemberId;
         membership.MembershipPlanId = request.MembershipPlanId;
         membership.StartsOn = request.StartsOn;
         membership.EndsOn = request.EndsOn;
-        membership.Status = Normalize(request.Status);
         membership.UpdatedAt = DateTime.UtcNow;
 
         await _dbContext.SaveChangesAsync();
@@ -136,6 +146,78 @@ public class MemberMembershipsService : IMemberMembershipsService
         _dbContext.MemberMemberships.Remove(membership);
         await _dbContext.SaveChangesAsync();
 
+        return ServiceResult.Success();
+    }
+
+    public async Task<ServiceResult<SetMembershipBillingResponse>> SetBillingAsync(long id, SetMembershipBillingRequest request)
+    {
+        var membership = await _dbContext.MemberMemberships
+            .Include(item => item.Member)
+            .Include(item => item.MembershipPlan)
+            .FirstOrDefaultAsync(item => item.Id == id && item.StudioId == _currentUser.StudioId);
+        if (membership is null)
+            return ServiceResult<SetMembershipBillingResponse>.NotFound(
+                "Member membership not found.", "A membership with this id does not exist.");
+        if (membership.BillingStartsOn.HasValue)
+            return ServiceResult<SetMembershipBillingResponse>.Conflict(
+                "Billing is already enabled.", "Billing has already been enabled for this membership.");
+        if (request.FirstBillingOn < membership.StartsOn || membership.EndsOn.HasValue && request.FirstBillingOn >= membership.EndsOn.Value)
+            return ServiceResult<SetMembershipBillingResponse>.Conflict(
+                "Invalid first billing date.", "The first billing date must be inside the membership period.");
+
+        var settings = await _paymentSettingsService.GetAsync();
+        if (!settings.IsComplete)
+            return ServiceResult<SetMembershipBillingResponse>.Conflict(
+                "Payment settings are incomplete.",
+                "Open payment settings and enter the recipient, valid IBAN, reference and description before enabling billing.");
+
+        var today = await GetStudioTodayAsync();
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync();
+        membership.BillingStartsOn = request.FirstBillingOn;
+        membership.NextBillingOn = request.FirstBillingOn;
+        membership.UpdatedAt = DateTime.UtcNow;
+        var created = await MembershipObligationGenerator.GenerateDueAsync(
+            _dbContext, membership, settings, today);
+        await _dbContext.SaveChangesAsync();
+        await transaction.CommitAsync();
+
+        var response = new MemberMembershipResponse(
+            membership.Id,
+            membership.MemberId,
+            membership.Member.FirstName + " " + membership.Member.LastName,
+            membership.MembershipPlanId,
+            membership.MembershipPlan.Name,
+            membership.StartsOn,
+            membership.EndsOn,
+            membership.BillingStartsOn,
+            membership.NextBillingOn,
+            !membership.EndsOn.HasValue || membership.EndsOn.Value > today);
+        return ServiceResult<SetMembershipBillingResponse>.Success(
+            new SetMembershipBillingResponse(response, created, membership.NextBillingOn));
+    }
+
+    public async Task<ServiceResult> EndMembershipAsync(long id, EndMembershipRequest request)
+    {
+        var membership = await _dbContext.MemberMemberships.FirstOrDefaultAsync(x => x.Id == id && x.StudioId == _currentUser.StudioId);
+        if (membership is null) return ServiceResult.NotFound("Member membership not found.", "A membership with this id does not exist.");
+        var isAdmin = _currentUser.IsInRole(AuthRoles.Admin);
+        if (!isAdmin && (!_currentUser.MemberId.HasValue || membership.MemberId != _currentUser.MemberId.Value))
+            return ServiceResult.Forbidden("Membership access denied.", "A member can only end their own membership.");
+        var today = await GetStudioTodayAsync();
+        if (request.EndsOn <= membership.StartsOn || !isAdmin && request.EndsOn < today)
+            return ServiceResult.Conflict("Invalid membership end date.", "The end date must be after the start date and members cannot backdate it.");
+
+        membership.EndsOn = request.EndsOn;
+        if (membership.NextBillingOn.HasValue && membership.NextBillingOn.Value >= request.EndsOn) membership.NextBillingOn = null;
+        membership.UpdatedAt = DateTime.UtcNow;
+        var pending = await _dbContext.MembershipPaymentObligations.FirstOrDefaultAsync(x =>
+            x.MemberMembershipId == id && x.Status == "pending" && x.PeriodStartsOn < request.EndsOn && x.PeriodEndsOn > request.EndsOn);
+        if (pending is not null)
+        {
+            pending.AmountDue = MembershipCycle.Prorate(pending.FullAmount, pending.PeriodStartsOn, pending.PeriodEndsOn, request.EndsOn);
+            pending.UpdatedAt = DateTime.UtcNow;
+        }
+        await _dbContext.SaveChangesAsync();
         return ServiceResult.Success();
     }
 
@@ -165,23 +247,26 @@ public class MemberMembershipsService : IMemberMembershipsService
             membership.MembershipPlan.Name,
             membership.StartsOn,
             membership.EndsOn,
-            membership.Status));
+            membership.BillingStartsOn,
+            membership.NextBillingOn,
+            !membership.EndsOn.HasValue || membership.EndsOn.Value > DateOnly.FromDateTime(DateTime.UtcNow)));
     }
 
     private async Task<ServiceResult?> ValidateRequestAsync(CreateMemberMembershipRequest request)
     {
-        if (request.EndsOn < request.StartsOn)
+        if (request.EndsOn.HasValue && request.EndsOn.Value <= request.StartsOn)
         {
             return ServiceResult.Conflict(
                 "Invalid membership dates.",
                 "Membership end date must be on or after its start date.");
         }
-
-        if (!AllowedStatuses.Contains(Normalize(request.Status)))
+        if (request.NextBillingOn is { } firstBillingOn
+            && (firstBillingOn < request.StartsOn
+                || request.EndsOn.HasValue && firstBillingOn >= request.EndsOn.Value))
         {
             return ServiceResult.Conflict(
-                "Invalid membership status.",
-                "Status must be active, expired, paused or cancelled.");
+                "Invalid first billing date.",
+                "The first billing date must be inside the membership period.");
         }
 
         if (!await _dbContext.Members.AnyAsync(member =>
@@ -202,8 +287,6 @@ public class MemberMembershipsService : IMemberMembershipsService
 
         return null;
     }
-
-    private static string Normalize(string value) => value.Trim().ToLowerInvariant();
 
     private async Task<DateOnly> GetStudioTodayAsync()
     {

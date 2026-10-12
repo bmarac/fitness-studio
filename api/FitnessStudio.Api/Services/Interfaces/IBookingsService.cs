@@ -6,7 +6,6 @@ public interface IBookingsService
 {
     Task<List<BookingResponse>> GetBookingsAsync();
 
-    Task<int> GetCurrentMemberUsageAsync(DateOnly startsOn, DateOnly endsOn);
 
     Task<ServiceResult<List<BookingResponse>>> GetBookingsByClassSessionIdAsync(
         long classSessionId);

@@ -12,4 +12,5 @@ public record RecurringClassScheduleResponse(
     int Capacity,
     DateOnly ValidFrom,
     DateOnly? ValidUntil,
-    string Status);
+    string Status,
+    DateOnly? StatusEffectiveFrom);

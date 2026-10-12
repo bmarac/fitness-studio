@@ -47,6 +47,36 @@ public class RecurringClassSchedulesController : ControllerBase
         return result.Status == ServiceResultStatus.Success ? NoContent() : this.ToActionResult(result);
     }
 
+    [Authorize(Roles = AuthRoles.Staff)]
+    [HttpPatch("{id:long}/pause")]
+    public async Task<IActionResult> PauseSchedule(
+        long id,
+        ChangeRecurringClassScheduleStatusRequest request)
+    {
+        var result = await _service.PauseScheduleAsync(id, request);
+        return result.Status == ServiceResultStatus.Success ? NoContent() : this.ToActionResult(result);
+    }
+
+    [Authorize(Roles = AuthRoles.Staff)]
+    [HttpPatch("{id:long}/resume")]
+    public async Task<IActionResult> ResumeSchedule(
+        long id,
+        ChangeRecurringClassScheduleStatusRequest request)
+    {
+        var result = await _service.ResumeScheduleAsync(id, request);
+        return result.Status == ServiceResultStatus.Success ? NoContent() : this.ToActionResult(result);
+    }
+
+    [Authorize(Roles = AuthRoles.Staff)]
+    [HttpPatch("{id:long}/end")]
+    public async Task<IActionResult> EndSchedule(
+        long id,
+        ChangeRecurringClassScheduleStatusRequest request)
+    {
+        var result = await _service.EndScheduleAsync(id, request);
+        return result.Status == ServiceResultStatus.Success ? NoContent() : this.ToActionResult(result);
+    }
+
     [Authorize(Roles = AuthRoles.Admin)]
     [HttpDelete("{id:long}")]
     public async Task<IActionResult> DeleteSchedule(long id)

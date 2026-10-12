@@ -12,9 +12,7 @@ public class CreateMemberMembershipRequest
 
     public DateOnly StartsOn { get; set; }
 
-    public DateOnly EndsOn { get; set; }
+    public DateOnly? EndsOn { get; set; }
 
-    [Required]
-    [StringLength(30)]
-    public string Status { get; set; } = "active";
+    public DateOnly? NextBillingOn { get; set; }
 }

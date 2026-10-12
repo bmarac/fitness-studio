@@ -27,7 +27,7 @@ public class MembershipPlansService : IMembershipPlansService
                 plan.Id,
                 plan.Name,
                 plan.Description,
-                plan.DurationDays,
+                plan.BillingPeriodMonths,
                 plan.SessionLimit,
                 plan.SessionLimitPeriod,
                 plan.PriceAmount,
@@ -64,7 +64,7 @@ public class MembershipPlansService : IMembershipPlansService
             StudioId = _currentUser.StudioId,
             Name = request.Name.Trim(),
             Description = request.Description?.Trim(),
-            DurationDays = request.DurationDays,
+            BillingPeriodMonths = request.BillingPeriodMonths,
             SessionLimit = request.SessionLimit,
             SessionLimitPeriod = NormalizeOptional(request.SessionLimitPeriod),
             PriceAmount = request.PriceAmount,
@@ -98,7 +98,7 @@ public class MembershipPlansService : IMembershipPlansService
 
         plan.Name = request.Name.Trim();
         plan.Description = request.Description?.Trim();
-        plan.DurationDays = request.DurationDays;
+        plan.BillingPeriodMonths = request.BillingPeriodMonths;
         plan.SessionLimit = request.SessionLimit;
         plan.SessionLimitPeriod = NormalizeOptional(request.SessionLimitPeriod);
         plan.PriceAmount = request.PriceAmount;
@@ -185,7 +185,7 @@ public class MembershipPlansService : IMembershipPlansService
             plan.Id,
             plan.Name,
             plan.Description,
-            plan.DurationDays,
+            plan.BillingPeriodMonths,
             plan.SessionLimit,
             plan.SessionLimitPeriod,
             plan.PriceAmount,

@@ -4,7 +4,7 @@ public record MembershipPlanResponse(
     long Id,
     string Name,
     string? Description,
-    int DurationDays,
+    int BillingPeriodMonths,
     int? SessionLimit,
     string? SessionLimitPeriod,
     decimal PriceAmount,

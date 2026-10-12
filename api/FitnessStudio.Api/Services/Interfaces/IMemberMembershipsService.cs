@@ -10,4 +10,6 @@ public interface IMemberMembershipsService
     Task<ServiceResult<MemberMembershipResponse>> CreateMembershipAsync(CreateMemberMembershipRequest request);
     Task<ServiceResult> UpdateMembershipAsync(long id, UpdateMemberMembershipRequest request);
     Task<ServiceResult> DeleteMembershipAsync(long id);
+    Task<ServiceResult<SetMembershipBillingResponse>> SetBillingAsync(long id, SetMembershipBillingRequest request);
+    Task<ServiceResult> EndMembershipAsync(long id, EndMembershipRequest request);
 }

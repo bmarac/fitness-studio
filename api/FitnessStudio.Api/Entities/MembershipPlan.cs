@@ -11,7 +11,7 @@ public partial class MembershipPlan
 
     public string? Description { get; set; }
 
-    public int DurationDays { get; set; }
+    public int BillingPeriodMonths { get; set; }
 
     public int? SessionLimit { get; set; }
 

@@ -19,6 +19,8 @@ public partial class ClassSession
 
     public string Status { get; set; } = null!;
 
+    public string? CancellationReason { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }

@@ -202,6 +202,7 @@ public class ClassSessionsService : IClassSessionsService
 
         var now = DateTime.UtcNow;
         classSession.Status = ClassSessionStatuses.Cancelled;
+        classSession.CancellationReason = "single_session";
         classSession.UpdatedAt = now;
 
         foreach (var booking in classSession.Bookings.Where(item =>
@@ -209,6 +210,7 @@ public class ClassSessionsService : IClassSessionsService
         {
             booking.Status = BookingStatuses.Cancelled;
             booking.CancelledAt = now;
+            booking.CancellationReason = "single_session";
             booking.UpdatedAt = now;
         }
 

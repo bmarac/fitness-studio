@@ -22,5 +22,9 @@ public class ClassSessionResponse
 
     public int BookedCount { get; set; }
 
+    public long? RecurringScheduleId { get; set; }
+
+    public string? RecurringScheduleStatus { get; set; }
+
     public string Status { get; set; } = null!;
 }

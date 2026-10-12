@@ -12,6 +12,7 @@ public class ClassSessionProfile : Profile
             .ForMember(destination => destination.ClassTypeName, options => options.MapFrom(source => source.ClassType.Name))
             .ForMember(destination => destination.TrainerFirstName, options => options.MapFrom(source => source.Trainer.FirstName))
             .ForMember(destination => destination.TrainerLastName, options => options.MapFrom(source => source.Trainer.LastName))
+            .ForMember(destination => destination.RecurringScheduleStatus, options => options.MapFrom(source => source.RecurringSchedule == null ? null : source.RecurringSchedule.Status))
             .ForMember(destination => destination.BookedCount, options => options.MapFrom(source => source.Bookings.Count(booking => booking.Status != "cancelled")));
 
         CreateMap<CreateClassSessionRequest, ClassSession>();

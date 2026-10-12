@@ -10,8 +10,8 @@ public class CreateMembershipPlanRequest
 
     public string? Description { get; set; }
 
-    [Range(1, int.MaxValue)]
-    public int DurationDays { get; set; }
+    [Range(1, 1)]
+    public int BillingPeriodMonths { get; set; } = 1;
 
     [Range(1, int.MaxValue)]
     public int? SessionLimit { get; set; }

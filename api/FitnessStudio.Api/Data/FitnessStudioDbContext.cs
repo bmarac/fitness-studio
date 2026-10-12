@@ -16,6 +16,10 @@ public partial class FitnessStudioDbContext : DbContext
 
     public virtual DbSet<AppUserRole> AppUserRoles { get; set; }
 
+    public virtual DbSet<AppNotification> AppNotifications { get; set; }
+
+    public virtual DbSet<AppUserDeviceToken> AppUserDeviceTokens { get; set; }
+
     public virtual DbSet<Booking> Bookings { get; set; }
 
     public virtual DbSet<ClassSession> ClassSessions { get; set; }
@@ -34,6 +38,8 @@ public partial class FitnessStudioDbContext : DbContext
 
     public virtual DbSet<MemberMembership> MemberMemberships { get; set; }
 
+    public virtual DbSet<MembershipPaymentObligation> MembershipPaymentObligations { get; set; }
+
     public virtual DbSet<MembershipPlan> MembershipPlans { get; set; }
 
     public virtual DbSet<RecurringClassSchedule> RecurringClassSchedules { get; set; }
@@ -46,6 +52,40 @@ public partial class FitnessStudioDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<AppNotification>(entity =>
+        {
+            entity.ToTable("app_notifications");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).UseIdentityAlwaysColumn().HasColumnName("id");
+            entity.Property(e => e.StudioId).HasColumnName("studio_id");
+            entity.Property(e => e.AppUserId).HasColumnName("app_user_id");
+            entity.Property(e => e.PaymentObligationId).HasColumnName("payment_obligation_id");
+            entity.Property(e => e.NotificationType).HasMaxLength(50).HasColumnName("notification_type");
+            entity.Property(e => e.DayOffset).HasColumnName("day_offset");
+            entity.Property(e => e.Title).HasMaxLength(160).HasColumnName("title");
+            entity.Property(e => e.Body).HasColumnName("body");
+            entity.Property(e => e.ReadAt).HasColumnName("read_at");
+            entity.Property(e => e.PushedAt).HasColumnName("pushed_at");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("now()").HasColumnName("created_at");
+            entity.HasOne(e => e.AppUser).WithMany(e => e.AppNotifications).HasForeignKey(e => e.AppUserId);
+            entity.HasOne(e => e.PaymentObligation).WithMany().HasForeignKey(e => e.PaymentObligationId);
+            entity.HasOne(e => e.Studio).WithMany(e => e.AppNotifications).HasForeignKey(e => e.StudioId);
+        });
+
+        modelBuilder.Entity<AppUserDeviceToken>(entity =>
+        {
+            entity.ToTable("app_user_device_tokens");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Token).IsUnique();
+            entity.Property(e => e.Id).UseIdentityAlwaysColumn().HasColumnName("id");
+            entity.Property(e => e.AppUserId).HasColumnName("app_user_id");
+            entity.Property(e => e.Token).HasColumnName("token");
+            entity.Property(e => e.Platform).HasMaxLength(20).HasColumnName("platform");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("now()").HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("now()").HasColumnName("updated_at");
+            entity.HasOne(e => e.AppUser).WithMany(e => e.DeviceTokens).HasForeignKey(e => e.AppUserId);
+        });
+
         modelBuilder.Entity<AppUser>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("app_users_pkey");
@@ -153,6 +193,9 @@ public partial class FitnessStudioDbContext : DbContext
                 .HasDefaultValueSql("'self_service'::character varying")
                 .HasColumnName("booking_source");
             entity.Property(e => e.CancelledAt).HasColumnName("cancelled_at");
+            entity.Property(e => e.CancellationReason)
+                .HasMaxLength(30)
+                .HasColumnName("cancellation_reason");
             entity.Property(e => e.ClassSessionId).HasColumnName("class_session_id");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("now()")
@@ -206,6 +249,9 @@ public partial class FitnessStudioDbContext : DbContext
                 .UseIdentityAlwaysColumn()
                 .HasColumnName("id");
             entity.Property(e => e.Capacity).HasColumnName("capacity");
+            entity.Property(e => e.CancellationReason)
+                .HasMaxLength(30)
+                .HasColumnName("cancellation_reason");
             entity.Property(e => e.ClassTypeId).HasColumnName("class_type_id");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("now()")
@@ -529,13 +575,11 @@ public partial class FitnessStudioDbContext : DbContext
                 .HasDefaultValueSql("now()")
                 .HasColumnName("created_at");
             entity.Property(e => e.EndsOn).HasColumnName("ends_on");
+            entity.Property(e => e.BillingStartsOn).HasColumnName("billing_starts_on");
             entity.Property(e => e.MemberId).HasColumnName("member_id");
             entity.Property(e => e.MembershipPlanId).HasColumnName("membership_plan_id");
             entity.Property(e => e.StartsOn).HasColumnName("starts_on");
-            entity.Property(e => e.Status)
-                .HasMaxLength(30)
-                .HasDefaultValueSql("'active'::character varying")
-                .HasColumnName("status");
+            entity.Property(e => e.NextBillingOn).HasColumnName("next_billing_on");
             entity.Property(e => e.StudioId).HasColumnName("studio_id");
             entity.Property(e => e.UpdatedAt)
                 .HasDefaultValueSql("now()")
@@ -555,6 +599,41 @@ public partial class FitnessStudioDbContext : DbContext
                 .HasForeignKey(d => d.StudioId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("member_memberships_studio_id_fkey");
+        });
+
+        modelBuilder.Entity<MembershipPaymentObligation>(entity =>
+        {
+            entity.ToTable("membership_payment_obligations");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.MemberMembershipId, e.PeriodStartsOn }).IsUnique();
+            entity.HasIndex(e => new { e.StudioId, e.DueOn });
+            entity.HasIndex(e => new { e.StudioId, e.Status });
+            entity.Property(e => e.Id).UseIdentityAlwaysColumn().HasColumnName("id");
+            entity.Property(e => e.StudioId).HasColumnName("studio_id");
+            entity.Property(e => e.MemberMembershipId).HasColumnName("member_membership_id");
+            entity.Property(e => e.PeriodStartsOn).HasColumnName("period_starts_on");
+            entity.Property(e => e.PeriodEndsOn).HasColumnName("period_ends_on");
+            entity.Property(e => e.DueOn).HasColumnName("due_on");
+            entity.Property(e => e.PlanName).HasMaxLength(120).HasColumnName("plan_name");
+            entity.Property(e => e.FullAmount).HasPrecision(10, 2).HasColumnName("full_amount");
+            entity.Property(e => e.AmountDue).HasPrecision(10, 2).HasColumnName("amount_due");
+            entity.Property(e => e.Currency).HasMaxLength(3).HasColumnName("currency");
+            entity.Property(e => e.Status).HasMaxLength(30).HasDefaultValue("pending").HasColumnName("status");
+            entity.Property(e => e.RecipientName).HasMaxLength(100).HasColumnName("recipient_name");
+            entity.Property(e => e.Iban).HasMaxLength(34).HasColumnName("iban");
+            entity.Property(e => e.PaymentModel).HasMaxLength(4).HasColumnName("payment_model");
+            entity.Property(e => e.PaymentReference).HasMaxLength(22).HasColumnName("payment_reference");
+            entity.Property(e => e.PaymentDescription).HasMaxLength(35).HasColumnName("payment_description");
+            entity.Property(e => e.ReportedAt).HasColumnName("reported_at");
+            entity.Property(e => e.ReportedByUserId).HasColumnName("reported_by_user_id");
+            entity.Property(e => e.ConfirmedAt).HasColumnName("confirmed_at");
+            entity.Property(e => e.ConfirmedByUserId).HasColumnName("confirmed_by_user_id");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("now()").HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("now()").HasColumnName("updated_at");
+            entity.HasOne(e => e.MemberMembership).WithMany(e => e.PaymentObligations).HasForeignKey(e => e.MemberMembershipId);
+            entity.HasOne(e => e.Studio).WithMany(e => e.MembershipPaymentObligations).HasForeignKey(e => e.StudioId);
+            entity.HasOne(e => e.ReportedByUser).WithMany().HasForeignKey(e => e.ReportedByUserId);
+            entity.HasOne(e => e.ConfirmedByUser).WithMany().HasForeignKey(e => e.ConfirmedByUserId);
         });
 
         modelBuilder.Entity<MembershipPlan>(entity =>
@@ -578,7 +657,9 @@ public partial class FitnessStudioDbContext : DbContext
                 .HasDefaultValueSql("'EUR'::character varying")
                 .HasColumnName("currency");
             entity.Property(e => e.Description).HasColumnName("description");
-            entity.Property(e => e.DurationDays).HasColumnName("duration_days");
+            entity.Property(e => e.BillingPeriodMonths)
+                .HasDefaultValue(1)
+                .HasColumnName("billing_period_months");
             entity.Property(e => e.Name)
                 .HasMaxLength(120)
                 .HasColumnName("name");
@@ -629,6 +710,7 @@ public partial class FitnessStudioDbContext : DbContext
                 .HasMaxLength(30)
                 .HasDefaultValueSql("'active'::character varying")
                 .HasColumnName("status");
+            entity.Property(e => e.StatusEffectiveFrom).HasColumnName("status_effective_from");
             entity.Property(e => e.StudioId).HasColumnName("studio_id");
             entity.Property(e => e.TrainerId).HasColumnName("trainer_id");
             entity.Property(e => e.UpdatedAt)
