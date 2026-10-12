@@ -6,6 +6,14 @@ class BookingsRemoteDataSource {
 
   final ApiClient _apiClient;
 
+  Future<List<BookingModel>> getBookings() async {
+    final response = await _apiClient.get<List<dynamic>>('/api/bookings');
+
+    return (response.data ?? [])
+        .map((item) => BookingModel.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<void> cancelBooking(int id) async {
     await _apiClient.delete<void>('/api/bookings/$id');
   }

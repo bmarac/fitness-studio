@@ -18,6 +18,7 @@ import '../features/bookings/domain/repositories/bookings_repository.dart';
 import '../features/bookings/domain/usecases/cancel_booking.dart';
 import '../features/bookings/domain/usecases/cancel_fixed_schedule.dart';
 import '../features/bookings/domain/usecases/create_booking.dart';
+import '../features/bookings/domain/usecases/get_bookings.dart';
 import '../features/bookings/domain/usecases/get_class_session_bookings.dart';
 import '../features/bookings/domain/usecases/update_booking_status.dart';
 import '../features/class_sessions/data/datasources/class_sessions_remote_data_source.dart';
@@ -28,6 +29,7 @@ import '../features/class_sessions/domain/usecases/get_class_session.dart';
 import '../features/class_sessions/domain/usecases/get_class_sessions.dart';
 import '../features/class_sessions/domain/usecases/get_my_class_sessions.dart';
 import '../features/profile/data/datasources/profile_remote_data_source.dart';
+import '../features/payments/data/payments_remote_data_source.dart';
 import '../features/profile/data/repositories/profile_repository_impl.dart';
 import '../features/profile/domain/repositories/profile_repository.dart';
 import '../features/profile/domain/usecases/get_profile.dart';
@@ -38,6 +40,9 @@ import '../features/progress/domain/usecases/get_member_progress.dart';
 import '../features/recurring_schedules/data/datasources/recurring_schedules_remote_data_source.dart';
 import '../features/recurring_schedules/data/repositories/recurring_schedules_repository_impl.dart';
 import '../features/recurring_schedules/domain/repositories/recurring_schedules_repository.dart';
+import '../features/recurring_schedules/domain/usecases/change_recurring_schedule_status.dart';
+import '../features/recurring_schedules/domain/usecases/get_recurring_schedules.dart';
+import '../features/recurring_schedules/domain/usecases/get_trainers.dart';
 
 final serviceLocator = GetIt.instance;
 
@@ -105,6 +110,18 @@ Future<void> configureDependencies() async {
         serviceLocator<RecurringSchedulesRemoteDataSource>(),
       ),
     )
+    ..registerLazySingleton<GetRecurringSchedules>(
+      () =>
+          GetRecurringSchedules(serviceLocator<RecurringSchedulesRepository>()),
+    )
+    ..registerLazySingleton<GetTrainers>(
+      () => GetTrainers(serviceLocator<RecurringSchedulesRepository>()),
+    )
+    ..registerLazySingleton<ChangeRecurringScheduleStatus>(
+      () => ChangeRecurringScheduleStatus(
+        serviceLocator<RecurringSchedulesRepository>(),
+      ),
+    )
     ..registerLazySingleton<BookingsRemoteDataSource>(
       () => BookingsRemoteDataSource(serviceLocator<ApiClient>()),
     )
@@ -113,6 +130,9 @@ Future<void> configureDependencies() async {
     )
     ..registerLazySingleton<CancelBooking>(
       () => CancelBooking(serviceLocator<BookingsRepository>()),
+    )
+    ..registerLazySingleton<GetBookings>(
+      () => GetBookings(serviceLocator<BookingsRepository>()),
     )
     ..registerLazySingleton<CancelFixedSchedule>(
       () => CancelFixedSchedule(serviceLocator<BookingsRepository>()),
@@ -128,6 +148,9 @@ Future<void> configureDependencies() async {
     )
     ..registerLazySingleton<ProfileRemoteDataSource>(
       () => ProfileRemoteDataSource(serviceLocator<ApiClient>()),
+    )
+    ..registerLazySingleton<PaymentsRemoteDataSource>(
+      () => PaymentsRemoteDataSource(serviceLocator<ApiClient>()),
     )
     ..registerLazySingleton<ProfileRepository>(
       () => ProfileRepositoryImpl(serviceLocator<ProfileRemoteDataSource>()),

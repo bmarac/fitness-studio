@@ -1,3 +1,4 @@
+import '../../../../core/error/failure.dart';
 import '../../domain/entities/class_session.dart';
 
 sealed class ClassSessionsState {
@@ -19,7 +20,7 @@ class ClassSessionsLoaded extends ClassSessionsState {
 }
 
 class ClassSessionsError extends ClassSessionsState {
-  const ClassSessionsError(this.message);
+  const ClassSessionsError(this.failure);
 
-  final String message;
+  final Failure failure;
 }

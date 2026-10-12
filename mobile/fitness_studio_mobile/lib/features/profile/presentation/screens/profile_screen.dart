@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/error/failure_localization.dart';
+import '../../../../core/l10n/localization.dart';
 import '../../../../core/widgets/error_view.dart';
 import '../../../../core/widgets/loading_view.dart';
 import '../../../../navigation/app_routes.dart';
@@ -26,16 +28,34 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final profile = ref.watch(profileProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Profil')),
+      appBar: AppBar(
+        title: Text(context.l10n.navProfile),
+        actions: [
+          IconButton(
+            tooltip: context.l10n.notificationsTitle,
+            onPressed: () => context.push(AppRoutes.notificationsPath),
+            icon: const Icon(Icons.notifications_outlined),
+          ),
+          IconButton(
+            tooltip: context.l10n.logoutTooltip,
+            onPressed: _isLoggingOut ? null : _confirmLogout,
+            icon: _isLoggingOut
+                ? const SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.logout),
+          ),
+        ],
+      ),
       body: profile.when(
         loading: () => const LoadingView(),
         error: (error, stackTrace) => ErrorView(
-          message: error.toString(),
+          message: localizedError(context, error),
           onRetry: () => ref.invalidate(profileProvider),
         ),
         data: (profile) => _ProfileContent(
           profile: profile,
-          isLoggingOut: _isLoggingOut,
           onRefresh: () async {
             ref.invalidate(profileProvider);
             final memberId = profile.member?.id;
@@ -47,7 +67,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               await ref.read(memberProgressProvider(memberId).future);
             }
           },
-          onLogout: _confirmLogout,
         ),
       ),
     );
@@ -57,17 +76,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final shouldLogout = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Odjava'),
-        content: const Text('Želiš li se odjaviti iz aplikacije?'),
+        title: Text(context.l10n.logoutTitle),
+        content: Text(context.l10n.logoutQuestion),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Odustani'),
+            child: Text(context.l10n.actionCancel),
           ),
           FilledButton.icon(
             onPressed: () => Navigator.of(context).pop(true),
             icon: const Icon(Icons.logout),
-            label: const Text('Odjavi se'),
+            label: Text(context.l10n.logoutAction),
           ),
         ],
       ),
@@ -76,31 +95,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     if (shouldLogout != true || !mounted) return;
 
     setState(() => _isLoggingOut = true);
-    final error = await ref.read(loginControllerProvider.notifier).logout();
+    final failure = await ref.read(loginControllerProvider.notifier).logout();
 
     if (!mounted) return;
     setState(() => _isLoggingOut = false);
 
-    if (error != null) {
+    if (failure != null) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(error)));
+      ).showSnackBar(SnackBar(content: Text(failure.localized(context))));
     }
   }
 }
 
 class _ProfileContent extends StatelessWidget {
-  const _ProfileContent({
-    required this.profile,
-    required this.isLoggingOut,
-    required this.onRefresh,
-    required this.onLogout,
-  });
+  const _ProfileContent({required this.profile, required this.onRefresh});
 
   final Profile profile;
-  final bool isLoggingOut;
   final Future<void> Function() onRefresh;
-  final VoidCallback onLogout;
 
   @override
   Widget build(BuildContext context) {
@@ -113,11 +125,11 @@ class _ProfileContent extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
           _ProfileHeader(profile: profile, person: person),
-          const SizedBox(height: 24),
-          _PersonalDetailsCard(profile: profile, person: person),
           if (profile.membership case final membership?) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             _MembershipCard(membership: membership, usage: profile.usage),
+            const SizedBox(height: 16),
+            const _PaymentsCard(admin: false),
           ],
           if (profile.member case final member?) ...[
             const SizedBox(height: 16),
@@ -129,6 +141,12 @@ class _ProfileContent extends StatelessWidget {
             const SizedBox(height: 16),
             const _MembersProgressCard(),
           ],
+          if (profile.user.roles.contains('admin')) ...[
+            const SizedBox(height: 16),
+            const _PaymentsCard(admin: true),
+            const SizedBox(height: 16),
+            const _PaymentSettingsCard(),
+          ],
           if (profile.fixedSchedules.isNotEmpty) ...[
             const SizedBox(height: 16),
             _FixedSchedulesCard(schedules: profile.fixedSchedules),
@@ -138,17 +156,6 @@ class _ProfileContent extends StatelessWidget {
             const SizedBox(height: 16),
             _TrainerBioCard(bio: bio),
           ],
-          const SizedBox(height: 24),
-          OutlinedButton.icon(
-            onPressed: isLoggingOut ? null : onLogout,
-            icon: isLoggingOut
-                ? const SizedBox.square(
-                    dimension: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.logout),
-            label: Text(isLoggingOut ? 'Odjavljujem...' : 'Odjavi se'),
-          ),
         ],
       ),
     );
@@ -163,13 +170,50 @@ class _MembersProgressCard extends StatelessWidget {
     return Card(
       child: ListTile(
         leading: const Icon(Icons.monitor_heart_outlined),
-        title: const Text('Napredak članova'),
-        subtitle: const Text('Pregled i unos mjerenja'),
+        title: Text(context.l10n.profileMembersProgress),
+        subtitle: Text(context.l10n.profileMembersProgressSubtitle),
         trailing: const Icon(Icons.chevron_right),
         onTap: () => context.push(AppRoutes.membersProgressPath),
       ),
     );
   }
+}
+
+class _PaymentsCard extends StatelessWidget {
+  const _PaymentsCard({required this.admin});
+  final bool admin;
+  @override
+  Widget build(BuildContext context) => Card(
+    child: ListTile(
+      leading: const Icon(Icons.payments_outlined),
+      title: Text(
+        admin
+            ? context.l10n.profileAdminPayments
+            : context.l10n.profileMyPayments,
+      ),
+      subtitle: Text(
+        admin
+            ? context.l10n.profileAdminPaymentsSubtitle
+            : context.l10n.profileMyPaymentsSubtitle,
+      ),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => context.push('${AppRoutes.paymentsPath}?admin=$admin'),
+    ),
+  );
+}
+
+class _PaymentSettingsCard extends StatelessWidget {
+  const _PaymentSettingsCard();
+  @override
+  Widget build(BuildContext context) => Card(
+    child: ListTile(
+      leading: const Icon(Icons.account_balance_outlined),
+      title: Text(context.l10n.profilePaymentSettings),
+      subtitle: Text(context.l10n.profilePaymentSettingsSubtitle),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => context.push(AppRoutes.paymentSettingsPath),
+    ),
+  );
 }
 
 class _ProfileHeader extends StatelessWidget {
@@ -229,7 +273,7 @@ class _ProfileHeader extends StatelessWidget {
                             color: theme.colorScheme.primary,
                           ),
                           const SizedBox(width: 5),
-                          Text(_roleLabel(role)),
+                          Text(_roleLabel(context, role)),
                         ],
                       ),
                     )
@@ -250,48 +294,13 @@ class _ProfileHeader extends StatelessWidget {
     };
   }
 
-  static String _roleLabel(String role) {
+  static String _roleLabel(BuildContext context, String role) {
     return switch (role) {
-      'admin' => 'Administrator',
-      'trainer' => 'Trener',
-      'member' => 'Član',
+      'admin' => context.l10n.roleAdmin,
+      'trainer' => context.l10n.roleTrainer,
+      'member' => context.l10n.roleMember,
       _ => role,
     };
-  }
-}
-
-class _PersonalDetailsCard extends StatelessWidget {
-  const _PersonalDetailsCard({required this.profile, required this.person});
-
-  final Profile profile;
-  final ProfilePerson? person;
-
-  @override
-  Widget build(BuildContext context) {
-    return _SectionCard(
-      title: 'Osobni podaci',
-      children: [
-        _InfoRow(
-          icon: Icons.email_outlined,
-          label: 'E-mail',
-          value: person?.email ?? profile.user.email,
-        ),
-        if (person?.phone case final phone? when phone.trim().isNotEmpty)
-          _InfoRow(icon: Icons.phone_outlined, label: 'Telefon', value: phone),
-        if (person?.dateOfBirth case final dateOfBirth?)
-          _InfoRow(
-            icon: Icons.cake_outlined,
-            label: 'Datum rođenja',
-            value: _formatDate(dateOfBirth),
-          ),
-        _InfoRow(
-          icon: Icons.check_circle_outline,
-          label: 'Status',
-          value: _statusLabel(person?.status ?? 'active'),
-          isLast: true,
-        ),
-      ],
-    );
   }
 }
 
@@ -306,7 +315,7 @@ class _MembershipCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     return _SectionCard(
-      title: 'Moj paket',
+      title: context.l10n.profileMyPlan,
       children: [
         Text(
           membership.planName,
@@ -325,7 +334,7 @@ class _MembershipCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  _usageTitle(usage.period),
+                  _usageTitle(context, usage.period),
                   style: theme.textTheme.labelLarge,
                 ),
               ),
@@ -347,27 +356,36 @@ class _MembershipCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '${_formatDate(usage.periodStartsOn)} - ${_formatDate(usage.periodEndsOn)}',
+            context.l10n.profileValidRange(
+              context.formatDate(usage.periodStartsOn),
+              context.formatDate(usage.periodEndsOn),
+            ),
             style: theme.textTheme.bodySmall,
           ),
           const SizedBox(height: 16),
         ],
         _InfoRow(
           icon: Icons.date_range_outlined,
-          label: 'Vrijedi',
-          value:
-              '${_formatDate(membership.startsOn)} - ${_formatDate(membership.endsOn)}',
+          label: context.l10n.profileValid,
+          value: membership.endsOn == null
+              ? context.l10n.profileValidFrom(
+                  context.formatDate(membership.startsOn),
+                )
+              : context.l10n.profileValidRange(
+                  context.formatDate(membership.startsOn),
+                  context.formatDate(membership.endsOn!),
+                ),
           isLast: true,
         ),
       ],
     );
   }
 
-  static String _usageTitle(String period) {
+  static String _usageTitle(BuildContext context, String period) {
     return switch (period) {
-      'week' => 'Iskorišteno ovaj tjedan',
-      'month' => 'Iskorišteno ovaj mjesec',
-      _ => 'Iskorišteno u članarini',
+      'week' => context.l10n.profileUsedThisWeek,
+      'month' => context.l10n.profileUsedThisMonth,
+      _ => context.l10n.profileUsedInMembership,
     };
   }
 }
@@ -392,14 +410,14 @@ class _ProgressSummaryCard extends ConsumerWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'Napredak',
+                    context.l10n.profileProgress,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
                 IconButton(
-                  tooltip: 'Osvježi napredak',
+                  tooltip: context.l10n.profileRefreshProgress,
                   onPressed: () =>
                       ref.invalidate(memberProgressProvider(memberId)),
                   icon: const Icon(Icons.refresh),
@@ -415,15 +433,13 @@ class _ProgressSummaryCard extends ConsumerWidget {
               error: (error, stackTrace) => Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Podatke o napretku trenutno nije moguće učitati.',
-                  ),
+                  Text(context.l10n.profileProgressLoadError),
                   const SizedBox(height: 8),
                   TextButton.icon(
                     onPressed: () =>
                         ref.invalidate(memberProgressProvider(memberId)),
                     icon: const Icon(Icons.refresh),
-                    label: const Text('Pokušaj ponovno'),
+                    label: Text(context.l10n.actionRetry),
                   ),
                 ],
               ),
@@ -448,7 +464,7 @@ class _ProgressSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (progress.latestValues.isEmpty) {
-      return const Text('Još nema zabilježenih mjerenja.');
+      return Text(context.l10n.profileNoMeasurements);
     }
 
     const preferredCodes = ['weight_kg', 'bmi', 'waist_cm'];
@@ -475,7 +491,7 @@ class _ProgressSummary extends StatelessWidget {
           child: FilledButton.tonalIcon(
             onPressed: onOpen,
             icon: const Icon(Icons.show_chart),
-            label: const Text('Prikaži povijest'),
+            label: Text(context.l10n.profileShowHistory),
           ),
         ),
       ],
@@ -495,7 +511,7 @@ class _ProgressSummaryRow extends StatelessWidget {
     final unit = value.unit == null ? '' : ' ${value.unit}';
     final changeText = change == null
         ? null
-        : '${change! > 0 ? '+' : ''}${change!.toStringAsFixed(value.decimalPlaces)}$unit';
+        : '${change! > 0 ? '+' : ''}${context.formatNumber(change!, decimalDigits: value.decimalPlaces)}$unit';
 
     return Row(
       children: [
@@ -515,7 +531,7 @@ class _ProgressSummaryRow extends StatelessWidget {
           const SizedBox(width: 12),
         ],
         Text(
-          value.formattedValue,
+          '${context.formatNumber(value.value, decimalDigits: value.decimalPlaces)}$unit',
           style: theme.textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.w800,
           ),
@@ -533,7 +549,7 @@ class _FixedSchedulesCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _SectionCard(
-      title: 'Moji fiksni termini',
+      title: context.l10n.profileFixedSchedules,
       children: [
         for (var index = 0; index < schedules.length; index++)
           _FixedScheduleRow(
@@ -567,7 +583,7 @@ class _FixedScheduleRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${_weekday(schedule.dayOfWeek)}, ${_shortTime(schedule.startsAtTime)}',
+                  '${_weekday(context, schedule.dayOfWeek)}, ${_shortTime(schedule.startsAtTime)}',
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
@@ -591,7 +607,10 @@ class _TrainerBioCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _SectionCard(title: 'O meni', children: [Text(bio)]);
+    return _SectionCard(
+      title: context.l10n.profileAboutMe,
+      children: [Text(bio)],
+    );
   }
 }
 
@@ -664,32 +683,11 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
-String _formatDate(DateTime value) {
-  final day = value.day.toString().padLeft(2, '0');
-  final month = value.month.toString().padLeft(2, '0');
-  return '$day.$month.${value.year}.';
-}
-
-String _statusLabel(String status) {
-  return switch (status) {
-    'active' => 'Aktivan',
-    'paused' => 'Pauziran',
-    'inactive' => 'Neaktivan',
-    _ => status,
-  };
-}
-
-String _weekday(int value) {
-  return switch (value) {
-    1 => 'Ponedjeljak',
-    2 => 'Utorak',
-    3 => 'Srijeda',
-    4 => 'Četvrtak',
-    5 => 'Petak',
-    6 => 'Subota',
-    7 => 'Nedjelja',
-    _ => 'Dan $value',
-  };
+String _weekday(BuildContext context, int value) {
+  if (value < DateTime.monday || value > DateTime.sunday) {
+    return context.l10n.unknownDay(value);
+  }
+  return context.formatWeekday(DateTime(2024, 1, value));
 }
 
 String _shortTime(String value) {

@@ -11,6 +11,8 @@ class ClassSession {
     required this.capacity,
     required this.bookedCount,
     required this.status,
+    required this.recurringScheduleId,
+    required this.recurringScheduleStatus,
   });
 
   final int id;
@@ -24,6 +26,8 @@ class ClassSession {
   final int capacity;
   final int bookedCount;
   final String status;
+  final int? recurringScheduleId;
+  final String? recurringScheduleStatus;
 
   String get trainerFullName => '$trainerFirstName $trainerLastName';
 

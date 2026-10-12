@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/error/failure_localization.dart';
+import '../../../../core/l10n/localization.dart';
 import '../../../../core/widgets/error_view.dart';
 import '../../../../core/widgets/loading_view.dart';
 import '../../../auth/presentation/state/login_controller.dart';
@@ -31,16 +33,6 @@ class _CreateScheduleScreenState extends ConsumerState<CreateScheduleScreen> {
   TimeOfDay _startsAtTime = const TimeOfDay(hour: 18, minute: 0);
   DateTime _validFrom = DateUtils.dateOnly(DateTime.now());
 
-  static const _weekdays = {
-    1: 'Ponedjeljak',
-    2: 'Utorak',
-    3: 'Srijeda',
-    4: 'Cetvrtak',
-    5: 'Petak',
-    6: 'Subota',
-    7: 'Nedjelja',
-  };
-
   @override
   void dispose() {
     _durationController.dispose();
@@ -57,12 +49,12 @@ class _CreateScheduleScreenState extends ConsumerState<CreateScheduleScreen> {
         Navigator.of(context).pop(true);
       }
 
-      if (next case CreateScheduleReady(errorMessage: final message?)
-          when previous is! CreateScheduleReady ||
-              previous.errorMessage != message) {
+      if (next case CreateScheduleReady(
+        failure: final failure?,
+      ) when previous is! CreateScheduleReady || previous.failure != failure) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(message)));
+        ).showSnackBar(SnackBar(content: Text(failure.localized(context))));
       }
     });
 
@@ -71,11 +63,11 @@ class _CreateScheduleScreenState extends ConsumerState<CreateScheduleScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Novi termin')),
+      appBar: AppBar(title: Text(context.l10n.newScheduleTitle)),
       body: switch (state) {
         CreateScheduleLoading() => const LoadingView(),
-        CreateScheduleLoadError(message: final message) => ErrorView(
-          message: message,
+        CreateScheduleLoadError(failure: final failure) => ErrorView(
+          message: failure.localized(context),
           onRetry: () => ref
               .read(createScheduleControllerProvider.notifier)
               .loadFormData(),
@@ -92,7 +84,7 @@ class _CreateScheduleScreenState extends ConsumerState<CreateScheduleScreen> {
 
   Widget _buildForm(ScheduleFormData formData, bool isSubmitting) {
     if (formData.classTypes.isEmpty || formData.trainers.isEmpty) {
-      return const Center(child: Text('Nedostaju vrste treninga ili treneri.'));
+      return Center(child: Text(context.l10n.missingClassTypesOrTrainers));
     }
 
     return SafeArea(
@@ -108,10 +100,10 @@ class _CreateScheduleScreenState extends ConsumerState<CreateScheduleScreen> {
                 children: [
                   DropdownButtonFormField<int>(
                     initialValue: _classTypeId,
-                    decoration: const InputDecoration(
-                      labelText: 'Vrsta treninga',
-                      prefixIcon: Icon(Icons.fitness_center),
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: context.l10n.classTypeLabel,
+                      prefixIcon: const Icon(Icons.fitness_center),
+                      border: const OutlineInputBorder(),
                     ),
                     items: formData.classTypes
                         .map(
@@ -136,10 +128,10 @@ class _CreateScheduleScreenState extends ConsumerState<CreateScheduleScreen> {
                   const SizedBox(height: 16),
                   DropdownButtonFormField<int>(
                     initialValue: _trainerId,
-                    decoration: const InputDecoration(
-                      labelText: 'Trener',
-                      prefixIcon: Icon(Icons.person_outline),
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: context.l10n.labelTrainer,
+                      prefixIcon: const Icon(Icons.person_outline),
+                      border: const OutlineInputBorder(),
                     ),
                     items: formData.trainers
                         .map(
@@ -156,16 +148,18 @@ class _CreateScheduleScreenState extends ConsumerState<CreateScheduleScreen> {
                   const SizedBox(height: 16),
                   DropdownButtonFormField<int>(
                     initialValue: _dayOfWeek,
-                    decoration: const InputDecoration(
-                      labelText: 'Dan',
-                      prefixIcon: Icon(Icons.calendar_today_outlined),
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: context.l10n.dayLabel,
+                      prefixIcon: const Icon(Icons.calendar_today_outlined),
+                      border: const OutlineInputBorder(),
                     ),
-                    items: _weekdays.entries
+                    items: List.generate(7, (index) => index + 1)
                         .map(
                           (weekday) => DropdownMenuItem(
-                            value: weekday.key,
-                            child: Text(weekday.value),
+                            value: weekday,
+                            child: Text(
+                              context.formatWeekday(DateTime(2024, 1, weekday)),
+                            ),
                           ),
                         )
                         .toList(),
@@ -176,7 +170,7 @@ class _CreateScheduleScreenState extends ConsumerState<CreateScheduleScreen> {
                   const SizedBox(height: 16),
                   _PickerField(
                     icon: Icons.schedule,
-                    label: 'Vrijeme početka',
+                    label: context.l10n.startTimeLabel,
                     value: _startsAtTime.format(context),
                     onTap: isSubmitting ? null : _pickTime,
                   ),
@@ -188,9 +182,9 @@ class _CreateScheduleScreenState extends ConsumerState<CreateScheduleScreen> {
                           controller: _durationController,
                           enabled: !isSubmitting,
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            labelText: 'Trajanje (min)',
-                            border: OutlineInputBorder(),
+                          decoration: InputDecoration(
+                            labelText: context.l10n.durationMinutesLabel,
+                            border: const OutlineInputBorder(),
                           ),
                           validator: _positiveNumberValidator,
                         ),
@@ -201,9 +195,9 @@ class _CreateScheduleScreenState extends ConsumerState<CreateScheduleScreen> {
                           controller: _capacityController,
                           enabled: !isSubmitting,
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            labelText: 'Kapacitet',
-                            border: OutlineInputBorder(),
+                          decoration: InputDecoration(
+                            labelText: context.l10n.labelCapacity,
+                            border: const OutlineInputBorder(),
                           ),
                           validator: _positiveNumberValidator,
                         ),
@@ -213,8 +207,8 @@ class _CreateScheduleScreenState extends ConsumerState<CreateScheduleScreen> {
                   const SizedBox(height: 16),
                   _PickerField(
                     icon: Icons.event_outlined,
-                    label: 'Vrijedi od',
-                    value: _formatDate(_validFrom),
+                    label: context.l10n.validFromLabel,
+                    value: context.formatDate(_validFrom),
                     onTap: isSubmitting ? null : _pickDate,
                   ),
                   const SizedBox(height: 24),
@@ -226,7 +220,11 @@ class _CreateScheduleScreenState extends ConsumerState<CreateScheduleScreen> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.save_outlined),
-                    label: Text(isSubmitting ? 'Spremam...' : 'Spremi termin'),
+                    label: Text(
+                      isSubmitting
+                          ? context.l10n.actionSaving
+                          : context.l10n.saveSchedule,
+                    ),
                   ),
                 ],
               ),
@@ -315,15 +313,11 @@ class _CreateScheduleScreenState extends ConsumerState<CreateScheduleScreen> {
         );
   }
 
-  static String? _positiveNumberValidator(String? value) {
+  String? _positiveNumberValidator(String? value) {
     final number = int.tryParse(value ?? '');
-    return number == null || number <= 0 ? 'Unesi broj veći od 0.' : null;
-  }
-
-  static String _formatDate(DateTime value) {
-    final day = value.day.toString().padLeft(2, '0');
-    final month = value.month.toString().padLeft(2, '0');
-    return '$day.$month.${value.year}.';
+    return number == null || number <= 0
+        ? context.l10n.positiveNumberRequired
+        : null;
   }
 }
 

@@ -2,11 +2,36 @@ import '../../../../core/network/api_client.dart';
 import '../../domain/entities/recurring_schedule_draft.dart';
 import '../models/class_type_option_model.dart';
 import '../models/trainer_option_model.dart';
+import '../models/recurring_schedule_model.dart';
 
 class RecurringSchedulesRemoteDataSource {
   const RecurringSchedulesRemoteDataSource(this._apiClient);
 
   final ApiClient _apiClient;
+
+  Future<List<RecurringScheduleModel>> getSchedules() async {
+    final response = await _apiClient.get<List<dynamic>>(
+      '/api/recurring-class-schedules',
+    );
+
+    return (response.data ?? [])
+        .map(
+          (item) =>
+              RecurringScheduleModel.fromJson(item as Map<String, dynamic>),
+        )
+        .toList();
+  }
+
+  Future<void> changeScheduleStatus({
+    required int id,
+    required String action,
+    required DateTime effectiveFrom,
+  }) async {
+    await _apiClient.patch<void>(
+      '/api/recurring-class-schedules/$id/$action',
+      data: {'effectiveFrom': _formatDate(effectiveFrom)},
+    );
+  }
 
   Future<List<ClassTypeOptionModel>> getClassTypes() async {
     final response = await _apiClient.get<List<dynamic>>('/api/class-types');

@@ -26,7 +26,7 @@ void main() {
         'planDescription': 'Dva grupna treninga tjedno.',
         'startsOn': '2026-09-19',
         'endsOn': '2026-10-18',
-        'status': 'active',
+        'isActive': true,
         'sessionLimit': 2,
         'sessionLimitPeriod': 'week',
       },

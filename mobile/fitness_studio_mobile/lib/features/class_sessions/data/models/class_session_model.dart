@@ -13,6 +13,8 @@ class ClassSessionModel extends ClassSession {
     required super.capacity,
     required super.bookedCount,
     required super.status,
+    required super.recurringScheduleId,
+    required super.recurringScheduleStatus,
   });
 
   factory ClassSessionModel.fromJson(Map<String, dynamic> json) {
@@ -28,6 +30,8 @@ class ClassSessionModel extends ClassSession {
       capacity: json['capacity'] as int,
       bookedCount: json['bookedCount'] as int,
       status: json['status'] as String,
+      recurringScheduleId: json['recurringScheduleId'] as int?,
+      recurringScheduleStatus: json['recurringScheduleStatus'] as String?,
     );
   }
 }

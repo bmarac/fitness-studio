@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/error/failure_localization.dart';
+import '../../../../core/l10n/localization.dart';
 import '../../../../core/widgets/empty_view.dart';
 import '../../../../core/widgets/error_view.dart';
 import '../../../../core/widgets/loading_view.dart';
@@ -31,29 +33,31 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
     final profile = ref.watch(profileProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.memberName ?? 'Napredak')),
+      appBar: AppBar(
+        title: Text(widget.memberName ?? context.l10n.progressTitle),
+      ),
       floatingActionButton: widget.memberId == null
           ? null
           : FloatingActionButton.extended(
               onPressed: () => context.push(
                 AppRoutes.createMeasurementPath(widget.memberId!),
-                extra: widget.memberName ?? 'Član',
+                extra: widget.memberName ?? context.l10n.roleMember,
               ),
               icon: const Icon(Icons.add),
-              label: const Text('Mjerenje'),
+              label: Text(context.l10n.measurementAction),
             ),
       body: profile.when(
         loading: () => const LoadingView(),
         error: (error, stackTrace) => ErrorView(
-          message: error.toString(),
+          message: localizedError(context, error),
           onRetry: () => ref.invalidate(profileProvider),
         ),
         data: (profile) {
           final memberId = widget.memberId ?? profile.member?.id;
           if (memberId == null) {
-            return const EmptyView(
-              title: 'Nema članskog profila',
-              message: 'Praćenje napretka dostupno je članovima.',
+            return EmptyView(
+              title: context.l10n.noMemberProfileTitle,
+              message: context.l10n.noMemberProfileMessage,
             );
           }
 
@@ -61,7 +65,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
           return progress.when(
             loading: () => const LoadingView(),
             error: (error, stackTrace) => ErrorView(
-              message: error.toString(),
+              message: localizedError(context, error),
               onRetry: () => ref.invalidate(memberProgressProvider(memberId)),
             ),
             data: (progress) => _ProgressContent(
@@ -94,9 +98,9 @@ class _ProgressContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (progress.latestValues.isEmpty) {
-      return const EmptyView(
-        title: 'Nema mjerenja',
-        message: 'Još nema zabilježenih podataka o napretku.',
+      return EmptyView(
+        title: context.l10n.noMeasurementsTitle,
+        message: context.l10n.noMeasurementsMessage,
       );
     }
 
@@ -115,10 +119,10 @@ class _ProgressContent extends StatelessWidget {
         children: [
           DropdownButtonFormField<String>(
             initialValue: selected,
-            decoration: const InputDecoration(
-              labelText: 'Parametar',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.show_chart),
+            decoration: InputDecoration(
+              labelText: context.l10n.parameterLabel,
+              border: const OutlineInputBorder(),
+              prefixIcon: const Icon(Icons.show_chart),
             ),
             items: progress.latestValues
                 .map(
@@ -166,10 +170,13 @@ class _CurrentValueCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Trenutno', style: theme.textTheme.labelLarge),
+                  Text(
+                    context.l10n.currentValue,
+                    style: theme.textTheme.labelLarge,
+                  ),
                   const SizedBox(height: 4),
                   Text(
-                    parameter.formattedValue,
+                    _formatValue(context, parameter.value, parameter),
                     style: theme.textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
@@ -208,7 +215,7 @@ class _ChangeIndicator extends StatelessWidget {
         Icon(icon, size: 18, color: Theme.of(context).colorScheme.secondary),
         const SizedBox(width: 4),
         Text(
-          '$sign${value.toStringAsFixed(parameter.decimalPlaces)}$unit',
+          '$sign${context.formatNumber(value, decimalDigits: parameter.decimalPlaces)}$unit',
           style: Theme.of(
             context,
           ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
@@ -237,7 +244,7 @@ class _ProgressChart extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),
               child: Text(
-                'Kretanje',
+                context.l10n.progressTrend,
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -247,9 +254,7 @@ class _ProgressChart extends StatelessWidget {
             SizedBox(
               height: 220,
               child: points.length < 2
-                  ? const Center(
-                      child: Text('Za graf su potrebna barem dva mjerenja.'),
-                    )
+                  ? Center(child: Text(context.l10n.chartNeedsTwoMeasurements))
                   : LineChart(_chartData(context)),
             ),
           ],
@@ -289,7 +294,10 @@ class _ProgressChart extends StatelessWidget {
             showTitles: true,
             reservedSize: 44,
             getTitlesWidget: (value, meta) => Text(
-              value.toStringAsFixed(parameter.decimalPlaces),
+              context.formatNumber(
+                value,
+                decimalDigits: parameter.decimalPlaces,
+              ),
               style: theme.textTheme.labelSmall,
             ),
           ),
@@ -308,7 +316,7 @@ class _ProgressChart extends StatelessWidget {
               return Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(
-                  '${date.day}.${date.month}.',
+                  context.formatShortDate(date),
                   style: theme.textTheme.labelSmall,
                 ),
               );
@@ -361,7 +369,7 @@ class _HistoryCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Povijest',
+              context.l10n.progressHistory,
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
@@ -377,7 +385,7 @@ class _HistoryCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _formatDate(points[index].measuredAt),
+                          context.formatDate(points[index].measuredAt),
                           style: theme.textTheme.bodyLarge,
                         ),
                         if (points[index].note case final note?
@@ -387,7 +395,7 @@ class _HistoryCard extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    _formatValue(points[index].value, parameter),
+                    _formatValue(context, points[index].value, parameter),
                     style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
@@ -402,13 +410,14 @@ class _HistoryCard extends StatelessWidget {
   }
 }
 
-String _formatDate(DateTime value) {
-  final day = value.day.toString().padLeft(2, '0');
-  final month = value.month.toString().padLeft(2, '0');
-  return '$day.$month.${value.year}.';
-}
-
-String _formatValue(double value, ProgressValue parameter) {
-  final number = value.toStringAsFixed(parameter.decimalPlaces);
+String _formatValue(
+  BuildContext context,
+  double value,
+  ProgressValue parameter,
+) {
+  final number = context.formatNumber(
+    value,
+    decimalDigits: parameter.decimalPlaces,
+  );
   return parameter.unit == null ? number : '$number ${parameter.unit}';
 }

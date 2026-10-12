@@ -15,13 +15,9 @@ class ProfileRepositoryImpl implements ProfileRepository {
     try {
       return Success(await _remoteDataSource.getProfile());
     } on ApiException catch (error) {
-      return FailureResult(
-        Failure(message: error.message, statusCode: error.statusCode),
-      );
+      return FailureResult(error.toFailure());
     } on FormatException {
-      return const FailureResult(
-        Failure(message: 'Nije moguce procitati podatke s API-ja.'),
-      );
+      return const FailureResult(Failure(FailureKind.readApi));
     }
   }
 }

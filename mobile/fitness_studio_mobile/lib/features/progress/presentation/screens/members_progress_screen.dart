@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/error/failure_localization.dart';
+import '../../../../core/l10n/localization.dart';
 import '../../../../core/widgets/error_view.dart';
 import '../../../../core/widgets/loading_view.dart';
 import '../../../../navigation/app_routes.dart';
@@ -24,11 +26,11 @@ class _MembersProgressScreenState extends ConsumerState<MembersProgressScreen> {
     final members = ref.watch(progressMembersProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Napredak članova')),
+      appBar: AppBar(title: Text(context.l10n.membersProgressTitle)),
       body: members.when(
         loading: () => const LoadingView(),
         error: (error, stackTrace) => ErrorView(
-          message: error.toString(),
+          message: localizedError(context, error),
           onRetry: () => ref.invalidate(progressMembersProvider),
         ),
         data: (members) {
@@ -50,17 +52,17 @@ class _MembersProgressScreenState extends ConsumerState<MembersProgressScreen> {
               children: [
                 TextField(
                   onChanged: (value) => setState(() => _query = value),
-                  decoration: const InputDecoration(
-                    labelText: 'Pretraži članove',
-                    prefixIcon: Icon(Icons.search),
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: context.l10n.searchMembers,
+                    prefixIcon: const Icon(Icons.search),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 16),
                 if (filtered.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 48),
-                    child: Center(child: Text('Nema pronađenih članova.')),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 48),
+                    child: Center(child: Text(context.l10n.noMembersFound)),
                   )
                 else
                   ...filtered.map((member) => _MemberTile(member: member)),

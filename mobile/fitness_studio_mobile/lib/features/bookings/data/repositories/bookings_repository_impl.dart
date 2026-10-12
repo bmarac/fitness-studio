@@ -11,14 +11,23 @@ class BookingsRepositoryImpl implements BookingsRepository {
   final BookingsRemoteDataSource _remoteDataSource;
 
   @override
+  Future<Result<List<Booking>>> getBookings() async {
+    try {
+      return Success(await _remoteDataSource.getBookings());
+    } on ApiException catch (error) {
+      return FailureResult(error.toFailure());
+    } on FormatException {
+      return const FailureResult(Failure(FailureKind.readBookings));
+    }
+  }
+
+  @override
   Future<Result<void>> cancelBooking(int id) async {
     try {
       await _remoteDataSource.cancelBooking(id);
       return const Success(null);
     } on ApiException catch (error) {
-      return FailureResult(
-        Failure(message: error.message, statusCode: error.statusCode),
-      );
+      return FailureResult(error.toFailure());
     }
   }
 
@@ -34,9 +43,7 @@ class BookingsRepositoryImpl implements BookingsRepository {
       );
       return const Success(null);
     } on ApiException catch (error) {
-      return FailureResult(
-        Failure(message: error.message, statusCode: error.statusCode),
-      );
+      return FailureResult(error.toFailure());
     }
   }
 
@@ -49,9 +56,7 @@ class BookingsRepositoryImpl implements BookingsRepository {
       await _remoteDataSource.updateBookingStatus(id: id, status: status);
       return const Success(null);
     } on ApiException catch (error) {
-      return FailureResult(
-        Failure(message: error.message, statusCode: error.statusCode),
-      );
+      return FailureResult(error.toFailure());
     }
   }
 
@@ -65,13 +70,9 @@ class BookingsRepositoryImpl implements BookingsRepository {
       );
       return Success(bookings);
     } on ApiException catch (error) {
-      return FailureResult(
-        Failure(message: error.message, statusCode: error.statusCode),
-      );
+      return FailureResult(error.toFailure());
     } on FormatException {
-      return const FailureResult(
-        Failure(message: 'Nije moguce procitati podatke s API-ja.'),
-      );
+      return const FailureResult(Failure(FailureKind.readApi));
     }
   }
 
@@ -88,13 +89,9 @@ class BookingsRepositoryImpl implements BookingsRepository {
 
       return Success(booking);
     } on ApiException catch (error) {
-      return FailureResult(
-        Failure(message: error.message, statusCode: error.statusCode),
-      );
+      return FailureResult(error.toFailure());
     } on FormatException {
-      return const FailureResult(
-        Failure(message: 'Nije moguce procitati podatke s API-ja.'),
-      );
+      return const FailureResult(Failure(FailureKind.readApi));
     }
   }
 }

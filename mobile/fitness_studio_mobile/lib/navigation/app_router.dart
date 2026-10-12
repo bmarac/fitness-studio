@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/l10n/localization.dart';
 import '../features/auth/presentation/screens/auth_splash_screen.dart';
 import '../features/auth/presentation/screens/login_screen.dart';
 import '../features/auth/presentation/state/login_controller.dart';
@@ -10,6 +11,9 @@ import '../features/bookings/presentation/screens/my_workouts_screen.dart';
 import '../features/class_sessions/presentation/screens/class_session_details_screen.dart';
 import '../features/class_sessions/presentation/screens/class_sessions_screen.dart';
 import '../features/profile/presentation/screens/profile_screen.dart';
+import '../features/payments/presentation/screens/payments_screen.dart';
+import '../features/payments/presentation/screens/payment_settings_screen.dart';
+import '../features/payments/presentation/screens/notifications_screen.dart';
 import '../features/progress/presentation/screens/progress_screen.dart';
 import '../features/progress/presentation/screens/members_progress_screen.dart';
 import '../features/progress/presentation/screens/create_measurement_screen.dart';
@@ -39,7 +43,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       if (authState is LoginSuccess) {
         if (location == AppRoutes.login || location == AppRoutes.splash) {
-          return AppRoutes.classSessions;
+          return AppRoutes.myWorkouts;
         }
 
         return null;
@@ -131,9 +135,24 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                       if (memberId == null) return const ProfileScreen();
                       return CreateMeasurementScreen(
                         memberId: memberId,
-                        memberName: state.extra as String? ?? 'Član',
+                        memberName:
+                            state.extra as String? ?? context.l10n.roleMember,
                       );
                     },
+                  ),
+                  GoRoute(
+                    path: AppRoutes.payments,
+                    builder: (context, state) => PaymentsScreen(
+                      admin: state.uri.queryParameters['admin'] == 'true',
+                    ),
+                  ),
+                  GoRoute(
+                    path: AppRoutes.paymentSettings,
+                    builder: (context, state) => const PaymentSettingsScreen(),
+                  ),
+                  GoRoute(
+                    path: AppRoutes.notifications,
+                    builder: (context, state) => const NotificationsScreen(),
                   ),
                 ],
               ),

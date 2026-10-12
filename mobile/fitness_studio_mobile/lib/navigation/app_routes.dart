@@ -25,6 +25,13 @@ class AppRoutes {
 
   static const createMeasurement = 'clanovi/:memberId/novo-mjerenje';
 
+  static const payments = 'clanarine';
+  static const paymentSettings = 'postavke-placanja';
+  static const notifications = 'obavijesti';
+  static const paymentsPath = '$profile/clanarine';
+  static const paymentSettingsPath = '$profile/postavke-placanja';
+  static const notificationsPath = '$profile/obavijesti';
+
   static const membersProgressPath = '$profile/clanovi';
 
   static String memberProgressPath(int memberId) {

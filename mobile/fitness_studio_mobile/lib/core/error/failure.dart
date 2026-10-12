@@ -1,11 +1,33 @@
-class Failure {
-  const Failure({required this.message, this.statusCode});
+enum FailureKind {
+  remote,
+  restoreSession,
+  logout,
+  loginResponse,
+  saveSession,
+  readApi,
+  readBookings,
+  readTrainers,
+  readSchedules,
+  readScheduleForm,
+  readScheduleResponse,
+  readProgress,
+  readMembers,
+  readMeasurementParameters,
+  saveMeasurement,
+  notFound,
+  network,
+}
 
-  final String message;
+class Failure {
+  const Failure(this.kind, {this.remoteMessage, this.statusCode});
+
+  const Failure.remote(String message, {int? statusCode})
+    : this(FailureKind.remote, remoteMessage: message, statusCode: statusCode);
+
+  final FailureKind kind;
+  final String? remoteMessage;
   final int? statusCode;
 
   @override
-  String toString() {
-    return message;
-  }
+  String toString() => remoteMessage ?? kind.name;
 }

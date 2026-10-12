@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/error/failure_localization.dart';
 import '../../../../core/error/result.dart';
+import '../../../../core/l10n/localization.dart';
 import '../../../../core/widgets/error_view.dart';
 import '../../../../core/widgets/loading_view.dart';
 import '../../../../injection/service_locator.dart';
@@ -47,11 +49,11 @@ class _CreateMeasurementScreenState
     final parameters = ref.watch(measurementParametersProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Novo mjerenje')),
+      appBar: AppBar(title: Text(context.l10n.newMeasurementTitle)),
       body: parameters.when(
         loading: () => const LoadingView(),
         error: (error, stackTrace) => ErrorView(
-          message: error.toString(),
+          message: localizedError(context, error),
           onRetry: () => ref.invalidate(measurementParametersProvider),
         ),
         data: (parameters) {
@@ -70,7 +72,7 @@ class _CreateMeasurementScreenState
                   ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 4),
-                const Text('Unesi barem jedan izmjereni parametar.'),
+                Text(context.l10n.enterOneMeasuredParameter),
                 const SizedBox(height: 20),
                 for (final parameter in manual) ...[
                   TextFormField(
@@ -96,9 +98,9 @@ class _CreateMeasurementScreenState
                   enabled: !_saving,
                   maxLines: 3,
                   maxLength: 2000,
-                  decoration: const InputDecoration(
-                    labelText: 'Napomena',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: context.l10n.labelNotes,
+                    border: const OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -110,7 +112,11 @@ class _CreateMeasurementScreenState
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.save_outlined),
-                  label: Text(_saving ? 'Spremam...' : 'Spremi mjerenje'),
+                  label: Text(
+                    _saving
+                        ? context.l10n.actionSaving
+                        : context.l10n.saveMeasurement,
+                  ),
                 ),
               ],
             ),
@@ -126,12 +132,16 @@ class _CreateMeasurementScreenState
   String? _validateValue(MeasurementParameter parameter, String? raw) {
     if (raw == null || raw.trim().isEmpty) return null;
     final value = double.tryParse(raw.replaceAll(',', '.'));
-    if (value == null) return 'Unesi ispravan broj.';
+    if (value == null) return context.l10n.invalidNumber;
     if (parameter.minValue != null && value < parameter.minValue!) {
-      return 'Najmanja vrijednost je ${parameter.minValue}.';
+      return context.l10n.minimumValue(
+        context.formatNumber(parameter.minValue!),
+      );
     }
     if (parameter.maxValue != null && value > parameter.maxValue!) {
-      return 'Najveća vrijednost je ${parameter.maxValue}.';
+      return context.l10n.maximumValue(
+        context.formatNumber(parameter.maxValue!),
+      );
     }
     return null;
   }
@@ -151,9 +161,9 @@ class _CreateMeasurementScreenState
         .toList(growable: false);
 
     if (values.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unesi barem jednu vrijednost.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.enterOneValue)));
       return;
     }
 
@@ -178,7 +188,7 @@ class _CreateMeasurementScreenState
       case FailureResult(failure: final failure):
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(failure.message)));
+        ).showSnackBar(SnackBar(content: Text(failure.localized(context))));
     }
   }
 }

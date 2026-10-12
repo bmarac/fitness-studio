@@ -28,9 +28,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
       return Success<AuthSession?>(session);
     } on AuthStorageException {
-      return const FailureResult(
-        Failure(message: 'Nije moguce ucitati spremljenu prijavu.'),
-      );
+      return const FailureResult(Failure(FailureKind.restoreSession));
     }
   }
 
@@ -40,9 +38,7 @@ class AuthRepositoryImpl implements AuthRepository {
       await _localDataSource.clearSession();
       return const Success<void>(null);
     } on AuthStorageException {
-      return const FailureResult(
-        Failure(message: 'Odjava trenutno nije moguca. Pokusaj ponovno.'),
-      );
+      return const FailureResult(Failure(FailureKind.logout));
     }
   }
 
@@ -62,17 +58,11 @@ class AuthRepositoryImpl implements AuthRepository {
 
       return Success(session);
     } on ApiException catch (error) {
-      return FailureResult(
-        Failure(message: error.message, statusCode: error.statusCode),
-      );
+      return FailureResult(error.toFailure());
     } on FormatException {
-      return const FailureResult(
-        Failure(message: 'Nije moguce procitati odgovor za prijavu.'),
-      );
+      return const FailureResult(Failure(FailureKind.loginResponse));
     } on AuthStorageException {
-      return const FailureResult(
-        Failure(message: 'Nije moguce sigurno spremiti prijavu.'),
-      );
+      return const FailureResult(Failure(FailureKind.saveSession));
     }
   }
 }

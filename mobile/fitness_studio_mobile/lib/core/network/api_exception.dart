@@ -1,10 +1,19 @@
 import 'package:dio/dio.dart';
 
+import '../error/failure.dart';
+
+enum ApiExceptionKind { remote, notFound, network }
+
 class ApiException implements Exception {
-  const ApiException({required this.message, this.statusCode});
+  const ApiException({
+    required this.message,
+    this.statusCode,
+    this.kind = ApiExceptionKind.remote,
+  });
 
   final String message;
   final int? statusCode;
+  final ApiExceptionKind kind;
 
   factory ApiException.fromDioException(DioException error) {
     final response = error.response;
@@ -26,14 +35,30 @@ class ApiException implements Exception {
 
     if (response?.statusCode == 404) {
       return const ApiException(
-        message: 'Trazeni podatak nije pronaden.',
+        message: 'Not found.',
         statusCode: 404,
+        kind: ApiExceptionKind.notFound,
       );
     }
 
     return ApiException(
       message: error.message ?? 'Network request failed.',
       statusCode: response?.statusCode,
+      kind: ApiExceptionKind.network,
     );
   }
+}
+
+extension ApiExceptionFailure on ApiException {
+  Failure toFailure() => switch (kind) {
+    ApiExceptionKind.remote => Failure.remote(message, statusCode: statusCode),
+    ApiExceptionKind.notFound => Failure(
+      FailureKind.notFound,
+      statusCode: statusCode,
+    ),
+    ApiExceptionKind.network => Failure(
+      FailureKind.network,
+      statusCode: statusCode,
+    ),
+  };
 }

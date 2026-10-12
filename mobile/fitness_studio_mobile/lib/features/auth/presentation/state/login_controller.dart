@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/config/app_config.dart';
+import '../../../../core/error/failure.dart';
 import '../../../../core/error/result.dart';
 import '../../../../injection/service_locator.dart';
 import '../../domain/usecases/login.dart';
@@ -36,7 +37,7 @@ class LoginController extends Notifier<LoginState> {
         session,
       ),
       Success() => const LoginInitial(),
-      FailureResult(failure: final failure) => LoginError(failure.message),
+      FailureResult(failure: final failure) => LoginError(failure),
     };
   }
 
@@ -54,20 +55,20 @@ class LoginController extends Notifier<LoginState> {
 
     state = switch (result) {
       Success(value: final session) => LoginSuccess(session),
-      FailureResult(failure: final failure) => LoginError(failure.message),
+      FailureResult(failure: final failure) => LoginError(failure),
     };
   }
 
-  Future<String?> logout() async {
+  Future<Failure?> logout() async {
     final result = await _logout();
 
     return switch (result) {
       Success() => _completeLogout(),
-      FailureResult(failure: final failure) => failure.message,
+      FailureResult(failure: final failure) => failure,
     };
   }
 
-  String? _completeLogout() {
+  Failure? _completeLogout() {
     state = const LoginInitial();
     return null;
   }

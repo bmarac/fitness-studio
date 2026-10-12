@@ -1,3 +1,4 @@
+import '../../../../core/error/failure.dart';
 import '../../domain/entities/schedule_form_data.dart';
 
 sealed class CreateScheduleState {
@@ -12,30 +13,30 @@ class CreateScheduleReady extends CreateScheduleState {
   const CreateScheduleReady({
     required this.formData,
     this.isSubmitting = false,
-    this.errorMessage,
+    this.failure,
   });
 
   final ScheduleFormData formData;
   final bool isSubmitting;
-  final String? errorMessage;
+  final Failure? failure;
 
   CreateScheduleReady copyWith({
     bool? isSubmitting,
-    String? errorMessage,
+    Failure? failure,
     bool clearError = false,
   }) {
     return CreateScheduleReady(
       formData: formData,
       isSubmitting: isSubmitting ?? this.isSubmitting,
-      errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
+      failure: clearError ? null : failure ?? this.failure,
     );
   }
 }
 
 class CreateScheduleLoadError extends CreateScheduleState {
-  const CreateScheduleLoadError(this.message);
+  const CreateScheduleLoadError(this.failure);
 
-  final String message;
+  final Failure failure;
 }
 
 class CreateScheduleSuccess extends CreateScheduleState {

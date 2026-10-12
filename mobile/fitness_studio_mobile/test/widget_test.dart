@@ -1,5 +1,6 @@
 import 'package:fitness_studio_mobile/app.dart';
 import 'package:fitness_studio_mobile/injection/service_locator.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,7 +15,13 @@ void main() {
 
     expect(find.text('Fitness Studio'), findsOneWidget);
     expect(find.text('Email'), findsOneWidget);
-    expect(find.text('Lozinka'), findsOneWidget);
-    expect(find.text('Prijavi se'), findsOneWidget);
+    expect(find.text('Password'), findsOneWidget);
+    expect(find.text('Sign in'), findsOneWidget);
+
+    final fields = tester.widgetList<TextFormField>(find.byType(TextFormField));
+    expect(
+      fields.map((field) => field.controller?.text),
+      everyElement(isEmpty),
+    );
   });
 }

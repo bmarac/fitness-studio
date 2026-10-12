@@ -5,6 +5,7 @@ class TrainerOptionModel extends TrainerOption {
     required super.id,
     required super.firstName,
     required super.lastName,
+    required super.status,
   });
 
   factory TrainerOptionModel.fromJson(Map<String, dynamic> json) {
@@ -12,6 +13,7 @@ class TrainerOptionModel extends TrainerOption {
       id: json['id'] as int,
       firstName: json['firstName'] as String,
       lastName: json['lastName'] as String,
+      status: json['status'] as String,
     );
   }
 }

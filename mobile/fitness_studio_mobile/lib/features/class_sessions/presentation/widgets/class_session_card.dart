@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/l10n/localization.dart';
 import '../../domain/entities/class_session.dart';
 
 class ClassSessionCard extends StatelessWidget {
@@ -28,13 +29,13 @@ class ClassSessionCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _formatTime(classSession.startsAt),
+                      context.formatTime(classSession.startsAt),
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                     Text(
-                      _formatTime(classSession.endsAt),
+                      context.formatTime(classSession.endsAt),
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.outline,
                       ),
@@ -88,7 +89,9 @@ class ClassSessionCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      spotsLeft > 0 ? '$spotsLeft mjesta' : 'Popunjeno',
+                      spotsLeft > 0
+                          ? context.l10n.spotsAvailable(spotsLeft)
+                          : context.l10n.classFull,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.labelSmall?.copyWith(
@@ -120,13 +123,5 @@ class ClassSessionCard extends StatelessWidget {
       'cancelled' => theme.colorScheme.error,
       _ => theme.colorScheme.outline,
     };
-  }
-
-  static String _formatTime(DateTime value) {
-    final localValue = value.toLocal();
-    final hour = localValue.hour.toString().padLeft(2, '0');
-    final minute = localValue.minute.toString().padLeft(2, '0');
-
-    return '$hour:$minute';
   }
 }

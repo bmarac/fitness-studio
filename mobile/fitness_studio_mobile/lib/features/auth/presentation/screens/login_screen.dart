@@ -1,7 +1,8 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/error/failure_localization.dart';
+import '../../../../core/l10n/localization.dart';
 import '../state/login_controller.dart';
 import '../state/login_state.dart';
 
@@ -14,12 +15,8 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController(
-    text: kDebugMode ? 'filip.saric@stayfitjoyful.demo' : '',
-  );
-  final _passwordController = TextEditingController(
-    text: kDebugMode ? 'Fitness123!' : '',
-  );
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
 
   bool _obscurePassword = true;
 
@@ -41,11 +38,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         case LoginSuccess():
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(const SnackBar(content: Text('Prijava je uspjesna.')));
-        case LoginError(message: final message):
+          ).showSnackBar(SnackBar(content: Text(context.l10n.loginSuccess)));
+        case LoginError(failure: final failure):
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(SnackBar(content: Text(message)));
+          ).showSnackBar(SnackBar(content: Text(failure.localized(context))));
         case LoginChecking() || LoginInitial() || LoginLoading():
           break;
       }
@@ -88,14 +85,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ),
                             const SizedBox(height: 24),
                             Text(
-                              'Fitness Studio',
+                              context.l10n.appTitle,
                               style: theme.textTheme.headlineMedium?.copyWith(
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Prijavi se u svoj studio',
+                              context.l10n.loginSubtitle,
                               style: theme.textTheme.bodyLarge?.copyWith(
                                 color: theme.colorScheme.onSurfaceVariant,
                               ),
@@ -103,10 +100,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             const SizedBox(height: 32),
                             TextFormField(
                               controller: _emailController,
-                              decoration: const InputDecoration(
-                                labelText: 'Email',
-                                prefixIcon: Icon(Icons.email_outlined),
-                                border: OutlineInputBorder(),
+                              decoration: InputDecoration(
+                                labelText: context.l10n.labelEmail,
+                                prefixIcon: const Icon(Icons.email_outlined),
+                                border: const OutlineInputBorder(),
                               ),
                               keyboardType: TextInputType.emailAddress,
                               textCapitalization: TextCapitalization.none,
@@ -118,12 +115,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             TextFormField(
                               controller: _passwordController,
                               decoration: InputDecoration(
-                                labelText: 'Lozinka',
+                                labelText: context.l10n.labelPassword,
                                 prefixIcon: const Icon(Icons.lock_outline),
                                 suffixIcon: IconButton(
                                   tooltip: _obscurePassword
-                                      ? 'Prikazi lozinku'
-                                      : 'Sakrij lozinku',
+                                      ? context.l10n.showPassword
+                                      : context.l10n.hidePassword,
                                   onPressed: () {
                                     setState(() {
                                       _obscurePassword = !_obscurePassword;
@@ -157,7 +154,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                       )
                                     : const Icon(Icons.login),
                                 label: Text(
-                                  isLoading ? 'Prijava...' : 'Prijavi se',
+                                  isLoading
+                                      ? context.l10n.loginInProgress
+                                      : context.l10n.loginAction,
                                 ),
                               ),
                             ),
@@ -190,19 +189,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         );
   }
 
-  static String? _validateEmail(String? value) {
+  String? _validateEmail(String? value) {
     final email = value?.trim() ?? '';
 
     if (email.isEmpty || !email.contains('@') || !email.contains('.')) {
-      return 'Unesi ispravnu email adresu.';
+      return context.l10n.invalidEmail;
     }
 
     return null;
   }
 
-  static String? _validatePassword(String? value) {
+  String? _validatePassword(String? value) {
     if (value == null || value.isEmpty) {
-      return 'Unesi lozinku.';
+      return context.l10n.passwordRequired;
     }
 
     return null;

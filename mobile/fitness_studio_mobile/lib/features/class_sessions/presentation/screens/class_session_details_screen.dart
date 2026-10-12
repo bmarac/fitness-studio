@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/error/failure_localization.dart';
 import '../../../../core/error/result.dart';
+import '../../../../core/l10n/localization.dart';
 import '../../../../core/widgets/error_view.dart';
 import '../../../../core/widgets/loading_view.dart';
 import '../../../../injection/service_locator.dart';
@@ -17,6 +19,8 @@ import '../../domain/usecases/cancel_class_session.dart';
 import '../state/class_sessions_controller.dart';
 import '../state/class_session_bookings_provider.dart';
 import '../state/class_session_details_provider.dart';
+import '../../../recurring_schedules/domain/usecases/change_recurring_schedule_status.dart';
+import '../../../recurring_schedules/presentation/widgets/recurring_schedules_sheet.dart';
 
 class ClassSessionDetailsScreen extends ConsumerWidget {
   const ClassSessionDetailsScreen({super.key, required this.classSessionId});
@@ -28,12 +32,12 @@ class ClassSessionDetailsScreen extends ConsumerWidget {
     final classSession = ref.watch(classSessionDetailsProvider(classSessionId));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Detalji termina')),
+      appBar: AppBar(title: Text(context.l10n.classSessionDetailsTitle)),
       body: classSession.when(
         data: (classSession) =>
             _ClassSessionDetailsContent(classSession: classSession),
         error: (error, stackTrace) => ErrorView(
-          message: error.toString(),
+          message: localizedError(context, error),
           onRetry: () =>
               ref.invalidate(classSessionDetailsProvider(classSessionId)),
         ),
@@ -57,6 +61,7 @@ class _ClassSessionDetailsContentState
     extends ConsumerState<_ClassSessionDetailsContent> {
   bool _isBooking = false;
   bool _isCancelling = false;
+  bool _isChangingSchedule = false;
 
   @override
   Widget build(BuildContext context) {
@@ -94,24 +99,31 @@ class _ClassSessionDetailsContentState
                 children: [
                   _DetailRow(
                     icon: Icons.calendar_today_outlined,
-                    label: 'Datum',
-                    value: _formatDate(classSession.startsAt),
+                    label: context.l10n.labelDate,
+                    value: context.formatDate(classSession.startsAt),
                   ),
                   _DetailRow(
                     icon: Icons.schedule,
-                    label: 'Vrijeme',
+                    label: context.l10n.labelTime,
                     value:
-                        '${_formatTime(classSession.startsAt)} - ${_formatTime(classSession.endsAt)}',
+                        '${context.formatTime(classSession.startsAt)} – ${context.formatTime(classSession.endsAt)}',
                   ),
                   _DetailRow(
                     icon: Icons.timer_outlined,
-                    label: 'Trajanje',
-                    value: '${classSession.durationMinutes} min',
+                    label: context.l10n.labelDuration,
+                    value: context.l10n.minutesShort(
+                      classSession.durationMinutes,
+                    ),
                   ),
                   _DetailRow(
                     icon: Icons.info_outline,
-                    label: 'Status',
-                    value: classSession.status,
+                    label: context.l10n.labelStatus,
+                    value: switch (classSession.status) {
+                      'cancelled' => context.l10n.sessionStatusCancelled,
+                      'completed' => context.l10n.sessionStatusCompleted,
+                      'scheduled' => context.l10n.sessionStatusScheduled,
+                      final status => status,
+                    },
                   ),
                 ],
               ),
@@ -125,7 +137,7 @@ class _ClassSessionDetailsContentState
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Popunjenost',
+                    context.l10n.occupancyTitle,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
@@ -140,14 +152,17 @@ class _ClassSessionDetailsContentState
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    '${classSession.bookedCount}/${classSession.capacity} rezervirano',
+                    context.l10n.reservedCapacity(
+                      classSession.bookedCount,
+                      classSession.capacity,
+                    ),
                     style: theme.textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 4),
                   Text(
                     spotsLeft > 0
-                        ? '$spotsLeft mjesta slobodno'
-                        : 'Termin je pun',
+                        ? context.l10n.freeSpots(spotsLeft)
+                        : context.l10n.classIsFull,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: spotsLeft > 0
                           ? theme.colorScheme.secondary
@@ -181,7 +196,11 @@ class _ClassSessionDetailsContentState
                       !_isBooking
                   ? () => _createBooking(classSession)
                   : null,
-              child: Text(_isBooking ? 'Rezerviram...' : 'Rezerviraj'),
+              child: Text(
+                _isBooking
+                    ? context.l10n.bookingInProgress
+                    : context.l10n.bookAction,
+              ),
             ),
           if (canViewParticipants) ...[
             const SizedBox(height: 12),
@@ -196,12 +215,23 @@ class _ClassSessionDetailsContentState
                     )
                   : const Icon(Icons.event_busy_outlined),
               label: Text(
-                _isCancelling ? 'Otkazujem...' : 'Otkaži ovaj termin',
+                _isCancelling
+                    ? context.l10n.cancellingSession
+                    : context.l10n.cancelOnlyThisSession,
               ),
               style: OutlinedButton.styleFrom(
                 foregroundColor: theme.colorScheme.error,
               ),
             ),
+            if (classSession.recurringScheduleId != null) ...[
+              const SizedBox(height: 20),
+              _RecurringScheduleActionsCard(
+                status: classSession.recurringScheduleStatus ?? 'active',
+                isChanging: _isChangingSchedule,
+                onAction: (action) =>
+                    _changeRecurringSchedule(classSession, action),
+              ),
+            ],
           ],
         ],
       ),
@@ -223,18 +253,16 @@ class _ClassSessionDetailsContentState
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Otkaži termin'),
-        content: const Text(
-          'Želiš li otkazati samo ovaj termin? Budući termini iz rasporeda ostat će aktivni.',
-        ),
+        title: Text(context.l10n.cancelSessionTitle),
+        content: Text(context.l10n.cancelOnlyThisSessionQuestion),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Odustani'),
+            child: Text(context.l10n.actionCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Otkaži termin'),
+            child: Text(context.l10n.cancelSessionAction),
           ),
         ],
       ),
@@ -257,7 +285,7 @@ class _ClassSessionDetailsContentState
       case Success():
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Termin je otkazan.')));
+        ).showSnackBar(SnackBar(content: Text(context.l10n.sessionCancelled)));
         ref.invalidate(classSessionDetailsProvider(classSession.id));
         ref.invalidate(classSessionBookingsProvider(classSession.id));
         await ref
@@ -266,7 +294,7 @@ class _ClassSessionDetailsContentState
       case FailureResult(failure: final failure):
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(failure.message)));
+        ).showSnackBar(SnackBar(content: Text(failure.localized(context))));
     }
   }
 
@@ -278,11 +306,9 @@ class _ClassSessionDetailsContentState
     };
 
     if (memberId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Prijavljeni korisnik nije povezan s clanom.'),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.loggedUserNotMember)));
       return;
     }
 
@@ -306,30 +332,144 @@ class _ClassSessionDetailsContentState
 
     switch (result) {
       case Success():
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Rezervacija je spremljena.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.bookingSaved)));
         ref.invalidate(classSessionDetailsProvider(classSession.id));
         ref.read(classSessionsControllerProvider.notifier).loadClassSessions();
       case FailureResult(failure: final failure):
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(failure.message)));
+        ).showSnackBar(SnackBar(content: Text(failure.localized(context))));
     }
   }
 
-  static String _formatDate(DateTime value) {
-    final day = value.day.toString().padLeft(2, '0');
-    final month = value.month.toString().padLeft(2, '0');
+  Future<void> _changeRecurringSchedule(
+    ClassSession classSession,
+    RecurringScheduleAction action,
+  ) async {
+    final scheduleId = classSession.recurringScheduleId;
+    if (scheduleId == null) return;
 
-    return '$day.$month.${value.year}.';
+    final effectiveFrom = await showRecurringScheduleChangeDialog(
+      context,
+      action: action,
+      initialDate: classSession.startsAt.toLocal(),
+    );
+    if (effectiveFrom == null || !mounted) return;
+
+    setState(() => _isChangingSchedule = true);
+    final result = await serviceLocator<ChangeRecurringScheduleStatus>()(
+      id: scheduleId,
+      action: action.endpoint,
+      effectiveFrom: effectiveFrom,
+    );
+    if (!mounted) return;
+
+    setState(() => _isChangingSchedule = false);
+    switch (result) {
+      case Success():
+        final message = switch (action) {
+          RecurringScheduleAction.pause => context.l10n.schedulePaused,
+          RecurringScheduleAction.resume => context.l10n.scheduleResumed,
+          RecurringScheduleAction.end => context.l10n.scheduleEnded,
+        };
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
+        ref.invalidate(classSessionDetailsProvider(classSession.id));
+        ref.invalidate(classSessionBookingsProvider(classSession.id));
+        await ref
+            .read(classSessionsControllerProvider.notifier)
+            .loadClassSessions();
+      case FailureResult(failure: final failure):
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(failure.localized(context))));
+    }
   }
+}
 
-  static String _formatTime(DateTime value) {
-    final hour = value.hour.toString().padLeft(2, '0');
-    final minute = value.minute.toString().padLeft(2, '0');
+class _RecurringScheduleActionsCard extends StatelessWidget {
+  const _RecurringScheduleActionsCard({
+    required this.status,
+    required this.isChanging,
+    required this.onAction,
+  });
 
-    return '$hour:$minute';
+  final String status;
+  final bool isChanging;
+  final ValueChanged<RecurringScheduleAction> onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final statusLabel = switch (status) {
+      'paused' => context.l10n.statusPaused,
+      'ended' => context.l10n.statusCompleted,
+      _ => context.l10n.statusActive,
+    };
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    context.l10n.fixedScheduleTitle,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                Text(statusLabel, style: theme.textTheme.labelLarge),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              context.l10n.scheduleActionScope,
+              style: theme.textTheme.bodySmall,
+            ),
+            if (isChanging) ...[
+              const SizedBox(height: 16),
+              const Center(child: CircularProgressIndicator()),
+            ] else if (status == 'active') ...[
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () => onAction(RecurringScheduleAction.pause),
+                icon: const Icon(Icons.pause_circle_outline),
+                label: Text(context.l10n.pauseSchedule),
+              ),
+              TextButton(
+                onPressed: () => onAction(RecurringScheduleAction.end),
+                style: TextButton.styleFrom(
+                  foregroundColor: theme.colorScheme.error,
+                ),
+                child: Text(context.l10n.finishSchedule),
+              ),
+            ] else if (status == 'paused') ...[
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                onPressed: () => onAction(RecurringScheduleAction.resume),
+                icon: const Icon(Icons.play_circle_outline),
+                label: Text(context.l10n.resumeSchedule),
+              ),
+              TextButton(
+                onPressed: () => onAction(RecurringScheduleAction.end),
+                style: TextButton.styleFrom(
+                  foregroundColor: theme.colorScheme.error,
+                ),
+                child: Text(context.l10n.finishSchedule),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -361,32 +501,32 @@ class _ParticipantsCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             bookings.when(
-              loading: () => const Row(
+              loading: () => Row(
                 children: [
-                  SizedBox.square(
+                  const SizedBox.square(
                     dimension: 18,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   ),
-                  SizedBox(width: 12),
-                  Text('Učitavam polaznike...'),
+                  const SizedBox(width: 12),
+                  Text(context.l10n.loadingAttendees),
                 ],
               ),
               error: (error, stackTrace) => Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Polaznici',
+                    context.l10n.attendeesTitle,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text('Polaznike trenutno nije moguće učitati.'),
+                  Text(context.l10n.attendeesLoadError),
                   const SizedBox(height: 8),
                   TextButton.icon(
                     onPressed: onRetry,
                     icon: const Icon(Icons.refresh),
-                    label: const Text('Pokušaj ponovno'),
+                    label: Text(context.l10n.actionRetry),
                   ),
                 ],
               ),
@@ -394,14 +534,14 @@ class _ParticipantsCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Polaznici (${items.length}/$capacity)',
+                    context.l10n.attendeesCapacity(items.length, capacity),
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: 12),
                   if (items.isEmpty)
-                    const Text('Nema prijavljenih polaznika.')
+                    Text(context.l10n.noAttendees)
                   else
                     for (var index = 0; index < items.length; index++) ...[
                       if (index > 0) const Divider(height: 20),
@@ -460,7 +600,7 @@ class _ParticipantRowState extends ConsumerState<_ParticipantRow> {
               ),
               const SizedBox(height: 2),
               Text(
-                _statusLabel(booking.status),
+                _statusLabel(context, booking.status),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
@@ -473,7 +613,7 @@ class _ParticipantRowState extends ConsumerState<_ParticipantRow> {
           )
         else if (widget.attendanceEnabled) ...[
           IconButton(
-            tooltip: 'Prisutan',
+            tooltip: context.l10n.attendedTooltip,
             onPressed: () => _updateStatus('attended'),
             style: booking.status == 'attended'
                 ? IconButton.styleFrom(
@@ -485,7 +625,7 @@ class _ParticipantRowState extends ConsumerState<_ParticipantRow> {
             icon: const Icon(Icons.check),
           ),
           IconButton(
-            tooltip: 'Nije došao',
+            tooltip: context.l10n.noShowTooltip,
             onPressed: () => _updateStatus('no_show'),
             style: booking.status == 'no_show'
                 ? IconButton.styleFrom(
@@ -499,24 +639,24 @@ class _ParticipantRowState extends ConsumerState<_ParticipantRow> {
         ],
         if (!_isUpdating)
           PopupMenuButton<_ParticipantAction>(
-            tooltip: 'Akcije za člana',
+            tooltip: context.l10n.memberActionsTooltip,
             onSelected: _handleAction,
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: _ParticipantAction.removeFromSession,
                 child: ListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: Icon(Icons.person_remove_outlined),
-                  title: Text('Ukloni s ovog termina'),
+                  leading: const Icon(Icons.person_remove_outlined),
+                  title: Text(context.l10n.removeFromSession),
                 ),
               ),
               if (booking.memberFixedScheduleId != null)
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: _ParticipantAction.removeFromFixedSchedule,
                   child: ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.event_busy_outlined),
-                    title: Text('Ukloni iz fiksne grupe'),
+                    leading: const Icon(Icons.event_busy_outlined),
+                    title: Text(context.l10n.removeFromFixedGroup),
                   ),
                 ),
             ],
@@ -532,21 +672,23 @@ class _ParticipantRowState extends ConsumerState<_ParticipantRow> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(
-          removesFixedSchedule ? 'Ukloni iz fiksne grupe' : 'Ukloni s termina',
+          removesFixedSchedule
+              ? context.l10n.removeFromFixedGroup
+              : context.l10n.removeFromSessionShort,
         ),
         content: Text(
           removesFixedSchedule
-              ? 'Član će biti uklonjen s ovog i svih budućih termina iz ove fiksne grupe.'
-              : 'Član će biti uklonjen samo s ovog termina.',
+              ? context.l10n.removeFixedGroupWarning
+              : context.l10n.removeSessionWarning,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Odustani'),
+            child: Text(context.l10n.actionCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Ukloni'),
+            child: Text(context.l10n.actionRemove),
           ),
         ],
       ),
@@ -592,8 +734,8 @@ class _ParticipantRowState extends ConsumerState<_ParticipantRow> {
             SnackBar(
               content: Text(
                 removesFixedSchedule
-                    ? 'Član je uklonjen iz fiksne grupe.'
-                    : 'Član je uklonjen s termina.',
+                    ? context.l10n.removedFromFixedGroup
+                    : context.l10n.removedFromSession,
               ),
             ),
           );
@@ -601,7 +743,7 @@ class _ParticipantRowState extends ConsumerState<_ParticipantRow> {
       case FailureResult(failure: final failure):
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(failure.message)));
+        ).showSnackBar(SnackBar(content: Text(failure.localized(context))));
     }
   }
 
@@ -628,16 +770,16 @@ class _ParticipantRowState extends ConsumerState<_ParticipantRow> {
       case FailureResult(failure: final failure):
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(failure.message)));
+        ).showSnackBar(SnackBar(content: Text(failure.localized(context))));
     }
   }
 
-  static String _statusLabel(String status) {
+  static String _statusLabel(BuildContext context, String status) {
     return switch (status) {
-      'booked' => 'Rezervirano',
-      'waitlisted' => 'Lista čekanja',
-      'attended' => 'Prisutan',
-      'no_show' => 'Nije došao',
+      'booked' => context.l10n.bookingStatusBooked,
+      'waitlisted' => context.l10n.bookingStatusWaitlisted,
+      'attended' => context.l10n.attendedTooltip,
+      'no_show' => context.l10n.noShowTooltip,
       _ => status,
     };
   }

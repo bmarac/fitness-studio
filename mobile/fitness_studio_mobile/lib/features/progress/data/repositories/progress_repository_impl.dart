@@ -16,25 +16,21 @@ class ProgressRepositoryImpl implements ProgressRepository {
     try {
       return Success(await _remoteDataSource.getMemberProgress(memberId));
     } on ApiException catch (error) {
-      return FailureResult(
-        Failure(message: error.message, statusCode: error.statusCode),
-      );
+      return FailureResult(error.toFailure());
     } on FormatException {
-      return const FailureResult(
-        Failure(message: 'Nije moguce procitati podatke o napretku.'),
-      );
+      return const FailureResult(Failure(FailureKind.readProgress));
     }
   }
 
   @override
   Future<Result<List<ProgressMember>>> getMembers() =>
-      _guard(_remoteDataSource.getMembers, 'Nije moguce ucitati clanove.');
+      _guard(_remoteDataSource.getMembers, FailureKind.readMembers);
 
   @override
   Future<Result<List<MeasurementParameter>>> getMeasurementParameters() =>
       _guard(
         _remoteDataSource.getMeasurementParameters,
-        'Nije moguce ucitati parametre mjerenja.',
+        FailureKind.readMeasurementParameters,
       );
 
   @override
@@ -43,21 +39,19 @@ class ProgressRepositoryImpl implements ProgressRepository {
     NewMeasurement measurement,
   ) => _guard(
     () => _remoteDataSource.createMeasurement(memberId, measurement),
-    'Mjerenje nije moguce spremiti.',
+    FailureKind.saveMeasurement,
   );
 
   Future<Result<T>> _guard<T>(
     Future<T> Function() action,
-    String formatMessage,
+    FailureKind formatFailure,
   ) async {
     try {
       return Success(await action());
     } on ApiException catch (error) {
-      return FailureResult(
-        Failure(message: error.message, statusCode: error.statusCode),
-      );
+      return FailureResult(error.toFailure());
     } on FormatException {
-      return FailureResult(Failure(message: formatMessage));
+      return FailureResult(Failure(formatFailure));
     }
   }
 }

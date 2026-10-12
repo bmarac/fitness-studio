@@ -28,9 +28,7 @@ class ClassSessionsController extends Notifier<ClassSessionsState> {
 
     state = switch (result) {
       Success(value: final classSessions) => ClassSessionsLoaded(classSessions),
-      FailureResult(failure: final failure) => ClassSessionsError(
-        failure.message,
-      ),
+      FailureResult(failure: final failure) => ClassSessionsError(failure),
     };
   }
 }

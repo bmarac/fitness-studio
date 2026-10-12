@@ -2,6 +2,8 @@ import '../../../../core/error/result.dart';
 import '../entities/booking.dart';
 
 abstract class BookingsRepository {
+  Future<Result<List<Booking>>> getBookings();
+
   Future<Result<void>> cancelBooking(int id);
 
   Future<Result<void>> cancelFixedSchedule({

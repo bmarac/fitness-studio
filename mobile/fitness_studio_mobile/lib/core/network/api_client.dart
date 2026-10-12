@@ -43,6 +43,19 @@ class ApiClient {
     return _send(() => _dio.patch<T>(path, data: data));
   }
 
+  Future<Response<T>> put<T>(String path, {Object? data}) {
+    return _send(() => _dio.put<T>(path, data: data));
+  }
+
+  Future<Response<List<int>>> getBytes(String path) {
+    return _send(
+      () => _dio.get<List<int>>(
+        path,
+        options: Options(responseType: ResponseType.bytes),
+      ),
+    );
+  }
+
   Future<Response<T>> delete<T>(String path) {
     return _send(() => _dio.delete<T>(path));
   }

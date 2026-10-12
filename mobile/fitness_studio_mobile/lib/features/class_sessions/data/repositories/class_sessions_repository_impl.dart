@@ -17,13 +17,9 @@ class ClassSessionsRepositoryImpl implements ClassSessionsRepository {
 
       return Success(classSessions);
     } on ApiException catch (error) {
-      return FailureResult(
-        Failure(message: error.message, statusCode: error.statusCode),
-      );
+      return FailureResult(error.toFailure());
     } on FormatException {
-      return const FailureResult(
-        Failure(message: 'Nije moguce procitati podatke s API-ja.'),
-      );
+      return const FailureResult(Failure(FailureKind.readApi));
     }
   }
 
@@ -33,13 +29,9 @@ class ClassSessionsRepositoryImpl implements ClassSessionsRepository {
       final classSessions = await _remoteDataSource.getMyClassSessions();
       return Success(classSessions);
     } on ApiException catch (error) {
-      return FailureResult(
-        Failure(message: error.message, statusCode: error.statusCode),
-      );
+      return FailureResult(error.toFailure());
     } on FormatException {
-      return const FailureResult(
-        Failure(message: 'Nije moguce procitati podatke s API-ja.'),
-      );
+      return const FailureResult(Failure(FailureKind.readApi));
     }
   }
 
@@ -50,13 +42,9 @@ class ClassSessionsRepositoryImpl implements ClassSessionsRepository {
 
       return Success(classSession);
     } on ApiException catch (error) {
-      return FailureResult(
-        Failure(message: error.message, statusCode: error.statusCode),
-      );
+      return FailureResult(error.toFailure());
     } on FormatException {
-      return const FailureResult(
-        Failure(message: 'Nije moguce procitati podatke s API-ja.'),
-      );
+      return const FailureResult(Failure(FailureKind.readApi));
     }
   }
 
@@ -66,9 +54,7 @@ class ClassSessionsRepositoryImpl implements ClassSessionsRepository {
       await _remoteDataSource.cancelClassSession(id);
       return const Success(null);
     } on ApiException catch (error) {
-      return FailureResult(
-        Failure(message: error.message, statusCode: error.statusCode),
-      );
+      return FailureResult(error.toFailure());
     }
   }
 }

@@ -70,7 +70,7 @@ class ProfileMembership {
     required this.planDescription,
     required this.startsOn,
     required this.endsOn,
-    required this.status,
+    required this.isActive,
     required this.sessionLimit,
     required this.sessionLimitPeriod,
   });
@@ -79,8 +79,8 @@ class ProfileMembership {
   final String planName;
   final String? planDescription;
   final DateTime startsOn;
-  final DateTime endsOn;
-  final String status;
+  final DateTime? endsOn;
+  final bool isActive;
   final int? sessionLimit;
   final String? sessionLimitPeriod;
 }

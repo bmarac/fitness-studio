@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/error/failure_localization.dart';
+import '../../../../core/l10n/localization.dart';
 import '../../../../core/widgets/empty_view.dart';
 import '../../../../core/widgets/error_view.dart';
 import '../../../../core/widgets/loading_view.dart';
@@ -12,6 +14,7 @@ import '../../domain/entities/class_session.dart';
 import '../state/class_sessions_controller.dart';
 import '../state/class_sessions_state.dart';
 import '../widgets/class_session_card.dart';
+import '../../../recurring_schedules/presentation/widgets/recurring_schedules_sheet.dart';
 
 class ClassSessionsScreen extends ConsumerStatefulWidget {
   const ClassSessionsScreen({super.key});
@@ -22,7 +25,6 @@ class ClassSessionsScreen extends ConsumerStatefulWidget {
 }
 
 class _ClassSessionsScreenState extends ConsumerState<ClassSessionsScreen> {
-  bool _isLoggingOut = false;
   late DateTime _weekStart = _startOfWeek(DateTime.now());
 
   @override
@@ -36,27 +38,23 @@ class _ClassSessionsScreenState extends ConsumerState<ClassSessionsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Termini'),
+        title: Text(context.l10n.classSessionsTitle),
         actions: [
-          IconButton(
-            tooltip: 'Odjavi se',
-            onPressed: _isLoggingOut ? null : _confirmLogout,
-            icon: _isLoggingOut
-                ? const SizedBox.square(
-                    dimension: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.logout),
-          ),
+          if (canManageSchedules)
+            IconButton(
+              tooltip: context.l10n.schedulesTooltip,
+              onPressed: _openSchedules,
+              icon: const Icon(Icons.calendar_month_outlined),
+            ),
         ],
       ),
       body: switch (state) {
         ClassSessionsInitial() || ClassSessionsLoading() => const LoadingView(),
         ClassSessionsLoaded(classSessions: final classSessions) =>
           classSessions.isEmpty
-              ? const EmptyView(
-                  title: 'Nema termina',
-                  message: 'Trenutno nema raspisanih grupnih treninga.',
+              ? EmptyView(
+                  title: context.l10n.noClassSessionsTitle,
+                  message: context.l10n.noClassSessionsMessage,
                 )
               : _ClassSessionsByWeekdayView(
                   key: ValueKey(_weekStart),
@@ -76,8 +74,8 @@ class _ClassSessionsScreenState extends ConsumerState<ClassSessionsScreen> {
                       .read(classSessionsControllerProvider.notifier)
                       .loadClassSessions(),
                 ),
-        ClassSessionsError(message: final message) => ErrorView(
-          message: message,
+        ClassSessionsError(failure: final failure) => ErrorView(
+          message: failure.localized(context),
           onRetry: () => ref
               .read(classSessionsControllerProvider.notifier)
               .loadClassSessions(),
@@ -85,7 +83,7 @@ class _ClassSessionsScreenState extends ConsumerState<ClassSessionsScreen> {
       },
       floatingActionButton: canManageSchedules
           ? FloatingActionButton(
-              tooltip: 'Novi termin',
+              tooltip: context.l10n.newClassSessionTooltip,
               onPressed: _openCreateSchedule,
               child: const Icon(Icons.add),
             )
@@ -103,57 +101,26 @@ class _ClassSessionsScreenState extends ConsumerState<ClassSessionsScreen> {
     }
   }
 
+  Future<void> _openSchedules() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: false,
+      builder: (context) => RecurringSchedulesSheet(
+        onChanged: () => ref
+            .read(classSessionsControllerProvider.notifier)
+            .loadClassSessions(),
+      ),
+    );
+  }
+
   static DateTime _startOfWeek(DateTime date) {
     final localDate = DateTime(date.year, date.month, date.day);
     return localDate.subtract(Duration(days: localDate.weekday - 1));
   }
-
-  Future<void> _confirmLogout() async {
-    final shouldLogout = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Odjava'),
-        content: const Text('Zelis li se odjaviti iz aplikacije?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Odustani'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Odjavi se'),
-          ),
-        ],
-      ),
-    );
-
-    if (shouldLogout != true || !mounted) {
-      return;
-    }
-
-    setState(() {
-      _isLoggingOut = true;
-    });
-
-    final error = await ref.read(loginControllerProvider.notifier).logout();
-
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      _isLoggingOut = false;
-    });
-
-    if (error != null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error)));
-    }
-  }
 }
 
-class _ClassSessionsByWeekdayView extends StatelessWidget {
+class _ClassSessionsByWeekdayView extends StatefulWidget {
   const _ClassSessionsByWeekdayView({
     super.key,
     required this.classSessions,
@@ -169,42 +136,49 @@ class _ClassSessionsByWeekdayView extends StatelessWidget {
   final VoidCallback onNextWeek;
   final Future<void> Function() onRefresh;
 
-  static const _shortWeekdays = [
-    'Pon',
-    'Uto',
-    'Sri',
-    'Cet',
-    'Pet',
-    'Sub',
-    'Ned',
-  ];
+  @override
+  State<_ClassSessionsByWeekdayView> createState() =>
+      _ClassSessionsByWeekdayViewState();
+}
 
-  static const _longWeekdays = [
-    'Ponedjeljak',
-    'Utorak',
-    'Srijeda',
-    'Cetvrtak',
-    'Petak',
-    'Subota',
-    'Nedjelja',
-  ];
+class _ClassSessionsByWeekdayViewState
+    extends State<_ClassSessionsByWeekdayView> {
+  final _scrollController = ScrollController();
+  final _scrollViewportKey = GlobalKey();
+  final _dayKeys = List.generate(7, (_) => GlobalKey());
+  var _selectedDayIndex = 0;
+  var _isScrollingToDay = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_syncSelectedDayWithScrollPosition);
+  }
+
+  @override
+  void dispose() {
+    _scrollController
+      ..removeListener(_syncSelectedDayWithScrollPosition)
+      ..dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final days = List.generate(
       7,
-      (index) => weekStart.add(Duration(days: index)),
+      (index) => widget.weekStart.add(Duration(days: index)),
     );
-    final weekEnd = weekStart.add(const Duration(days: 7));
+    final weekEnd = widget.weekStart.add(const Duration(days: 7));
     final sessionsByDay = <DateTime, List<ClassSession>>{
       for (final day in days) day: [],
     };
 
-    for (final classSession in classSessions) {
+    for (final classSession in widget.classSessions) {
       final date = classSession.startsAt.toLocal();
       final day = DateTime(date.year, date.month, date.day);
 
-      if (!day.isBefore(weekStart) && day.isBefore(weekEnd)) {
+      if (!day.isBefore(widget.weekStart) && day.isBefore(weekEnd)) {
         sessionsByDay[day]!.add(classSession);
       }
     }
@@ -215,39 +189,113 @@ class _ClassSessionsByWeekdayView extends StatelessWidget {
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: onRefresh,
-      child: CustomScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        slivers: [
-          SliverToBoxAdapter(
-            child: _WeekHeader(
-              weekStart: weekStart,
-              days: days,
-              sessionsByDay: sessionsByDay,
-              onPreviousWeek: onPreviousWeek,
-              onNextWeek: onNextWeek,
+    return Column(
+      children: [
+        _WeekHeader(
+          weekStart: widget.weekStart,
+          days: days,
+          sessionsByDay: sessionsByDay,
+          selectedDayIndex: _selectedDayIndex,
+          onDaySelected: _scrollToDay,
+          onPreviousWeek: widget.onPreviousWeek,
+          onNextWeek: widget.onNextWeek,
+        ),
+        Expanded(
+          key: _scrollViewportKey,
+          child: RefreshIndicator(
+            onRefresh: widget.onRefresh,
+            child: SingleChildScrollView(
+              controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+              child: Column(
+                children: [
+                  for (var index = 0; index < days.length; index++)
+                    _DaySection(
+                      key: _dayKeys[index],
+                      title: context.formatWeekday(days[index]),
+                      date: days[index],
+                      sessions: sessionsByDay[days[index]]!,
+                    ),
+                ],
+              ),
             ),
           ),
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-            sliver: SliverList.builder(
-              itemCount: days.length,
-              itemBuilder: (context, index) {
-                final day = days[index];
-                final sessions = sessionsByDay[day]!;
-
-                return _DaySection(
-                  title: _longWeekdays[index],
-                  date: day,
-                  sessions: sessions,
-                );
-              },
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
+  }
+
+  void _syncSelectedDayWithScrollPosition() {
+    if (_isScrollingToDay || !mounted) {
+      return;
+    }
+
+    final viewportBox =
+        _scrollViewportKey.currentContext?.findRenderObject() as RenderBox?;
+    if (viewportBox == null || !viewportBox.hasSize) {
+      return;
+    }
+
+    final viewportTop = viewportBox.localToGlobal(Offset.zero).dy;
+    var visibleDayIndex = _selectedDayIndex;
+
+    if (_scrollController.position.maxScrollExtent > 0 &&
+        _scrollController.position.extentAfter <= 1) {
+      visibleDayIndex = _dayKeys.length - 1;
+    } else {
+      for (var index = 0; index < _dayKeys.length; index++) {
+        final dayBox =
+            _dayKeys[index].currentContext?.findRenderObject() as RenderBox?;
+        if (dayBox == null || !dayBox.hasSize) {
+          continue;
+        }
+
+        final dayTop = dayBox.localToGlobal(Offset.zero).dy;
+        final dayBottom = dayTop + dayBox.size.height;
+        if (dayTop <= viewportTop + 1 && dayBottom > viewportTop + 1) {
+          visibleDayIndex = index;
+          break;
+        }
+
+        if (dayTop > viewportTop) {
+          visibleDayIndex = index;
+          break;
+        }
+      }
+    }
+
+    if (visibleDayIndex != _selectedDayIndex) {
+      setState(() {
+        _selectedDayIndex = visibleDayIndex;
+      });
+    }
+  }
+
+  Future<void> _scrollToDay(int index) async {
+    final dayContext = _dayKeys[index].currentContext;
+    if (dayContext == null) {
+      return;
+    }
+
+    setState(() {
+      _selectedDayIndex = index;
+      _isScrollingToDay = true;
+    });
+
+    await Scrollable.ensureVisible(
+      dayContext,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
+      alignment: 0,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    _isScrollingToDay = false;
+    _syncSelectedDayWithScrollPosition();
   }
 }
 
@@ -256,6 +304,8 @@ class _WeekHeader extends StatelessWidget {
     required this.weekStart,
     required this.days,
     required this.sessionsByDay,
+    required this.selectedDayIndex,
+    required this.onDaySelected,
     required this.onPreviousWeek,
     required this.onNextWeek,
   });
@@ -263,6 +313,8 @@ class _WeekHeader extends StatelessWidget {
   final DateTime weekStart;
   final List<DateTime> days;
   final Map<DateTime, List<ClassSession>> sessionsByDay;
+  final int selectedDayIndex;
+  final ValueChanged<int> onDaySelected;
   final VoidCallback onPreviousWeek;
   final VoidCallback onNextWeek;
 
@@ -280,13 +332,13 @@ class _WeekHeader extends StatelessWidget {
             Row(
               children: [
                 IconButton(
-                  tooltip: 'Prethodni tjedan',
+                  tooltip: context.l10n.previousWeek,
                   onPressed: onPreviousWeek,
                   icon: const Icon(Icons.chevron_left),
                 ),
                 Expanded(
                   child: Text(
-                    _formatWeekRange(weekStart, weekEnd),
+                    '${context.formatShortDate(weekStart)} – ${context.formatShortDate(weekEnd)}',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
@@ -294,7 +346,7 @@ class _WeekHeader extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  tooltip: 'Sljedeci tjedan',
+                  tooltip: context.l10n.nextWeek,
                   onPressed: onNextWeek,
                   icon: const Icon(Icons.chevron_right),
                 ),
@@ -306,9 +358,11 @@ class _WeekHeader extends StatelessWidget {
                 for (var index = 0; index < days.length; index++)
                   Expanded(
                     child: _DaySummary(
-                      label: _ClassSessionsByWeekdayView._shortWeekdays[index],
+                      label: context.formatWeekday(days[index], short: true),
                       date: days[index],
                       count: sessionsByDay[days[index]]!.length,
+                      isSelected: index == selectedDayIndex,
+                      onTap: () => onDaySelected(index),
                     ),
                   ),
               ],
@@ -318,14 +372,6 @@ class _WeekHeader extends StatelessWidget {
       ),
     );
   }
-
-  static String _formatWeekRange(DateTime start, DateTime end) {
-    if (start.month == end.month) {
-      return '${start.day}. - ${end.day}.${end.month}.${end.year}.';
-    }
-
-    return '${start.day}.${start.month}. - ${end.day}.${end.month}.${end.year}.';
-  }
 }
 
 class _DaySummary extends StatelessWidget {
@@ -333,11 +379,15 @@ class _DaySummary extends StatelessWidget {
     required this.label,
     required this.date,
     required this.count,
+    required this.isSelected,
+    required this.onTap,
   });
 
   final String label;
   final DateTime date;
   final int count;
+  final bool isSelected;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -346,35 +396,57 @@ class _DaySummary extends StatelessWidget {
     final isToday =
         date.year == now.year && date.month == now.month && date.day == now.day;
 
-    return Container(
-      constraints: const BoxConstraints(minHeight: 70),
-      margin: const EdgeInsets.symmetric(horizontal: 2),
-      padding: const EdgeInsets.symmetric(vertical: 7),
-      decoration: BoxDecoration(
-        color: isToday ? theme.colorScheme.primaryContainer : null,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        children: [
-          Text(label, style: theme.textTheme.labelSmall),
-          const SizedBox(height: 2),
-          Text(
-            '${date.day}',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: isToday ? theme.colorScheme.onPrimaryContainer : null,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: Semantics(
+        selected: isSelected,
+        button: true,
+        label: context.l10n.daySessionsSemantics(
+          label,
+          context.formatShortDate(date),
+          count,
+        ),
+        child: Material(
+          color: isSelected ? theme.colorScheme.primaryContainer : null,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: isToday && !isSelected
+                ? BorderSide(color: theme.colorScheme.primary)
+                : BorderSide.none,
+          ),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              constraints: const BoxConstraints(minHeight: 70),
+              padding: const EdgeInsets.symmetric(vertical: 7),
+              child: Column(
+                children: [
+                  Text(label, style: theme.textTheme.labelSmall),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${date.day}',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: isSelected
+                          ? theme.colorScheme.onPrimaryContainer
+                          : null,
+                    ),
+                  ),
+                  Text(
+                    '$count',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: count == 0
+                          ? theme.colorScheme.outline
+                          : theme.colorScheme.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-          Text(
-            '$count',
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: count == 0
-                  ? theme.colorScheme.outline
-                  : theme.colorScheme.primary,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -382,6 +454,7 @@ class _DaySummary extends StatelessWidget {
 
 class _DaySection extends StatelessWidget {
   const _DaySection({
+    super.key,
     required this.title,
     required this.date,
     required this.sessions,
@@ -411,7 +484,7 @@ class _DaySection extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                '${date.day}.${date.month}.',
+                context.formatShortDate(date),
                 style: theme.textTheme.labelLarge?.copyWith(
                   color: theme.colorScheme.outline,
                 ),
@@ -425,7 +498,7 @@ class _DaySection extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Text(
-                'Nema termina',
+                context.l10n.noClassSessionsTitle,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.outline,
                 ),

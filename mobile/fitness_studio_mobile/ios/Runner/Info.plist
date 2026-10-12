@@ -12,6 +12,11 @@
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>hr</string>
+		<string>en</string>
+	</array>
 	<key>CFBundleName</key>
 	<string>fitness_studio_mobile</string>
 	<key>CFBundlePackageType</key>

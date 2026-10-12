@@ -27,9 +27,7 @@ class CreateScheduleController extends Notifier<CreateScheduleState> {
 
     state = switch (result) {
       Success(value: final formData) => CreateScheduleReady(formData: formData),
-      FailureResult(failure: final failure) => CreateScheduleLoadError(
-        failure.message,
-      ),
+      FailureResult(failure: final failure) => CreateScheduleLoadError(failure),
     };
   }
 
@@ -46,7 +44,7 @@ class CreateScheduleController extends Notifier<CreateScheduleState> {
       Success() => const CreateScheduleSuccess(),
       FailureResult(failure: final failure) => currentState.copyWith(
         isSubmitting: false,
-        errorMessage: failure.message,
+        failure: failure,
       ),
     };
   }

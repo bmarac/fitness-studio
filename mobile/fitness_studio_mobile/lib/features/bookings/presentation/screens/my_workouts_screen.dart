@@ -2,13 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/error/failure_localization.dart';
+import '../../../../core/l10n/localization.dart';
 import '../../../../core/widgets/error_view.dart';
 import '../../../../core/widgets/loading_view.dart';
+import '../../../../core/error/result.dart';
+import '../../../../injection/service_locator.dart';
 import '../../../../navigation/app_routes.dart';
 import '../../../auth/presentation/state/login_controller.dart';
 import '../../../auth/presentation/state/login_state.dart';
+import '../../domain/entities/booking.dart';
+import '../../domain/usecases/cancel_booking.dart';
+import '../state/member_bookings_provider.dart';
 import '../../../class_sessions/domain/entities/class_session.dart';
 import '../../../class_sessions/presentation/state/my_class_sessions_provider.dart';
+import '../../../recurring_schedules/domain/entities/trainer_option.dart';
 
 enum _WorkoutFilter { active, completed, cancelled, all }
 
@@ -21,50 +29,326 @@ class MyWorkoutsScreen extends ConsumerStatefulWidget {
 
 class _MyWorkoutsScreenState extends ConsumerState<MyWorkoutsScreen> {
   _WorkoutFilter _filter = _WorkoutFilter.active;
+  int? _selectedTrainerId;
 
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(loginControllerProvider);
+    final isAdmin =
+        authState is LoginSuccess && authState.session.user.hasRole('admin');
     final isTrainer =
         authState is LoginSuccess && authState.session.user.hasRole('trainer');
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Moji treninzi'),
+        title: Text(context.l10n.myWorkoutsTitle),
         actions: [
-          if (isTrainer)
+          if (isAdmin || isTrainer)
             PopupMenuButton<_WorkoutFilter>(
-              tooltip: 'Filtriraj treninge',
+              tooltip: context.l10n.filterWorkouts,
               initialValue: _filter,
               onSelected: (value) => setState(() => _filter = value),
               icon: Badge(
                 isLabelVisible: _filter != _WorkoutFilter.active,
                 child: const Icon(Icons.filter_list),
               ),
-              itemBuilder: (context) => const [
+              itemBuilder: (context) => [
                 PopupMenuItem(
                   value: _WorkoutFilter.active,
-                  child: Text('Aktivni'),
+                  child: Text(context.l10n.filterActive),
                 ),
                 PopupMenuItem(
                   value: _WorkoutFilter.completed,
-                  child: Text('Završeni'),
+                  child: Text(context.l10n.filterCompleted),
                 ),
                 PopupMenuItem(
                   value: _WorkoutFilter.cancelled,
-                  child: Text('Otkazani'),
+                  child: Text(context.l10n.filterCancelled),
                 ),
-                PopupMenuItem(value: _WorkoutFilter.all, child: Text('Svi')),
+                PopupMenuItem(
+                  value: _WorkoutFilter.all,
+                  child: Text(context.l10n.filterAll),
+                ),
               ],
             ),
         ],
       ),
-      body: isTrainer
+      body: isAdmin
+          ? _AdminWorkoutsView(
+              classSessions: ref.watch(allClassSessionsProvider),
+              trainers: ref.watch(trainerOptionsProvider),
+              filter: _filter,
+              selectedTrainerId: _selectedTrainerId,
+              onTrainerSelected: (value) =>
+                  setState(() => _selectedTrainerId = value),
+            )
+          : isTrainer
           ? _TrainerWorkoutsView(
               classSessions: ref.watch(myClassSessionsProvider),
               filter: _filter,
             )
-          : const Center(child: Text('Nema treninga za prikaz.')),
+          : _MemberWorkoutsView(bookings: ref.watch(memberBookingsProvider)),
+    );
+  }
+}
+
+class _AdminWorkoutsView extends ConsumerWidget {
+  const _AdminWorkoutsView({
+    required this.classSessions,
+    required this.trainers,
+    required this.filter,
+    required this.selectedTrainerId,
+    required this.onTrainerSelected,
+  });
+
+  final AsyncValue<List<ClassSession>> classSessions;
+  final AsyncValue<List<TrainerOption>> trainers;
+  final _WorkoutFilter filter;
+  final int? selectedTrainerId;
+  final ValueChanged<int?> onTrainerSelected;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return trainers.when(
+      loading: () => const LoadingView(),
+      error: (error, _) => ErrorView(message: localizedError(context, error)),
+      data: (trainerItems) => classSessions.when(
+        loading: () => const LoadingView(),
+        error: (error, _) => ErrorView(message: localizedError(context, error)),
+        data: (sessionItems) {
+          final visibleSessions = selectedTrainerId == null
+              ? sessionItems
+              : sessionItems
+                    .where((item) => item.trainerId == selectedTrainerId)
+                    .toList();
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                child: DropdownButtonFormField<int?>(
+                  initialValue: selectedTrainerId,
+                  decoration: InputDecoration(
+                    labelText: context.l10n.labelTrainer,
+                    border: const OutlineInputBorder(),
+                  ),
+                  items: [
+                    DropdownMenuItem<int?>(
+                      value: null,
+                      child: Text(context.l10n.allTrainers),
+                    ),
+                    for (final trainer in trainerItems)
+                      DropdownMenuItem<int?>(
+                        value: trainer.id,
+                        child: Text(trainer.fullName),
+                      ),
+                  ],
+                  onChanged: onTrainerSelected,
+                ),
+              ),
+              Expanded(
+                child: _TrainerWorkoutsContent(
+                  classSessions: visibleSessions,
+                  filter: filter,
+                  onRefresh: () async {
+                    ref.invalidate(allClassSessionsProvider);
+                    ref.invalidate(trainerOptionsProvider);
+                  },
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _MemberWorkoutsView extends ConsumerWidget {
+  const _MemberWorkoutsView({required this.bookings});
+
+  final AsyncValue<List<Booking>> bookings;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return bookings.when(
+      loading: () => const LoadingView(),
+      error: (error, _) => ErrorView(
+        message: localizedError(context, error),
+        onRetry: () => ref.invalidate(memberBookingsProvider),
+      ),
+      data: (items) => RefreshIndicator(
+        onRefresh: () => ref.refresh(memberBookingsProvider.future),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+          children: [
+            if (items.isEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 64),
+                child: Center(child: Text(context.l10n.noReservedWorkouts)),
+              )
+            else
+              for (final booking in items) ...[
+                _MemberWorkoutCard(booking: booking),
+                const SizedBox(height: 8),
+              ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MemberWorkoutCard extends ConsumerStatefulWidget {
+  const _MemberWorkoutCard({required this.booking});
+
+  final Booking booking;
+
+  @override
+  ConsumerState<_MemberWorkoutCard> createState() => _MemberWorkoutCardState();
+}
+
+class _MemberWorkoutCardState extends ConsumerState<_MemberWorkoutCard> {
+  bool _isCancelling = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final booking = widget.booking;
+    final canCancel = booking.canMemberCancel(DateTime.now());
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 74,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        context.formatDate(booking.classSessionStartsAt),
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                      Text(context.formatTime(booking.classSessionStartsAt)),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        booking.classTypeName,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(booking.trainerFullName),
+                    ],
+                  ),
+                ),
+                _BookingStatusBadge(status: booking.status),
+              ],
+            ),
+            if (canCancel) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: _isCancelling ? null : _confirmCancellation,
+                  icon: _isCancelling
+                      ? const SizedBox.square(
+                          dimension: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.event_busy_outlined),
+                  label: Text(
+                    _isCancelling
+                        ? context.l10n.cancellingSession
+                        : context.l10n.cancelSessionAction,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmCancellation() async {
+    final booking = widget.booking;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(context.l10n.cancelSessionTitle),
+        content: Text(
+          context.l10n.cancelBookingDetails(
+            booking.classTypeName,
+            context.formatDate(booking.classSessionStartsAt),
+            context.formatTime(booking.classSessionStartsAt),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(context.l10n.actionCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(context.l10n.cancelSessionAction),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isCancelling = true);
+    final result = await serviceLocator<CancelBooking>()(booking.id);
+    if (!mounted) return;
+    setState(() => _isCancelling = false);
+
+    switch (result) {
+      case Success():
+        ref.invalidate(memberBookingsProvider);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.sessionCancelled)));
+      case FailureResult(failure: final failure):
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(failure.localized(context))));
+    }
+  }
+}
+
+class _BookingStatusBadge extends StatelessWidget {
+  const _BookingStatusBadge({required this.status});
+
+  final String status;
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, color) = switch (status) {
+      'attended' => (context.l10n.bookingStatusAttended, Colors.green),
+      'no_show' => (context.l10n.bookingStatusNoShow, Colors.red),
+      'cancelled' => (context.l10n.bookingStatusCancelled, Colors.grey),
+      'waitlisted' => (context.l10n.bookingStatusWaitlisted, Colors.orange),
+      _ => (context.l10n.bookingStatusBooked, Colors.blue),
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: .14),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(label, style: TextStyle(color: color)),
     );
   }
 }
@@ -83,11 +367,16 @@ class _TrainerWorkoutsView extends ConsumerWidget {
     return classSessions.when(
       loading: () => const LoadingView(),
       error: (error, stackTrace) => ErrorView(
-        message: error.toString(),
+        message: localizedError(context, error),
         onRetry: () => ref.invalidate(myClassSessionsProvider),
       ),
-      data: (items) =>
-          _TrainerWorkoutsContent(classSessions: items, filter: filter),
+      data: (items) => _TrainerWorkoutsContent(
+        classSessions: items,
+        filter: filter,
+        onRefresh: () async {
+          ref.invalidate(myClassSessionsProvider);
+        },
+      ),
     );
   }
 }
@@ -96,10 +385,12 @@ class _TrainerWorkoutsContent extends ConsumerWidget {
   const _TrainerWorkoutsContent({
     required this.classSessions,
     required this.filter,
+    required this.onRefresh,
   });
 
   final List<ClassSession> classSessions;
   final _WorkoutFilter filter;
+  final Future<void> Function() onRefresh;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -107,14 +398,17 @@ class _TrainerWorkoutsContent extends ConsumerWidget {
     final visibleItems = _filterItems(classSessions, filter, now);
 
     return RefreshIndicator(
-      onRefresh: () => ref.refresh(myClassSessionsProvider.future),
+      onRefresh: onRefresh,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
           _WeekSummary(classSessions: classSessions, now: now),
           const SizedBox(height: 24),
-          _WorkoutList(title: _filterLabel(filter), items: visibleItems),
+          _WorkoutList(
+            title: _filterLabel(context, filter),
+            items: visibleItems,
+          ),
         ],
       ),
     );
@@ -150,12 +444,12 @@ class _TrainerWorkoutsContent extends ConsumerWidget {
     return result;
   }
 
-  static String _filterLabel(_WorkoutFilter filter) {
+  static String _filterLabel(BuildContext context, _WorkoutFilter filter) {
     return switch (filter) {
-      _WorkoutFilter.active => 'Aktivni treninzi',
-      _WorkoutFilter.completed => 'Završeni treninzi',
-      _WorkoutFilter.cancelled => 'Otkazani treninzi',
-      _WorkoutFilter.all => 'Svi treninzi',
+      _WorkoutFilter.active => context.l10n.activeWorkouts,
+      _WorkoutFilter.completed => context.l10n.completedWorkouts,
+      _WorkoutFilter.cancelled => context.l10n.cancelledWorkouts,
+      _WorkoutFilter.all => context.l10n.allWorkouts,
     };
   }
 }
@@ -193,7 +487,7 @@ class _WeekSummary extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Ovaj tjedan',
+          context.l10n.thisWeek,
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.w800,
           ),
@@ -204,21 +498,23 @@ class _WeekSummary extends StatelessWidget {
             Expanded(
               child: _SummaryValue(
                 value: '${thisWeek.length}',
-                label: 'treninga',
+                label: context.l10n.workoutsMetric,
               ),
             ),
             const SizedBox(height: 44, child: VerticalDivider()),
             Expanded(
               child: _SummaryValue(
                 value: '$participantCount',
-                label: 'prijava',
+                label: context.l10n.bookingsMetric,
               ),
             ),
             const SizedBox(height: 44, child: VerticalDivider()),
             Expanded(
               child: _SummaryValue(
-                value: next == null ? '-' : _formatShortDate(next.startsAt),
-                label: 'sljedeći',
+                value: next == null
+                    ? '-'
+                    : context.formatShortDate(next.startsAt),
+                label: context.l10n.nextMetric,
               ),
             ),
           ],
@@ -275,7 +571,7 @@ class _WorkoutList extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         if (items.isEmpty)
-          Text('Nema termina.', style: theme.textTheme.bodyMedium)
+          Text(context.l10n.noSessions, style: theme.textTheme.bodyMedium)
         else
           for (final item in items) ...[
             _TrainerWorkoutCard(classSession: item),
@@ -310,13 +606,13 @@ class _TrainerWorkoutCard extends StatelessWidget {
                 child: Column(
                   children: [
                     Text(
-                      _formatTime(classSession.startsAt),
+                      context.formatTime(classSession.startsAt),
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                     Text(
-                      _formatDay(classSession.startsAt),
+                      context.formatWeekday(classSession.startsAt, short: true),
                       style: theme.textTheme.bodySmall,
                     ),
                   ],
@@ -337,7 +633,7 @@ class _TrainerWorkoutCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${classSession.bookedCount}/${classSession.capacity} polaznika',
+                      '${context.l10n.attendeesCount(classSession.bookedCount)} / ${classSession.capacity}',
                       style: theme.textTheme.bodySmall,
                     ),
                   ],
@@ -379,10 +675,10 @@ class _StatusBadge extends StatelessWidget {
       ),
       child: Text(
         switch (status) {
-          'cancelled' => 'Otkazan',
-          'completed' => 'Završen',
-          _ when hasEnded => 'Završen',
-          _ => 'Zakazan',
+          'cancelled' => context.l10n.sessionStatusCancelled,
+          'completed' => context.l10n.sessionStatusCompleted,
+          _ when hasEnded => context.l10n.sessionStatusCompleted,
+          _ => context.l10n.sessionStatusScheduled,
         },
         style: theme.textTheme.labelSmall?.copyWith(
           color: isCancelled
@@ -392,19 +688,4 @@ class _StatusBadge extends StatelessWidget {
       ),
     );
   }
-}
-
-String _formatTime(DateTime value) {
-  final hour = value.hour.toString().padLeft(2, '0');
-  final minute = value.minute.toString().padLeft(2, '0');
-  return '$hour:$minute';
-}
-
-String _formatDay(DateTime value) {
-  const weekdays = ['Pon', 'Uto', 'Sri', 'Čet', 'Pet', 'Sub', 'Ned'];
-  return weekdays[value.weekday - 1];
-}
-
-String _formatShortDate(DateTime value) {
-  return '${value.day}.${value.month}.';
 }

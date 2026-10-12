@@ -60,8 +60,8 @@ class ProfileModel extends Profile {
       planName: json['planName'] as String,
       planDescription: json['planDescription'] as String?,
       startsOn: DateTime.parse(json['startsOn'] as String),
-      endsOn: DateTime.parse(json['endsOn'] as String),
-      status: json['status'] as String,
+      endsOn: _optionalDate(json['endsOn']),
+      isActive: json['isActive'] as bool,
       sessionLimit: json['sessionLimit'] as int?,
       sessionLimitPeriod: json['sessionLimitPeriod'] as String?,
     );

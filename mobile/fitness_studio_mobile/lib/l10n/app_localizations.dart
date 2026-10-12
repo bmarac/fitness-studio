@@ -1,0 +1,1628 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/intl.dart' as intl;
+
+import 'app_localizations_en.dart';
+import 'app_localizations_hr.dart';
+
+// ignore_for_file: type=lint
+
+/// Callers can lookup localized strings with an instance of AppLocalizations
+/// returned by `AppLocalizations.of(context)`.
+///
+/// Applications need to include `AppLocalizations.delegate()` in their app's
+/// `localizationDelegates` list, and the locales they support in the app's
+/// `supportedLocales` list. For example:
+///
+/// ```dart
+/// import 'l10n/app_localizations.dart';
+///
+/// return MaterialApp(
+///   localizationsDelegates: AppLocalizations.localizationsDelegates,
+///   supportedLocales: AppLocalizations.supportedLocales,
+///   home: MyApplicationHome(),
+/// );
+/// ```
+///
+/// ## Update pubspec.yaml
+///
+/// Please make sure to update your pubspec.yaml to include the following
+/// packages:
+///
+/// ```yaml
+/// dependencies:
+///   # Internationalization support.
+///   flutter_localizations:
+///     sdk: flutter
+///   intl: any # Use the pinned version from flutter_localizations
+///
+///   # Rest of dependencies
+/// ```
+///
+/// ## iOS Applications
+///
+/// iOS applications define key application metadata, including supported
+/// locales, in an Info.plist file that is built into the application bundle.
+/// To configure the locales supported by your app, you’ll need to edit this
+/// file.
+///
+/// First, open your project’s ios/Runner.xcworkspace Xcode workspace file.
+/// Then, in the Project Navigator, open the Info.plist file under the Runner
+/// project’s Runner folder.
+///
+/// Next, select the Information Property List item, select Add Item from the
+/// Editor menu, then select Localizations from the pop-up menu.
+///
+/// Select and expand the newly-created Localizations item then, for each
+/// locale your application supports, add a new item and select the locale
+/// you wish to add from the pop-up menu in the Value field. This list should
+/// be consistent with the languages listed in the AppLocalizations.supportedLocales
+/// property.
+abstract class AppLocalizations {
+  AppLocalizations(String locale)
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+
+  final String localeName;
+
+  static AppLocalizations of(BuildContext context) {
+    return Localizations.of<AppLocalizations>(context, AppLocalizations)!;
+  }
+
+  static const LocalizationsDelegate<AppLocalizations> delegate =
+      _AppLocalizationsDelegate();
+
+  /// A list of this localizations delegate along with the default localizations
+  /// delegates.
+  ///
+  /// Returns a list of localizations delegates containing this delegate along with
+  /// GlobalMaterialLocalizations.delegate, GlobalCupertinoLocalizations.delegate,
+  /// and GlobalWidgetsLocalizations.delegate.
+  ///
+  /// Additional delegates can be added by appending to this list in
+  /// MaterialApp. This list does not have to be used at all if a custom list
+  /// of delegates is preferred or required.
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
+      <LocalizationsDelegate<dynamic>>[
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
+
+  /// A list of this localizations delegate's supported locales.
+  static const List<Locale> supportedLocales = <Locale>[
+    Locale('en'),
+    Locale('hr'),
+  ];
+
+  /// No description provided for @appTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Fitness Studio'**
+  String get appTitle;
+
+  /// No description provided for @navClassSessions.
+  ///
+  /// In hr, this message translates to:
+  /// **'Termini'**
+  String get navClassSessions;
+
+  /// No description provided for @navMyWorkouts.
+  ///
+  /// In hr, this message translates to:
+  /// **'Moji treninzi'**
+  String get navMyWorkouts;
+
+  /// No description provided for @navProfile.
+  ///
+  /// In hr, this message translates to:
+  /// **'Profil'**
+  String get navProfile;
+
+  /// No description provided for @actionCancel.
+  ///
+  /// In hr, this message translates to:
+  /// **'Odustani'**
+  String get actionCancel;
+
+  /// No description provided for @actionClose.
+  ///
+  /// In hr, this message translates to:
+  /// **'Zatvori'**
+  String get actionClose;
+
+  /// No description provided for @actionConfirm.
+  ///
+  /// In hr, this message translates to:
+  /// **'Potvrdi'**
+  String get actionConfirm;
+
+  /// No description provided for @actionContinue.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nastavi'**
+  String get actionContinue;
+
+  /// No description provided for @actionRetry.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pokušaj ponovno'**
+  String get actionRetry;
+
+  /// No description provided for @actionSave.
+  ///
+  /// In hr, this message translates to:
+  /// **'Spremi'**
+  String get actionSave;
+
+  /// No description provided for @actionSaving.
+  ///
+  /// In hr, this message translates to:
+  /// **'Spremam...'**
+  String get actionSaving;
+
+  /// No description provided for @actionRemove.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ukloni'**
+  String get actionRemove;
+
+  /// No description provided for @labelEmail.
+  ///
+  /// In hr, this message translates to:
+  /// **'E-mail'**
+  String get labelEmail;
+
+  /// No description provided for @labelPassword.
+  ///
+  /// In hr, this message translates to:
+  /// **'Lozinka'**
+  String get labelPassword;
+
+  /// No description provided for @labelTrainer.
+  ///
+  /// In hr, this message translates to:
+  /// **'Trener'**
+  String get labelTrainer;
+
+  /// No description provided for @labelStatus.
+  ///
+  /// In hr, this message translates to:
+  /// **'Status'**
+  String get labelStatus;
+
+  /// No description provided for @labelDate.
+  ///
+  /// In hr, this message translates to:
+  /// **'Datum'**
+  String get labelDate;
+
+  /// No description provided for @labelTime.
+  ///
+  /// In hr, this message translates to:
+  /// **'Vrijeme'**
+  String get labelTime;
+
+  /// No description provided for @labelDuration.
+  ///
+  /// In hr, this message translates to:
+  /// **'Trajanje'**
+  String get labelDuration;
+
+  /// No description provided for @labelCapacity.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kapacitet'**
+  String get labelCapacity;
+
+  /// No description provided for @labelMember.
+  ///
+  /// In hr, this message translates to:
+  /// **'Član'**
+  String get labelMember;
+
+  /// No description provided for @labelNotes.
+  ///
+  /// In hr, this message translates to:
+  /// **'Napomena'**
+  String get labelNotes;
+
+  /// No description provided for @notificationsTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Obavijesti'**
+  String get notificationsTitle;
+
+  /// No description provided for @logoutTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Odjava'**
+  String get logoutTitle;
+
+  /// No description provided for @logoutTooltip.
+  ///
+  /// In hr, this message translates to:
+  /// **'Odjavi se'**
+  String get logoutTooltip;
+
+  /// No description provided for @logoutQuestion.
+  ///
+  /// In hr, this message translates to:
+  /// **'Želiš li se odjaviti iz aplikacije?'**
+  String get logoutQuestion;
+
+  /// No description provided for @logoutAction.
+  ///
+  /// In hr, this message translates to:
+  /// **'Odjavi se'**
+  String get logoutAction;
+
+  /// No description provided for @logoutInProgress.
+  ///
+  /// In hr, this message translates to:
+  /// **'Odjavljujem...'**
+  String get logoutInProgress;
+
+  /// No description provided for @loginSubtitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijavi se u svoj studio'**
+  String get loginSubtitle;
+
+  /// No description provided for @loginAction.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijavi se'**
+  String get loginAction;
+
+  /// No description provided for @loginInProgress.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijava...'**
+  String get loginInProgress;
+
+  /// No description provided for @loginSuccess.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijava je uspješna.'**
+  String get loginSuccess;
+
+  /// No description provided for @showPassword.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prikaži lozinku'**
+  String get showPassword;
+
+  /// No description provided for @hidePassword.
+  ///
+  /// In hr, this message translates to:
+  /// **'Sakrij lozinku'**
+  String get hidePassword;
+
+  /// No description provided for @invalidEmail.
+  ///
+  /// In hr, this message translates to:
+  /// **'Unesi ispravnu e-mail adresu.'**
+  String get invalidEmail;
+
+  /// No description provided for @passwordRequired.
+  ///
+  /// In hr, this message translates to:
+  /// **'Unesi lozinku.'**
+  String get passwordRequired;
+
+  /// No description provided for @profileMyPlan.
+  ///
+  /// In hr, this message translates to:
+  /// **'Moj paket'**
+  String get profileMyPlan;
+
+  /// No description provided for @profileValid.
+  ///
+  /// In hr, this message translates to:
+  /// **'Vrijedi'**
+  String get profileValid;
+
+  /// No description provided for @profileValidFrom.
+  ///
+  /// In hr, this message translates to:
+  /// **'Od {date}'**
+  String profileValidFrom(String date);
+
+  /// No description provided for @profileValidRange.
+  ///
+  /// In hr, this message translates to:
+  /// **'{start} – {end}'**
+  String profileValidRange(String start, String end);
+
+  /// No description provided for @profileUsedThisWeek.
+  ///
+  /// In hr, this message translates to:
+  /// **'Iskorišteno ovaj tjedan'**
+  String get profileUsedThisWeek;
+
+  /// No description provided for @profileUsedThisMonth.
+  ///
+  /// In hr, this message translates to:
+  /// **'Iskorišteno ovaj mjesec'**
+  String get profileUsedThisMonth;
+
+  /// No description provided for @profileUsedInMembership.
+  ///
+  /// In hr, this message translates to:
+  /// **'Iskorišteno u članarini'**
+  String get profileUsedInMembership;
+
+  /// No description provided for @profileMembersProgress.
+  ///
+  /// In hr, this message translates to:
+  /// **'Napredak članova'**
+  String get profileMembersProgress;
+
+  /// No description provided for @profileMembersProgressSubtitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pregled i unos mjerenja'**
+  String get profileMembersProgressSubtitle;
+
+  /// No description provided for @profileMyPayments.
+  ///
+  /// In hr, this message translates to:
+  /// **'Moja članarina'**
+  String get profileMyPayments;
+
+  /// No description provided for @profileAdminPayments.
+  ///
+  /// In hr, this message translates to:
+  /// **'Naplata članarina'**
+  String get profileAdminPayments;
+
+  /// No description provided for @profileMyPaymentsSubtitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Podaci za uplatu i povijest'**
+  String get profileMyPaymentsSubtitle;
+
+  /// No description provided for @profileAdminPaymentsSubtitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pregled i potvrda uplata'**
+  String get profileAdminPaymentsSubtitle;
+
+  /// No description provided for @profilePaymentSettings.
+  ///
+  /// In hr, this message translates to:
+  /// **'Postavke plaćanja'**
+  String get profilePaymentSettings;
+
+  /// No description provided for @profilePaymentSettingsSubtitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Primatelj, IBAN i podsjetnici'**
+  String get profilePaymentSettingsSubtitle;
+
+  /// No description provided for @profileProgress.
+  ///
+  /// In hr, this message translates to:
+  /// **'Napredak'**
+  String get profileProgress;
+
+  /// No description provided for @profileRefreshProgress.
+  ///
+  /// In hr, this message translates to:
+  /// **'Osvježi napredak'**
+  String get profileRefreshProgress;
+
+  /// No description provided for @profileProgressLoadError.
+  ///
+  /// In hr, this message translates to:
+  /// **'Podatke o napretku trenutno nije moguće učitati.'**
+  String get profileProgressLoadError;
+
+  /// No description provided for @profileNoMeasurements.
+  ///
+  /// In hr, this message translates to:
+  /// **'Još nema zabilježenih mjerenja.'**
+  String get profileNoMeasurements;
+
+  /// No description provided for @profileShowHistory.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prikaži povijest'**
+  String get profileShowHistory;
+
+  /// No description provided for @profileFixedSchedules.
+  ///
+  /// In hr, this message translates to:
+  /// **'Moji fiksni termini'**
+  String get profileFixedSchedules;
+
+  /// No description provided for @profileAboutMe.
+  ///
+  /// In hr, this message translates to:
+  /// **'O meni'**
+  String get profileAboutMe;
+
+  /// No description provided for @roleAdmin.
+  ///
+  /// In hr, this message translates to:
+  /// **'Administrator'**
+  String get roleAdmin;
+
+  /// No description provided for @roleTrainer.
+  ///
+  /// In hr, this message translates to:
+  /// **'Trener'**
+  String get roleTrainer;
+
+  /// No description provided for @roleMember.
+  ///
+  /// In hr, this message translates to:
+  /// **'Član'**
+  String get roleMember;
+
+  /// No description provided for @statusActive.
+  ///
+  /// In hr, this message translates to:
+  /// **'Aktivan'**
+  String get statusActive;
+
+  /// No description provided for @statusPaused.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pauziran'**
+  String get statusPaused;
+
+  /// No description provided for @statusInactive.
+  ///
+  /// In hr, this message translates to:
+  /// **'Neaktivan'**
+  String get statusInactive;
+
+  /// No description provided for @statusCompleted.
+  ///
+  /// In hr, this message translates to:
+  /// **'Završeno'**
+  String get statusCompleted;
+
+  /// No description provided for @unknownDay.
+  ///
+  /// In hr, this message translates to:
+  /// **'Dan {day}'**
+  String unknownDay(int day);
+
+  /// No description provided for @classSessionsTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Termini'**
+  String get classSessionsTitle;
+
+  /// No description provided for @schedulesTooltip.
+  ///
+  /// In hr, this message translates to:
+  /// **'Rasporedi'**
+  String get schedulesTooltip;
+
+  /// No description provided for @newClassSessionTooltip.
+  ///
+  /// In hr, this message translates to:
+  /// **'Novi termin'**
+  String get newClassSessionTooltip;
+
+  /// No description provided for @noClassSessionsTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nema termina'**
+  String get noClassSessionsTitle;
+
+  /// No description provided for @noClassSessionsMessage.
+  ///
+  /// In hr, this message translates to:
+  /// **'Trenutno nema raspisanih grupnih treninga.'**
+  String get noClassSessionsMessage;
+
+  /// No description provided for @spotsAvailable.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, =1{1 mjesto} few{{count} mjesta} other{{count} mjesta}}'**
+  String spotsAvailable(int count);
+
+  /// No description provided for @classFull.
+  ///
+  /// In hr, this message translates to:
+  /// **'Popunjeno'**
+  String get classFull;
+
+  /// No description provided for @previousWeek.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prethodni tjedan'**
+  String get previousWeek;
+
+  /// No description provided for @nextWeek.
+  ///
+  /// In hr, this message translates to:
+  /// **'Sljedeći tjedan'**
+  String get nextWeek;
+
+  /// No description provided for @sessionsCount.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, =0{nema termina} =1{1 termin} few{{count} termina} other{{count} termina}}'**
+  String sessionsCount(int count);
+
+  /// No description provided for @daySessionsSemantics.
+  ///
+  /// In hr, this message translates to:
+  /// **'{day}, {date}, {count, plural, =0{nema termina} =1{1 termin} few{{count} termina} other{{count} termina}}'**
+  String daySessionsSemantics(String day, String date, int count);
+
+  /// No description provided for @classSessionDetailsTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Detalji termina'**
+  String get classSessionDetailsTitle;
+
+  /// No description provided for @minutesShort.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count} min'**
+  String minutesShort(int count);
+
+  /// No description provided for @occupancyTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Popunjenost'**
+  String get occupancyTitle;
+
+  /// No description provided for @reservedCapacity.
+  ///
+  /// In hr, this message translates to:
+  /// **'{booked}/{capacity} rezervirano'**
+  String reservedCapacity(int booked, int capacity);
+
+  /// No description provided for @freeSpots.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, =1{1 mjesto slobodno} few{{count} mjesta slobodno} other{{count} mjesta slobodno}}'**
+  String freeSpots(int count);
+
+  /// No description provided for @classIsFull.
+  ///
+  /// In hr, this message translates to:
+  /// **'Termin je pun'**
+  String get classIsFull;
+
+  /// No description provided for @bookAction.
+  ///
+  /// In hr, this message translates to:
+  /// **'Rezerviraj'**
+  String get bookAction;
+
+  /// No description provided for @bookingInProgress.
+  ///
+  /// In hr, this message translates to:
+  /// **'Rezerviram...'**
+  String get bookingInProgress;
+
+  /// No description provided for @bookingSaved.
+  ///
+  /// In hr, this message translates to:
+  /// **'Rezervacija je spremljena.'**
+  String get bookingSaved;
+
+  /// No description provided for @cancelSessionTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Otkaži termin'**
+  String get cancelSessionTitle;
+
+  /// No description provided for @cancelSessionAction.
+  ///
+  /// In hr, this message translates to:
+  /// **'Otkaži termin'**
+  String get cancelSessionAction;
+
+  /// No description provided for @cancelOnlyThisSession.
+  ///
+  /// In hr, this message translates to:
+  /// **'Otkaži ovaj termin'**
+  String get cancelOnlyThisSession;
+
+  /// No description provided for @cancelOnlyThisSessionQuestion.
+  ///
+  /// In hr, this message translates to:
+  /// **'Želiš li otkazati samo ovaj termin? Budući termini iz rasporeda ostat će aktivni.'**
+  String get cancelOnlyThisSessionQuestion;
+
+  /// No description provided for @cancellingSession.
+  ///
+  /// In hr, this message translates to:
+  /// **'Otkazujem...'**
+  String get cancellingSession;
+
+  /// No description provided for @sessionCancelled.
+  ///
+  /// In hr, this message translates to:
+  /// **'Termin je otkazan.'**
+  String get sessionCancelled;
+
+  /// No description provided for @loggedUserNotMember.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prijavljeni korisnik nije povezan s članom.'**
+  String get loggedUserNotMember;
+
+  /// No description provided for @pauseSchedule.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pauziraj raspored'**
+  String get pauseSchedule;
+
+  /// No description provided for @resumeSchedule.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nastavi raspored'**
+  String get resumeSchedule;
+
+  /// No description provided for @finishSchedule.
+  ///
+  /// In hr, this message translates to:
+  /// **'Završi raspored'**
+  String get finishSchedule;
+
+  /// No description provided for @pauseAction.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pauziraj'**
+  String get pauseAction;
+
+  /// No description provided for @resumeAction.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nastavi'**
+  String get resumeAction;
+
+  /// No description provided for @finishAction.
+  ///
+  /// In hr, this message translates to:
+  /// **'Završi'**
+  String get finishAction;
+
+  /// No description provided for @pauseScheduleMessage.
+  ///
+  /// In hr, this message translates to:
+  /// **'Od odabranog datuma otkazat će se ovaj i svi budući termini rasporeda. Raspored se kasnije može nastaviti.'**
+  String get pauseScheduleMessage;
+
+  /// No description provided for @resumeScheduleMessage.
+  ///
+  /// In hr, this message translates to:
+  /// **'Od odabranog datuma ponovno će se kreirati termini i rezervacije aktivnih fiksnih članova.'**
+  String get resumeScheduleMessage;
+
+  /// No description provided for @finishScheduleMessage.
+  ///
+  /// In hr, this message translates to:
+  /// **'Od odabranog datuma raspored i povezane fiksne dodjele trajno završavaju. Ovu radnju nije moguće poništiti.'**
+  String get finishScheduleMessage;
+
+  /// No description provided for @schedulePaused.
+  ///
+  /// In hr, this message translates to:
+  /// **'Raspored je pauziran.'**
+  String get schedulePaused;
+
+  /// No description provided for @scheduleResumed.
+  ///
+  /// In hr, this message translates to:
+  /// **'Raspored je nastavljen.'**
+  String get scheduleResumed;
+
+  /// No description provided for @scheduleEnded.
+  ///
+  /// In hr, this message translates to:
+  /// **'Raspored je završen.'**
+  String get scheduleEnded;
+
+  /// No description provided for @fixedScheduleTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Fiksni raspored'**
+  String get fixedScheduleTitle;
+
+  /// No description provided for @scheduleActionScope.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ova akcija odnosi se na ovaj i sve buduće termine rasporeda.'**
+  String get scheduleActionScope;
+
+  /// No description provided for @attendeesTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Polaznici'**
+  String get attendeesTitle;
+
+  /// No description provided for @attendeesCapacity.
+  ///
+  /// In hr, this message translates to:
+  /// **'Polaznici ({count}/{capacity})'**
+  String attendeesCapacity(int count, int capacity);
+
+  /// No description provided for @loadingAttendees.
+  ///
+  /// In hr, this message translates to:
+  /// **'Učitavam polaznike...'**
+  String get loadingAttendees;
+
+  /// No description provided for @attendeesLoadError.
+  ///
+  /// In hr, this message translates to:
+  /// **'Polaznike trenutno nije moguće učitati.'**
+  String get attendeesLoadError;
+
+  /// No description provided for @noAttendees.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nema prijavljenih polaznika.'**
+  String get noAttendees;
+
+  /// No description provided for @attendedTooltip.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prisutan'**
+  String get attendedTooltip;
+
+  /// No description provided for @noShowTooltip.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nije došao'**
+  String get noShowTooltip;
+
+  /// No description provided for @memberActionsTooltip.
+  ///
+  /// In hr, this message translates to:
+  /// **'Akcije za člana'**
+  String get memberActionsTooltip;
+
+  /// No description provided for @removeFromSession.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ukloni s ovog termina'**
+  String get removeFromSession;
+
+  /// No description provided for @removeFromFixedGroup.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ukloni iz fiksne grupe'**
+  String get removeFromFixedGroup;
+
+  /// No description provided for @removeFromSessionShort.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ukloni s termina'**
+  String get removeFromSessionShort;
+
+  /// No description provided for @removeFixedGroupWarning.
+  ///
+  /// In hr, this message translates to:
+  /// **'Član će biti uklonjen s ovog i svih budućih termina iz ove fiksne grupe.'**
+  String get removeFixedGroupWarning;
+
+  /// No description provided for @removeSessionWarning.
+  ///
+  /// In hr, this message translates to:
+  /// **'Član će biti uklonjen samo s ovog termina.'**
+  String get removeSessionWarning;
+
+  /// No description provided for @removedFromFixedGroup.
+  ///
+  /// In hr, this message translates to:
+  /// **'Član je uklonjen iz fiksne grupe.'**
+  String get removedFromFixedGroup;
+
+  /// No description provided for @removedFromSession.
+  ///
+  /// In hr, this message translates to:
+  /// **'Član je uklonjen s termina.'**
+  String get removedFromSession;
+
+  /// No description provided for @myWorkoutsTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Moji treninzi'**
+  String get myWorkoutsTitle;
+
+  /// No description provided for @filterWorkouts.
+  ///
+  /// In hr, this message translates to:
+  /// **'Filtriraj treninge'**
+  String get filterWorkouts;
+
+  /// No description provided for @filterActive.
+  ///
+  /// In hr, this message translates to:
+  /// **'Aktivni'**
+  String get filterActive;
+
+  /// No description provided for @filterCompleted.
+  ///
+  /// In hr, this message translates to:
+  /// **'Završeni'**
+  String get filterCompleted;
+
+  /// No description provided for @filterCancelled.
+  ///
+  /// In hr, this message translates to:
+  /// **'Otkazani'**
+  String get filterCancelled;
+
+  /// No description provided for @filterAll.
+  ///
+  /// In hr, this message translates to:
+  /// **'Svi'**
+  String get filterAll;
+
+  /// No description provided for @allTrainers.
+  ///
+  /// In hr, this message translates to:
+  /// **'Svi treneri'**
+  String get allTrainers;
+
+  /// No description provided for @noReservedWorkouts.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nema rezerviranih treninga.'**
+  String get noReservedWorkouts;
+
+  /// No description provided for @noSessions.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nema termina.'**
+  String get noSessions;
+
+  /// No description provided for @cancelBookingDetails.
+  ///
+  /// In hr, this message translates to:
+  /// **'{className}\n{date} u {time}'**
+  String cancelBookingDetails(String className, String date, String time);
+
+  /// No description provided for @bookingStatusAttended.
+  ///
+  /// In hr, this message translates to:
+  /// **'Odrađeno'**
+  String get bookingStatusAttended;
+
+  /// No description provided for @bookingStatusNoShow.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nije došao'**
+  String get bookingStatusNoShow;
+
+  /// No description provided for @bookingStatusCancelled.
+  ///
+  /// In hr, this message translates to:
+  /// **'Otkazano'**
+  String get bookingStatusCancelled;
+
+  /// No description provided for @bookingStatusWaitlisted.
+  ///
+  /// In hr, this message translates to:
+  /// **'Lista čekanja'**
+  String get bookingStatusWaitlisted;
+
+  /// No description provided for @bookingStatusBooked.
+  ///
+  /// In hr, this message translates to:
+  /// **'Rezervirano'**
+  String get bookingStatusBooked;
+
+  /// No description provided for @activeWorkouts.
+  ///
+  /// In hr, this message translates to:
+  /// **'Aktivni treninzi'**
+  String get activeWorkouts;
+
+  /// No description provided for @completedWorkouts.
+  ///
+  /// In hr, this message translates to:
+  /// **'Završeni treninzi'**
+  String get completedWorkouts;
+
+  /// No description provided for @cancelledWorkouts.
+  ///
+  /// In hr, this message translates to:
+  /// **'Otkazani treninzi'**
+  String get cancelledWorkouts;
+
+  /// No description provided for @allWorkouts.
+  ///
+  /// In hr, this message translates to:
+  /// **'Svi treninzi'**
+  String get allWorkouts;
+
+  /// No description provided for @thisWeek.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ovaj tjedan'**
+  String get thisWeek;
+
+  /// No description provided for @attendeesCount.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count, plural, =1{1 polaznik} few{{count} polaznika} other{{count} polaznika}}'**
+  String attendeesCount(int count);
+
+  /// No description provided for @sessionStatusCancelled.
+  ///
+  /// In hr, this message translates to:
+  /// **'Otkazan'**
+  String get sessionStatusCancelled;
+
+  /// No description provided for @sessionStatusCompleted.
+  ///
+  /// In hr, this message translates to:
+  /// **'Završen'**
+  String get sessionStatusCompleted;
+
+  /// No description provided for @sessionStatusScheduled.
+  ///
+  /// In hr, this message translates to:
+  /// **'Zakazan'**
+  String get sessionStatusScheduled;
+
+  /// No description provided for @workoutsMetric.
+  ///
+  /// In hr, this message translates to:
+  /// **'treninga'**
+  String get workoutsMetric;
+
+  /// No description provided for @bookingsMetric.
+  ///
+  /// In hr, this message translates to:
+  /// **'prijava'**
+  String get bookingsMetric;
+
+  /// No description provided for @nextMetric.
+  ///
+  /// In hr, this message translates to:
+  /// **'sljedeći'**
+  String get nextMetric;
+
+  /// No description provided for @progressTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Napredak'**
+  String get progressTitle;
+
+  /// No description provided for @measurementAction.
+  ///
+  /// In hr, this message translates to:
+  /// **'Mjerenje'**
+  String get measurementAction;
+
+  /// No description provided for @noMemberProfileTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nema članskog profila'**
+  String get noMemberProfileTitle;
+
+  /// No description provided for @noMemberProfileMessage.
+  ///
+  /// In hr, this message translates to:
+  /// **'Praćenje napretka dostupno je članovima.'**
+  String get noMemberProfileMessage;
+
+  /// No description provided for @noMeasurementsTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nema mjerenja'**
+  String get noMeasurementsTitle;
+
+  /// No description provided for @noMeasurementsMessage.
+  ///
+  /// In hr, this message translates to:
+  /// **'Još nema zabilježenih podataka o napretku.'**
+  String get noMeasurementsMessage;
+
+  /// No description provided for @parameterLabel.
+  ///
+  /// In hr, this message translates to:
+  /// **'Parametar'**
+  String get parameterLabel;
+
+  /// No description provided for @currentValue.
+  ///
+  /// In hr, this message translates to:
+  /// **'Trenutno'**
+  String get currentValue;
+
+  /// No description provided for @chartNeedsTwoMeasurements.
+  ///
+  /// In hr, this message translates to:
+  /// **'Za graf su potrebna barem dva mjerenja.'**
+  String get chartNeedsTwoMeasurements;
+
+  /// No description provided for @progressTrend.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kretanje'**
+  String get progressTrend;
+
+  /// No description provided for @progressHistory.
+  ///
+  /// In hr, this message translates to:
+  /// **'Povijest'**
+  String get progressHistory;
+
+  /// No description provided for @membersProgressTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Napredak članova'**
+  String get membersProgressTitle;
+
+  /// No description provided for @searchMembers.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pretraži članove'**
+  String get searchMembers;
+
+  /// No description provided for @noMembersFound.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nema pronađenih članova.'**
+  String get noMembersFound;
+
+  /// No description provided for @newMeasurementTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Novo mjerenje'**
+  String get newMeasurementTitle;
+
+  /// No description provided for @enterOneMeasuredParameter.
+  ///
+  /// In hr, this message translates to:
+  /// **'Unesi barem jedan izmjereni parametar.'**
+  String get enterOneMeasuredParameter;
+
+  /// No description provided for @saveMeasurement.
+  ///
+  /// In hr, this message translates to:
+  /// **'Spremi mjerenje'**
+  String get saveMeasurement;
+
+  /// No description provided for @invalidNumber.
+  ///
+  /// In hr, this message translates to:
+  /// **'Unesi ispravan broj.'**
+  String get invalidNumber;
+
+  /// No description provided for @minimumValue.
+  ///
+  /// In hr, this message translates to:
+  /// **'Najmanja vrijednost je {value}.'**
+  String minimumValue(String value);
+
+  /// No description provided for @maximumValue.
+  ///
+  /// In hr, this message translates to:
+  /// **'Najveća vrijednost je {value}.'**
+  String maximumValue(String value);
+
+  /// No description provided for @enterOneValue.
+  ///
+  /// In hr, this message translates to:
+  /// **'Unesi barem jednu vrijednost.'**
+  String get enterOneValue;
+
+  /// No description provided for @newScheduleTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Novi termin'**
+  String get newScheduleTitle;
+
+  /// No description provided for @missingClassTypesOrTrainers.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nedostaju vrste treninga ili treneri.'**
+  String get missingClassTypesOrTrainers;
+
+  /// No description provided for @classTypeLabel.
+  ///
+  /// In hr, this message translates to:
+  /// **'Vrsta treninga'**
+  String get classTypeLabel;
+
+  /// No description provided for @dayLabel.
+  ///
+  /// In hr, this message translates to:
+  /// **'Dan'**
+  String get dayLabel;
+
+  /// No description provided for @startTimeLabel.
+  ///
+  /// In hr, this message translates to:
+  /// **'Vrijeme početka'**
+  String get startTimeLabel;
+
+  /// No description provided for @durationMinutesLabel.
+  ///
+  /// In hr, this message translates to:
+  /// **'Trajanje (min)'**
+  String get durationMinutesLabel;
+
+  /// No description provided for @positiveNumberRequired.
+  ///
+  /// In hr, this message translates to:
+  /// **'Unesi broj veći od 0.'**
+  String get positiveNumberRequired;
+
+  /// No description provided for @validFromLabel.
+  ///
+  /// In hr, this message translates to:
+  /// **'Vrijedi od'**
+  String get validFromLabel;
+
+  /// No description provided for @saveSchedule.
+  ///
+  /// In hr, this message translates to:
+  /// **'Spremi termin'**
+  String get saveSchedule;
+
+  /// No description provided for @schedulesTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Rasporedi'**
+  String get schedulesTitle;
+
+  /// No description provided for @noSchedules.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nema kreiranih rasporeda.'**
+  String get noSchedules;
+
+  /// No description provided for @activeSchedules.
+  ///
+  /// In hr, this message translates to:
+  /// **'Aktivni'**
+  String get activeSchedules;
+
+  /// No description provided for @pausedSchedules.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pauzirani'**
+  String get pausedSchedules;
+
+  /// No description provided for @completedSchedules.
+  ///
+  /// In hr, this message translates to:
+  /// **'Završeni'**
+  String get completedSchedules;
+
+  /// No description provided for @manageSchedule.
+  ///
+  /// In hr, this message translates to:
+  /// **'Upravljaj rasporedom'**
+  String get manageSchedule;
+
+  /// No description provided for @effectiveFromDate.
+  ///
+  /// In hr, this message translates to:
+  /// **'od {date}'**
+  String effectiveFromDate(String date);
+
+  /// No description provided for @paymentSettingsTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Postavke plaćanja'**
+  String get paymentSettingsTitle;
+
+  /// No description provided for @recipientLabel.
+  ///
+  /// In hr, this message translates to:
+  /// **'Primatelj'**
+  String get recipientLabel;
+
+  /// No description provided for @paymentModelLabel.
+  ///
+  /// In hr, this message translates to:
+  /// **'Model'**
+  String get paymentModelLabel;
+
+  /// No description provided for @paymentReferenceLabel.
+  ///
+  /// In hr, this message translates to:
+  /// **'Poziv na broj'**
+  String get paymentReferenceLabel;
+
+  /// No description provided for @paymentDescriptionLabel.
+  ///
+  /// In hr, this message translates to:
+  /// **'Opis plaćanja'**
+  String get paymentDescriptionLabel;
+
+  /// No description provided for @memberReminderDaysLabel.
+  ///
+  /// In hr, this message translates to:
+  /// **'Podsjetnici članu (dani nakon dospijeća)'**
+  String get memberReminderDaysLabel;
+
+  /// No description provided for @adminReminderDaysLabel.
+  ///
+  /// In hr, this message translates to:
+  /// **'Podsjetnici adminu'**
+  String get adminReminderDaysLabel;
+
+  /// No description provided for @sendTimeLabel.
+  ///
+  /// In hr, this message translates to:
+  /// **'Vrijeme slanja (HH:mm)'**
+  String get sendTimeLabel;
+
+  /// No description provided for @requiredField.
+  ///
+  /// In hr, this message translates to:
+  /// **'Obavezno polje'**
+  String get requiredField;
+
+  /// No description provided for @settingsSaved.
+  ///
+  /// In hr, this message translates to:
+  /// **'Postavke su spremljene.'**
+  String get settingsSaved;
+
+  /// No description provided for @noPaymentsInCategory.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nema obračuna u ovoj kategoriji.'**
+  String get noPaymentsInCategory;
+
+  /// No description provided for @paymentFilterPending.
+  ///
+  /// In hr, this message translates to:
+  /// **'Za naplatu'**
+  String get paymentFilterPending;
+
+  /// No description provided for @paymentFilterReported.
+  ///
+  /// In hr, this message translates to:
+  /// **'Čeka potvrdu'**
+  String get paymentFilterReported;
+
+  /// No description provided for @paymentFilterOverdue.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kasni'**
+  String get paymentFilterOverdue;
+
+  /// No description provided for @paymentFilterPaid.
+  ///
+  /// In hr, this message translates to:
+  /// **'Plaćeno'**
+  String get paymentFilterPaid;
+
+  /// No description provided for @paymentFilterAll.
+  ///
+  /// In hr, this message translates to:
+  /// **'Sve'**
+  String get paymentFilterAll;
+
+  /// No description provided for @paymentRecipient.
+  ///
+  /// In hr, this message translates to:
+  /// **'Primatelj'**
+  String get paymentRecipient;
+
+  /// No description provided for @paymentModelAndReference.
+  ///
+  /// In hr, this message translates to:
+  /// **'Model i poziv'**
+  String get paymentModelAndReference;
+
+  /// No description provided for @paymentDescription.
+  ///
+  /// In hr, this message translates to:
+  /// **'Opis'**
+  String get paymentDescription;
+
+  /// No description provided for @paymentDueSummary.
+  ///
+  /// In hr, this message translates to:
+  /// **'{plan} · {period}\n{amount} · {status} · dospijeće {dueDate}'**
+  String paymentDueSummary(
+    String plan,
+    String period,
+    String amount,
+    String status,
+    String dueDate,
+  );
+
+  /// No description provided for @paymentStatusUnpaid.
+  ///
+  /// In hr, this message translates to:
+  /// **'Neplaćeno'**
+  String get paymentStatusUnpaid;
+
+  /// No description provided for @paymentCode.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kod za plaćanje'**
+  String get paymentCode;
+
+  /// No description provided for @paymentReported.
+  ///
+  /// In hr, this message translates to:
+  /// **'Uplatio sam'**
+  String get paymentReported;
+
+  /// No description provided for @rejectPaymentReport.
+  ///
+  /// In hr, this message translates to:
+  /// **'Odbij prijavu'**
+  String get rejectPaymentReport;
+
+  /// No description provided for @reopenPayment.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ponovno otvori'**
+  String get reopenPayment;
+
+  /// No description provided for @endMembership.
+  ///
+  /// In hr, this message translates to:
+  /// **'Završi članstvo'**
+  String get endMembership;
+
+  /// No description provided for @endMembershipSummary.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prvi dan kada više ne treniram: {date}\nProcijenjeni zadnji iznos: {amount}'**
+  String endMembershipSummary(String date, String amount);
+
+  /// No description provided for @markPaid.
+  ///
+  /// In hr, this message translates to:
+  /// **'Označi plaćeno'**
+  String get markPaid;
+
+  /// No description provided for @changeSaved.
+  ///
+  /// In hr, this message translates to:
+  /// **'Promjena je spremljena.'**
+  String get changeSaved;
+
+  /// No description provided for @hub3PaymentCode.
+  ///
+  /// In hr, this message translates to:
+  /// **'HUB3 kod za plaćanje'**
+  String get hub3PaymentCode;
+
+  /// No description provided for @billingNotEnabled.
+  ///
+  /// In hr, this message translates to:
+  /// **'Naplata nije uključena'**
+  String get billingNotEnabled;
+
+  /// No description provided for @allMembershipsBillingEnabled.
+  ///
+  /// In hr, this message translates to:
+  /// **'Sva aktivna članstva imaju uključenu naplatu.'**
+  String get allMembershipsBillingEnabled;
+
+  /// No description provided for @enableBilling.
+  ///
+  /// In hr, this message translates to:
+  /// **'Uključi naplatu'**
+  String get enableBilling;
+
+  /// No description provided for @activeBilling.
+  ///
+  /// In hr, this message translates to:
+  /// **'Aktivna naplata'**
+  String get activeBilling;
+
+  /// No description provided for @noActiveBilling.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nema članstava s aktivnom naplatom.'**
+  String get noActiveBilling;
+
+  /// No description provided for @membershipStarted.
+  ///
+  /// In hr, this message translates to:
+  /// **'Početak članstva: {date}'**
+  String membershipStarted(String date);
+
+  /// No description provided for @billingValidFrom.
+  ///
+  /// In hr, this message translates to:
+  /// **'Naplata vrijedi od'**
+  String get billingValidFrom;
+
+  /// No description provided for @retroactiveBilling.
+  ///
+  /// In hr, this message translates to:
+  /// **'Retroaktivna naplata'**
+  String get retroactiveBilling;
+
+  /// No description provided for @billingStartsSummary.
+  ///
+  /// In hr, this message translates to:
+  /// **'{plan}\nNaplata vrijedi od: {start}\nSljedeći obračun: {next}'**
+  String billingStartsSummary(String plan, String start, String next);
+
+  /// No description provided for @retroactiveBillingWarning.
+  ///
+  /// In hr, this message translates to:
+  /// **'Odabrali ste {date}. Odmah će nastati sve mjesečne obveze od tog datuma do aktualnog ciklusa.'**
+  String retroactiveBillingWarning(String date);
+
+  /// No description provided for @billingEnabled.
+  ///
+  /// In hr, this message translates to:
+  /// **'Naplata je uključena.'**
+  String get billingEnabled;
+
+  /// No description provided for @billingEnabledWithCount.
+  ///
+  /// In hr, this message translates to:
+  /// **'Naplata je uključena. {count, plural, =1{Kreiran je 1 obračun.} few{Kreirana su {count} obračuna.} other{Kreirano je {count} obračuna.}}'**
+  String billingEnabledWithCount(int count);
+
+  /// No description provided for @noNextBilling.
+  ///
+  /// In hr, this message translates to:
+  /// **'nema'**
+  String get noNextBilling;
+
+  /// No description provided for @failureRestoreSession.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nije moguće učitati spremljenu prijavu.'**
+  String get failureRestoreSession;
+
+  /// No description provided for @failureLogout.
+  ///
+  /// In hr, this message translates to:
+  /// **'Odjava trenutno nije moguća. Pokušaj ponovno.'**
+  String get failureLogout;
+
+  /// No description provided for @failureLoginResponse.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nije moguće pročitati odgovor za prijavu.'**
+  String get failureLoginResponse;
+
+  /// No description provided for @failureSaveSession.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nije moguće sigurno spremiti prijavu.'**
+  String get failureSaveSession;
+
+  /// No description provided for @failureReadApi.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nije moguće pročitati podatke s API-ja.'**
+  String get failureReadApi;
+
+  /// No description provided for @failureReadBookings.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nije moguće pročitati rezervacije.'**
+  String get failureReadBookings;
+
+  /// No description provided for @failureReadTrainers.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nije moguće pročitati trenere.'**
+  String get failureReadTrainers;
+
+  /// No description provided for @failureReadSchedules.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nije moguće pročitati rasporede.'**
+  String get failureReadSchedules;
+
+  /// No description provided for @failureReadScheduleForm.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nije moguće pročitati podatke za novi termin.'**
+  String get failureReadScheduleForm;
+
+  /// No description provided for @failureReadScheduleResponse.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nije moguće pročitati odgovor za novi termin.'**
+  String get failureReadScheduleResponse;
+
+  /// No description provided for @failureReadProgress.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nije moguće pročitati podatke o napretku.'**
+  String get failureReadProgress;
+
+  /// No description provided for @failureReadMembers.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nije moguće učitati članove.'**
+  String get failureReadMembers;
+
+  /// No description provided for @failureReadMeasurementParameters.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nije moguće učitati parametre mjerenja.'**
+  String get failureReadMeasurementParameters;
+
+  /// No description provided for @failureSaveMeasurement.
+  ///
+  /// In hr, this message translates to:
+  /// **'Mjerenje nije moguće spremiti.'**
+  String get failureSaveMeasurement;
+
+  /// No description provided for @failureBookingAlreadyExists.
+  ///
+  /// In hr, this message translates to:
+  /// **'Već ste prijavljeni na ovaj termin.'**
+  String get failureBookingAlreadyExists;
+
+  /// No description provided for @failureMembershipRequired.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nemate paket koji vrijedi na datum ovog termina.'**
+  String get failureMembershipRequired;
+
+  /// No description provided for @failureMembershipLimitReached.
+  ///
+  /// In hr, this message translates to:
+  /// **'Iskoristili ste sve termine dostupne u paketu za ovo razdoblje.'**
+  String get failureMembershipLimitReached;
+
+  /// No description provided for @failureNotFound.
+  ///
+  /// In hr, this message translates to:
+  /// **'Traženi podatak nije pronađen.'**
+  String get failureNotFound;
+
+  /// No description provided for @failureNetwork.
+  ///
+  /// In hr, this message translates to:
+  /// **'Mrežni zahtjev nije uspio.'**
+  String get failureNetwork;
+}
+
+class _AppLocalizationsDelegate
+    extends LocalizationsDelegate<AppLocalizations> {
+  const _AppLocalizationsDelegate();
+
+  @override
+  Future<AppLocalizations> load(Locale locale) {
+    return SynchronousFuture<AppLocalizations>(lookupAppLocalizations(locale));
+  }
+
+  @override
+  bool isSupported(Locale locale) =>
+      <String>['en', 'hr'].contains(locale.languageCode);
+
+  @override
+  bool shouldReload(_AppLocalizationsDelegate old) => false;
+}
+
+AppLocalizations lookupAppLocalizations(Locale locale) {
+  // Lookup logic when only language code is specified.
+  switch (locale.languageCode) {
+    case 'en':
+      return AppLocalizationsEn();
+    case 'hr':
+      return AppLocalizationsHr();
+  }
+
+  throw FlutterError(
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
+}
