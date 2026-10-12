@@ -14,6 +14,9 @@ Svi endpointi osim prijave zahtijevaju valjani JWT zbog globalne fallback author
 | Mjerenja clanova | povijest, posljednje stanje i unos na `/api/members/{memberId}/measurements` |
 | Studio | `GET/PUT /api/studios/current` |
 | Postavke | `GET /api/studio-settings`, `GET/PUT/DELETE /api/studio-settings/{setting}` |
+| Postavke placanja | `GET/PUT /api/payment-settings` |
+| Clanarine | `GET /api/membership-payments/mine`; administratorski pregled s `view=pending|reported|overdue|paid|all`; prijava, potvrda i HUB3 barkod |
+| Obavijesti | `GET /api/notifications`, oznacavanje procitanog i registracija tokena uredjaja |
 | Clanovi | CRUD na `/api/members` |
 | Treneri | CRUD na `/api/trainers` |
 | Vrste treninga | CRUD na `/api/class-types` |
@@ -23,6 +26,10 @@ Svi endpointi osim prijave zahtijevaju valjani JWT zbog globalne fallback author
 | Fiksne dodjele | CRUD i prekid dodjele na `/api/member-fixed-schedules` |
 | Termini | CRUD na `/api/class-sessions` |
 | Rezervacije | CRUD i statusi na `/api/bookings` |
+
+`PUT /api/member-memberships/{id}/billing` prima `firstBillingOn`. Odabrani datum
+sprema se kao pocetak ritma naplate, odmah se stvaraju svi dospjeli mjesecni
+obracuni, a odgovor vraca clanstvo, `createdObligations` i `nextBillingOn`.
 
 ## Posebne operacije
 
@@ -66,6 +73,15 @@ Objedinjuje korisnicki racun, uloge, studio te povezane podatke clana i/ili tren
 
 Razdoblje iskoristenosti prati `sessionLimitPeriod` paketa: `week`, `month` ili `membership`. U iskoristenost ulaze rezervacije statusa `booked`, `attended` i `no_show`; `cancelled` i `waitlisted` se ne racunaju. Sve datumske granice racunaju se u vremenskoj zoni studija.
 
+### Ogranicenje rezervacija paketom
+
+`POST /api/bookings` zahtijeva clanstvo koje pokriva lokalni datum termina.
+Isto pravilo vrijedi kada admin rezervira za clana i kada se rezervacija iz
+`waitlisted` ili `cancelled` statusa prebacuje u status koji trosi paket.
+Dosegnuti limit ili nepostojece clanstvo vracaju `409 Problem Details` s posebnim
+razlogom. Paket bez `sessionLimit` je neogranicen. Automatske fiksne rezervacije
+koje ne zadovoljavaju ova pravila preskacu se.
+
 ### Otkazivanje jednog termina
 
 ```http
@@ -73,6 +89,12 @@ PATCH /api/class-sessions/{id}/cancel
 ```
 
 Admin moze otkazati svaki termin svojeg studija. Trener moze otkazati samo termin kojem je dodijeljen. Termin i njegove aktivne rezervacije prelaze u `cancelled`; ponavljajuci raspored ostaje nepromijenjen.
+
+Ponavljajucim rasporedom upravlja se kroz `PATCH /api/recurring-class-schedules/{id}/pause`,
+`/resume` i `/end`, uz tijelo `{ "effectiveFrom": "YYYY-MM-DD" }`. Admin upravlja
+svim rasporedima studija, a trener samo vlastitima. Pauza otkazuje buduce generirane
+termine i rezervacije uz cuvanje razloga otkazivanja; nastavak vraca samo termine i
+fiksne rezervacije otkazane pauzom. Zavrseni raspored nije moguce ponovno aktivirati.
 
 ### Polaznici termina
 

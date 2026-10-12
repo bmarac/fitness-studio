@@ -27,6 +27,9 @@ Dodatne rute:
 - `/profil/clanovi`
 - `/profil/clanovi/{memberId}/napredak`
 - `/profil/clanovi/{memberId}/novo-mjerenje`
+- `/profil/clanarine`
+- `/profil/postavke-placanja`
+- `/profil/obavijesti`
 
 ## Trenutno implementirano
 
@@ -35,12 +38,18 @@ Dodatne rute:
 - detalji termina i popunjenost
 - rezerviranje termina za korisnika povezanog s clanom
 - forma za kreiranje ponavljajuceg rasporeda vidljiva adminu/treneru; API spremanje trenutno zahtijeva i ulogu `admin`
+- upravljanje ponavljajucim rasporedima ostaje unutar ekrana **Termini**: donji panel
+  prikazuje aktivne, pauzirane i zavrsene rasporede, a detalji termina nude pauzu,
+  nastavak i trajni zavrsetak od odabranog datuma
 - otkazivanje konkretnog termina uz provjeru uloge
 - pregled polaznika za admina ili dodijeljenog trenera
 - upravljanje polaznicima s detalja termina preko izbornika uz svakog clana
 - **Ukloni s ovog termina** otkazuje samo odabranu rezervaciju
 - **Ukloni iz fiksne grupe** otkazuje odabrani i buduce termine iste fiksne dodjele
 - trenerski pregled **Moji treninzi** s današnjim, nadolazećim i završenim terminima
+- **Moji treninzi** je početni tab nakon prijave: član vidi sve svoje rezervacije
+  kronološki i može otkazati pojedini budući termin, dok admin može filtrirati
+  pregled termina po aktivnom treneru ili odabrati **Svi treneri**
 - evidencija prisutnosti i nedolaska na zapocetim terminima
 - profil prijavljenog korisnika s osobnim podacima, ulogama i studijem
 - clanski prikaz aktivnog paketa, iskoristenosti i fiksnih termina
@@ -51,6 +60,17 @@ Dodatne rute:
 - trenerski popis clanova s pretragom i pregledom napretka odabranog clana
 - trenerski unos novog mjerenja s aktivnim rucnim parametrima studija
 - debug login forma s unaprijed popunjenim Filipovim racunom
+- clanski pregled obracuna, HUB3 koda, prijava uplate i zavrsetak clanstva
+- administratorski pregled i potvrda uplata te postavke primatelja i podsjetnika
+- ukljucivanje naplate s obveznim datumom **Naplata vrijedi od** te odvojenim
+  listama **Naplata nije ukljucena** i **Aktivna naplata**
+- filtri **Za naplatu**, **Ceka potvrdu**, **Kasni**, **Placeno** i **Sve** te
+  izravna akcija **Oznaci placeno** na svakom neplacenom mjesecnom obracunu
+- in-app centar obavijesti za clanarine
+
+Push transport zahtijeva Firebase projektne datoteke i vjerodajnice koje se ne
+spremaju u repozitorij. API vec sprema tokene uredjaja i idempotentne obavijesti;
+bez Firebase konfiguracije obavijesti ostaju dostupne unutar aplikacije.
 
 Ekran **Profil** koristi `GET /api/profile` i prilagodjava sadrzaj povezanim ulogama. Korisnik koji je istodobno clan i trener dobiva obje vrste podataka, dok se neprimjenjive sekcije ne prikazuju.
 

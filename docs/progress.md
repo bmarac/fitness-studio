@@ -73,3 +73,4 @@ Clan na profilu vidi sazetak posljednje tezine, BMI-ja i opsega struka te promje
 Admin i trener preko **Profil -> Napredak clanova** otvaraju pretrazivi popis clanova. Odabrani clan ima vlastiti ekran povijesti i akciju **Mjerenje**. Obrazac ucitava konfiguraciju studija, prikazuje samo aktivne rucne parametre, lokalno provjerava granice i nakon uspjesnog spremanja osvjezava povijest clana.
 
 Demo seed `db/seeds/004_ana_progress.sql` sadrzi cetiri mjerenja za Anu kroz razdoblje od otprilike tri mjeseca. BMI nije spremljen u seedu nego ga API racuna iz svake visine i tezine.
+Naplata clanarina opisana je zasebno u [payments.md](payments.md).

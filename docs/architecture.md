@@ -5,7 +5,9 @@
 - PostgreSQL 16 radi u Docker containeru `fitness_studio_postgres`.
 - ASP.NET Core Web API koristi .NET 10 i Entity Framework Core s Npgsql providerom.
 - Flutter mobilna aplikacija komunicira s API-jem preko HTTP/JSON protokola.
-- Placanje trenutno nije dio sustava.
+- Sustav vodi mjesecne obveze clanarina, prijavu i potvrdu uplata te generira
+  HUB3 PDF417 podatke. Ne povezuje se izravno s bankom niti automatski izvrsava
+  novcane transakcije.
 
 ## Backend
 
@@ -46,6 +48,13 @@ feature/
 ```
 
 Koriste se Riverpod za stanje, GetIt za dependency injection, Dio za HTTP, GoRouter za navigaciju i Flutter Secure Storage za lokalno cuvanje autentifikacijske sesije.
+
+## Pozadinska obrada
+
+`MembershipBillingWorker` periodicki pokrece obracun dospjelih mjesecnih obveza.
+Generator je idempotentan po clanstvu i pocetku obracunskog razdoblja. Nastale
+obavijesti vidljive su u aplikaciji; slanje push obavijesti zahtijeva zasebno
+konfiguriran Firebase transport.
 
 ## Multi-studio granica
 

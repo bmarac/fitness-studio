@@ -13,6 +13,7 @@ Ovaj direktorij sadrzi tehnicku i funkcionalnu dokumentaciju projekta Fitness St
 
 - [Termini i ponavljajuci rasporedi](scheduling.md)
 - [Rezervacije](bookings.md)
+- [Naplata clanarina](payments.md)
 - [Mobilna aplikacija](mobile.md)
 - [Pracenje napretka](progress.md)
 

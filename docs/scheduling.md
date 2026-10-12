@@ -29,11 +29,18 @@ Broj tjedana generiranja cita se iz `class_session_generation_weeks_ahead`. Zada
 
 Otkazivanje kroz `PATCH /api/class-sessions/{id}/cancel` utjece samo na odabrani termin. Ponavljajuci raspored i ostali buduci termini ostaju aktivni. Aktivne rezervacije otkazanog termina također se otkazuju.
 
+Ponavljajuci raspored ima stanja `active`, `paused` i `ended`. Pauza, nastavak i trajni
+zavrsetak primaju datum od kojeg promjena vrijedi. Otkazani termini i rezervacije cuvaju
+razlog otkazivanja kako nastavak ne bi vratio pojedinacno otkazane termine ili rezervacije.
+
 Admin moze otkazati svaki termin svojeg studija. Trener moze otkazati samo vlastiti termin.
 
 ## Mobilni tijek
 
-Tab **Termini** prikazuje tjedni raspored. Trener i admin trenutno vide gumb za novi ponavljajuci termin, ali API write operacije nad ponavljajucim rasporedima trenutno zahtijevaju ulogu `admin`. Detalji konkretnog termina prikazuju datum, vrijeme, trajanje, status, popunjenost i, za ovlastene korisnike, polaznike i akciju otkazivanja.
+Tab **Termini** prikazuje tjedni raspored. Trener i admin vide gumb za novi ponavljajuci
+termin te akciju **Rasporedi**, koja otvara upravljanje aktivnim, pauziranim i zavrsenim
+rasporedima. Detalji konkretnog termina nude odvojene akcije za otkazivanje samo te
+izvedbe te za pauzu ili zavrsetak cijelog ponavljajuceg rasporeda.
 
 ## Planirano
 

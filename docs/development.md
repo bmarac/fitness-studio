@@ -13,8 +13,13 @@
 Pokretanje PostgreSQL-a:
 
 ```bash
+cp .env.example .env
 docker compose up -d
 ```
+
+Pri prvom pokretanju s praznim volumeom `db/bootstrap.sh` redom primjenjuje
+`db/schema`, `db/migrations` i `db/seeds`. Init skripte PostgreSQL containera ne
+izvode se ponovno nad postojecim volumeom.
 
 Provjera containera:
 
@@ -52,6 +57,24 @@ dotnet ef dbcontext scaffold \
 
 Scaffold moze prepisati `Data/FitnessStudioDbContext.cs` i EF entitete. Poslovna logika ne smije se stavljati u generirane klase.
 
+## Izolirana provjera svjezeg sustava
+
+Iz korijena repozitorija:
+
+```bash
+./scripts/verify-fresh-stack.sh
+```
+
+Skripta zahtijeva Docker, .NET SDK, `curl` i `jq`. Pokrece zaseban PostgreSQL
+container na nasumicnom portu i API na `127.0.0.1:55146`, provjerava migracije,
+seedove, demo prijave, multi-studio granicu, rasporede, rezervacije i naplatu te
+na kraju uklanja privremeni container. Razvojna baza `fitness_studio` ostaje
+netaknuta. Ako je port zauzet, moze se zadati drugi:
+
+```bash
+FITNESS_STUDIO_VERIFY_API_PORT=55147 ./scripts/verify-fresh-stack.sh
+```
+
 ## API
 
 ```bash
@@ -74,16 +97,32 @@ flutter test
 flutter run
 ```
 
-Na iOS simulatoru `localhost` pokazuje na Mac pa zadani API URL radi izravno. Za fizicki uredjaj treba koristiti adresu Mac racunala dostupnu na lokalnoj mrezi.
+Na iOS simulatoru `localhost` pokazuje na Mac pa zadani API URL radi izravno.
+
+Za fizicki Android uredjaj spojen USB kabelom najjednostavnije je prije
+`flutter run` proslijediti API port:
+
+```bash
+adb reverse tcp:5146 tcp:5146
+adb reverse --list
+```
+
+Tada zadani `http://localhost:5146` radi i na mobitelu. Prosljedjivanje se moze
+izgubiti nakon odspajanja uredjaja, restarta ADB-a ili racunala pa ga tada treba
+ponovno postaviti. Alternativa je pokrenuti aplikaciju s adresom Mac racunala
+dostupnom na lokalnoj mrezi i odgovarajuce izloziti API na toj adresi.
 
 ## Provjere prije zavrsetka promjene
 
 ```bash
 cd api/FitnessStudio.Api
-dotnet build
+dotnet test ../FitnessStudio.Api.Tests/FitnessStudio.Api.Tests.csproj
 
 cd ../../mobile/fitness_studio_mobile
-dart format lib test
 flutter analyze
 flutter test
+
+cd ../..
+./scripts/verify-fresh-stack.sh
+git diff --check
 ```
