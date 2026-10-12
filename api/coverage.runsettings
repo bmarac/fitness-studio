@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+          <Format>lcov</Format>
+          <Include>[FitnessStudio.Api]*</Include>
+          <Exclude>[FitnessStudio.Api.Tests]*</Exclude>
+          <ExcludeByAttribute>GeneratedCodeAttribute,CompilerGeneratedAttribute,ExcludeFromCoverageAttribute,ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>
+          <ExcludeByFile>**/Entities/*.cs,**/Dtos/**/*.cs,**/Profiles/*.cs,**/Configuration/*.cs,**/Data/FitnessStudioDbContext.cs,**/obj/**/*.cs</ExcludeByFile>
+          <IncludeTestAssembly>false</IncludeTestAssembly>
+          <SkipAutoProps>true</SkipAutoProps>
+          <DeterministicReport>false</DeterministicReport>
+          <ExcludeAssembliesWithoutSources>MissingAll</ExcludeAssembliesWithoutSources>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

@@ -115,14 +115,42 @@ dostupnom na lokalnoj mrezi i odgovarajuce izloziti API na toj adresi.
 ## Provjere prije zavrsetka promjene
 
 ```bash
-cd api/FitnessStudio.Api
-dotnet test ../FitnessStudio.Api.Tests/FitnessStudio.Api.Tests.csproj
-
-cd ../../mobile/fitness_studio_mobile
+cd mobile/fitness_studio_mobile
 flutter analyze
-flutter test
-
 cd ../..
+./scripts/check-coverage.sh
 ./scripts/verify-fresh-stack.sh
 git diff --check
 ```
+
+## Pokrivenost testovima
+
+Iz korijena repozitorija pokrenuti:
+
+```bash
+./scripts/check-coverage.sh
+```
+
+Skripta izvodi sve backend i Flutter testove te sprema LCOV izvjestaje i sazeti
+Markdown pregled u `artifacts/coverage/`. Backend mjerenje obuhvaca ulaznu tocku,
+kontrolere, servise, domensku logiku, validaciju i razvojni auth seeder. Iz mjere
+su iskljuceni generirani EF entiteti i kontekst, DTO-i, profili mapiranja i
+konfiguracijske klase. Flutter mjerenje obuhvaca rucno pisani kod u `lib/`, a
+iskljucuje generirane lokalizacijske datoteke.
+
+Gate provjerava tri pravila:
+
+- ukupna pokrivenost ne smije pasti ispod verzioniranog baselinea;
+- poboljsanje od najmanje 0,1 postotnog boda mora se zapisati u baseline;
+- promijenjene izvrsne linije moraju imati najmanje 80% pokrivenosti, zasebno za
+  backend i Flutter.
+
+Kad testovi legitimno povecaju pokrivenost, baseline se podize naredbom:
+
+```bash
+./scripts/check-coverage.sh --update-baseline
+```
+
+Baseline se tom naredbom moze samo povecati. Dugorocni cilj za oba dijela je 60%.
+GitHub Actions pokrece isti gate na pull requestovima i na `main` grani, prikazuje
+sazetak u jobu te cuva LCOV izvjestaje 14 dana.

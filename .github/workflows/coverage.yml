@@ -1,0 +1,56 @@
+name: Coverage
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: coverage-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.38.9
+          cache: true
+
+      - name: Run coverage gate
+        env:
+          COVERAGE_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before || '' }}
+        run: ./scripts/check-coverage.sh
+
+      - name: Publish coverage summary
+        if: always()
+        run: |
+          if [ -f artifacts/coverage/summary.md ]; then
+            cat artifacts/coverage/summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-reports
+          path: artifacts/coverage
+          if-no-files-found: warn
+          retention-days: 14

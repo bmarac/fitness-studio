@@ -21,6 +21,7 @@
 **/.flutter-plugins-dependencies
 **/build/
 **/coverage/
+artifacts/coverage/
 **/.pub/
 **/.pub-cache/
 

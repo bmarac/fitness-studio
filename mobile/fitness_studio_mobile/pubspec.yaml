@@ -46,6 +46,7 @@ dependencies:
   intl: any
 
 dev_dependencies:
+  coverage: ^1.15.1
   flutter_test:
     sdk: flutter
 

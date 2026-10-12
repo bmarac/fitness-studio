@@ -28,3 +28,10 @@ tokova pokrece se iz korijena repozitorija:
 ```bash
 ./scripts/verify-fresh-stack.sh
 ```
+
+Backend i Flutter testovi, LCOV izvjestaji te coverage pragovi pokrecu se jednom
+naredbom:
+
+```bash
+./scripts/check-coverage.sh
+```
