@@ -140,6 +140,9 @@ class _LoggedInController extends LoginController {
 class _EmptyClassSessionsController extends ClassSessionsController {
   @override
   ClassSessionsState build() => const ClassSessionsLoaded([]);
+
+  @override
+  Future<void> loadClassSessions({DateTime? from, DateTime? to}) async {}
 }
 
 class _LogoutTestController extends LoginController {
