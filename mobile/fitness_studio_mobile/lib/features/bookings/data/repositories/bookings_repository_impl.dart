@@ -2,6 +2,7 @@ import '../../../../core/error/failure.dart';
 import '../../../../core/error/result.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../domain/entities/booking.dart';
+import '../../domain/entities/member_bookings_page.dart';
 import '../../domain/repositories/bookings_repository.dart';
 import '../datasources/bookings_remote_data_source.dart';
 
@@ -14,6 +15,27 @@ class BookingsRepositoryImpl implements BookingsRepository {
   Future<Result<List<Booking>>> getBookings() async {
     try {
       return Success(await _remoteDataSource.getBookings());
+    } on ApiException catch (error) {
+      return FailureResult(error.toFailure());
+    } on FormatException {
+      return const FailureResult(Failure(FailureKind.readBookings));
+    }
+  }
+
+  @override
+  Future<Result<MemberBookingsPage>> getMemberBookingsPage({
+    required String filter,
+    required int page,
+    required int pageSize,
+  }) async {
+    try {
+      return Success(
+        await _remoteDataSource.getMemberBookingsPage(
+          filter: filter,
+          page: page,
+          pageSize: pageSize,
+        ),
+      );
     } on ApiException catch (error) {
       return FailureResult(error.toFailure());
     } on FormatException {

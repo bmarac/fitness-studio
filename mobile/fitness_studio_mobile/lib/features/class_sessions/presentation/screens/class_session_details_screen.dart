@@ -19,8 +19,6 @@ import '../../domain/usecases/cancel_class_session.dart';
 import '../state/class_sessions_controller.dart';
 import '../state/class_session_bookings_provider.dart';
 import '../state/class_session_details_provider.dart';
-import '../../../recurring_schedules/domain/usecases/change_recurring_schedule_status.dart';
-import '../../../recurring_schedules/presentation/widgets/recurring_schedules_sheet.dart';
 
 class ClassSessionDetailsScreen extends ConsumerWidget {
   const ClassSessionDetailsScreen({super.key, required this.classSessionId});
@@ -61,7 +59,6 @@ class _ClassSessionDetailsContentState
     extends ConsumerState<_ClassSessionDetailsContent> {
   bool _isBooking = false;
   bool _isCancelling = false;
-  bool _isChangingSchedule = false;
 
   @override
   Widget build(BuildContext context) {
@@ -223,15 +220,6 @@ class _ClassSessionDetailsContentState
                 foregroundColor: theme.colorScheme.error,
               ),
             ),
-            if (classSession.recurringScheduleId != null) ...[
-              const SizedBox(height: 20),
-              _RecurringScheduleActionsCard(
-                status: classSession.recurringScheduleStatus ?? 'active',
-                isChanging: _isChangingSchedule,
-                onAction: (action) =>
-                    _changeRecurringSchedule(classSession, action),
-              ),
-            ],
           ],
         ],
       ),
@@ -342,134 +330,6 @@ class _ClassSessionDetailsContentState
           context,
         ).showSnackBar(SnackBar(content: Text(failure.localized(context))));
     }
-  }
-
-  Future<void> _changeRecurringSchedule(
-    ClassSession classSession,
-    RecurringScheduleAction action,
-  ) async {
-    final scheduleId = classSession.recurringScheduleId;
-    if (scheduleId == null) return;
-
-    final effectiveFrom = await showRecurringScheduleChangeDialog(
-      context,
-      action: action,
-      initialDate: classSession.startsAt.toLocal(),
-    );
-    if (effectiveFrom == null || !mounted) return;
-
-    setState(() => _isChangingSchedule = true);
-    final result = await serviceLocator<ChangeRecurringScheduleStatus>()(
-      id: scheduleId,
-      action: action.endpoint,
-      effectiveFrom: effectiveFrom,
-    );
-    if (!mounted) return;
-
-    setState(() => _isChangingSchedule = false);
-    switch (result) {
-      case Success():
-        final message = switch (action) {
-          RecurringScheduleAction.pause => context.l10n.schedulePaused,
-          RecurringScheduleAction.resume => context.l10n.scheduleResumed,
-          RecurringScheduleAction.end => context.l10n.scheduleEnded,
-        };
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(message)));
-        ref.invalidate(classSessionDetailsProvider(classSession.id));
-        ref.invalidate(classSessionBookingsProvider(classSession.id));
-        await ref
-            .read(classSessionsControllerProvider.notifier)
-            .loadClassSessions();
-      case FailureResult(failure: final failure):
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(failure.localized(context))));
-    }
-  }
-}
-
-class _RecurringScheduleActionsCard extends StatelessWidget {
-  const _RecurringScheduleActionsCard({
-    required this.status,
-    required this.isChanging,
-    required this.onAction,
-  });
-
-  final String status;
-  final bool isChanging;
-  final ValueChanged<RecurringScheduleAction> onAction;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final statusLabel = switch (status) {
-      'paused' => context.l10n.statusPaused,
-      'ended' => context.l10n.statusCompleted,
-      _ => context.l10n.statusActive,
-    };
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    context.l10n.fixedScheduleTitle,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                Text(statusLabel, style: theme.textTheme.labelLarge),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              context.l10n.scheduleActionScope,
-              style: theme.textTheme.bodySmall,
-            ),
-            if (isChanging) ...[
-              const SizedBox(height: 16),
-              const Center(child: CircularProgressIndicator()),
-            ] else if (status == 'active') ...[
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: () => onAction(RecurringScheduleAction.pause),
-                icon: const Icon(Icons.pause_circle_outline),
-                label: Text(context.l10n.pauseSchedule),
-              ),
-              TextButton(
-                onPressed: () => onAction(RecurringScheduleAction.end),
-                style: TextButton.styleFrom(
-                  foregroundColor: theme.colorScheme.error,
-                ),
-                child: Text(context.l10n.finishSchedule),
-              ),
-            ] else if (status == 'paused') ...[
-              const SizedBox(height: 12),
-              FilledButton.icon(
-                onPressed: () => onAction(RecurringScheduleAction.resume),
-                icon: const Icon(Icons.play_circle_outline),
-                label: Text(context.l10n.resumeSchedule),
-              ),
-              TextButton(
-                onPressed: () => onAction(RecurringScheduleAction.end),
-                style: TextButton.styleFrom(
-                  foregroundColor: theme.colorScheme.error,
-                ),
-                child: Text(context.l10n.finishSchedule),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
   }
 }
 

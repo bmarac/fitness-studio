@@ -36,13 +36,15 @@ dana. Vec potvrdene uplate ostaju nepromijenjene.
 API generira HUB3 PDF417 kao SVG iz spremljene snimke obveze. Podsjetnici se
 spremaju idempotentno u in-app centar za clana i administratora. Registracija
 tokena uredjaja postoji, ali stvarna push dostava nije aktivna bez Firebase
-projektnih datoteka i serverskih vjerodajnica.
+projektnih datoteka, iOS APNs kljuca i ukljucene serverske vjerodajnice. Nakon
+konfiguracije podsjetnici se prikazuju kao sistemske obavijesti u pozadini i kao
+lokalni banner dok je aplikacija otvorena.
 
 ## API
 
 ```http
-GET  /api/payment-settings
-PUT  /api/payment-settings
+GET  /api/studio-settings/configuration
+PUT  /api/studio-settings/configuration
 PUT  /api/member-memberships/{id}/billing
 PUT  /api/member-memberships/{id}/end
 GET  /api/membership-payments/mine
@@ -53,3 +55,7 @@ POST /api/membership-payments/{id}/confirm
 POST /api/membership-payments/{id}/reject-report
 POST /api/membership-payments/{id}/reopen
 ```
+
+Mobilna aplikacija cita i sprema pristupni kod, podatke za placanje i podsjetnike
+atomarno preko `studio-settings/configuration`. Stari endpoint
+`GET/PUT /api/payment-settings` ostaje dostupan samo radi kompatibilnosti.

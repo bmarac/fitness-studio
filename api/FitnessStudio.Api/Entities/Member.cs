@@ -25,7 +25,7 @@ public partial class Member
 
     public long StudioId { get; set; }
 
-    public virtual AppUser? AppUser { get; set; }
+    public virtual AppUserStudio? AppUserStudio { get; set; }
 
     public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 

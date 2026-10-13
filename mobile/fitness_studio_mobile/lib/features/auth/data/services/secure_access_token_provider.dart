@@ -8,17 +8,18 @@ class SecureAccessTokenProvider implements AccessTokenProvider {
 
   @override
   Future<String?> getAccessToken() async {
-    final session = await _localDataSource.readSession();
-
-    if (session == null) {
-      return null;
-    }
-
-    if (!session.expiresAt.isAfter(DateTime.now().toUtc())) {
+    final studioSession = await _localDataSource.readSession();
+    final accountSession = studioSession == null
+        ? await _localDataSource.readAccountSession()
+        : null;
+    final accessToken =
+        studioSession?.accessToken ?? accountSession?.accessToken;
+    final expiresAt = studioSession?.expiresAt ?? accountSession?.expiresAt;
+    if (accessToken == null || expiresAt == null) return null;
+    if (!expiresAt.isAfter(DateTime.now().toUtc())) {
       await _localDataSource.clearSession();
       return null;
     }
-
-    return session.accessToken;
+    return accessToken;
   }
 }

@@ -38,7 +38,10 @@ void main() {
 
     expect(find.text('Osobni podaci'), findsNothing);
     expect(find.text('Naplata članarina'), findsOneWidget);
-    expect(find.text('Postavke plaćanja'), findsOneWidget);
+    expect(find.text('Postavke studija'), findsOneWidget);
+    expect(find.text('Postavke plaćanja'), findsNothing);
+    expect(find.text('Treneri'), findsOneWidget);
+    expect(find.text('Pregledaj i unaprijed dodaj trenere'), findsOneWidget);
   });
 }
 

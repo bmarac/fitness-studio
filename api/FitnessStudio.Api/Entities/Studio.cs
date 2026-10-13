@@ -17,7 +17,7 @@ public partial class Studio
 
     public DateTime UpdatedAt { get; set; }
 
-    public virtual ICollection<AppUser> AppUsers { get; set; } = new List<AppUser>();
+    public virtual ICollection<AppUserStudio> AppUserStudios { get; set; } = new List<AppUserStudio>();
 
     public virtual ICollection<AppNotification> AppNotifications { get; set; } = new List<AppNotification>();
 

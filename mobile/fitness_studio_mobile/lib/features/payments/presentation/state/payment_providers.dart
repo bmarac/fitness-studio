@@ -18,9 +18,6 @@ final paymentsProvider =
 final paymentSummaryProvider = FutureProvider<MembershipPaymentSummary>(
   (ref) => serviceLocator<PaymentsRemoteDataSource>().getSummary(),
 );
-final paymentSettingsProvider = FutureProvider<PaymentSettings>(
-  (ref) => serviceLocator<PaymentsRemoteDataSource>().getSettings(),
-);
 final paymentBarcodeProvider = FutureProvider.family<Uint8List, int>(
   (ref, id) => serviceLocator<PaymentsRemoteDataSource>().barcode(id),
 );

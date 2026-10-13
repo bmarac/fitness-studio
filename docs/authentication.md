@@ -8,11 +8,25 @@ Korisnik se prijavljuje email adresom i lozinkom:
 POST /api/auth/login
 ```
 
-Request sadrzi `studioId`, `email` i `password`. Response sadrzi JWT, vrijeme isteka i podatke korisnika. Mobilna aplikacija sprema sesiju u Flutter Secure Storage i pokusava je obnoviti pri sljedecem pokretanju.
+Request sadrzi samo `email` i `password`. Registracija koristi isti oblik na
+`POST /api/auth/register`. Response sadrzi account JWT i sve studije kojima
+racun pripada. Account JWT sluzi za povezivanje i izbor studija; poslovni
+endpointi prihvacaju studio-scoped JWT dobiven izborom studija.
+
+## Povezivanje sa studijem
+
+Prijavljeni racun koristi `/api/account/studios/lookup` i `/join`. Kod se cita iz
+`studio_settings.join_code`; brisanje postavke iskljucuje nova povezivanja.
+Postojeci profil istog emaila povezuje se s racunom, a inace se kreira clan iz
+unesenog imena i prezimena. Izbor preko `/{studioId}/select` izdaje studio JWT.
+Trenerski profil admin unaprijed stvara na `/api/trainers`; racun s odgovarajucim
+emailom zato pri pridruzivanju dobiva ulogu trenera umjesto novog clanskog profila.
 
 ## JWT
 
-Token sadrzi identitet korisnika, `studio_id`, uloge te opcionalni `member_id` i `trainer_id`. API validira issuer, audience, potpis i vrijeme isteka. Razvojni token trenutno traje 60 minuta.
+Account token sadrzi samo identitet i email. Studio token dodatno sadrzi
+`studio_id`, uloge te opcionalni `member_id` i `trainer_id`. API validira issuer,
+audience, potpis i vrijeme isteka.
 
 ## Uloge
 
@@ -20,7 +34,8 @@ Token sadrzi identitet korisnika, `studio_id`, uloge te opcionalni `member_id` i
 - `trainer`: upravlja svojim terminima i vidi njihove polaznike
 - `admin`: upravlja studijem i svim terminima
 
-Jedan korisnik moze imati vise uloga kroz `app_user_roles`. Filip i Kristina u demo studiju imaju uloge `trainer` i `admin`.
+Jedan racun moze pripadati vise studija, a uloge su izolirane po vezi u
+`app_user_studio_roles`. Filip i Kristina u demo studiju imaju uloge `trainer` i `admin`.
 
 Backend uvijek provjerava ovlasti. Skrivanje gumba u mobilnoj aplikaciji sluzi korisnickom iskustvu, ali nije sigurnosna zastita.
 
@@ -36,6 +51,5 @@ Development seeder odrzava sljedece racune:
 
 Flutter login forma u debug buildu unaprijed popunjava Filipove podatke. Release build ostavlja polja prazna.
 
-## Planirano
-
-Invite kod ili QR povezivat ce novog korisnika s odgovarajucim studijem. Google i Apple prijava mogu se dodati kasnije kao vanjski identiteti, bez uklanjanja postojeceg korisnickog racuna i studijske pripadnosti.
+Google i Apple prijava mogu se kasnije dodati kao vanjski identiteti bez
+uklanjanja globalnog racuna i studijskih pripadnosti.

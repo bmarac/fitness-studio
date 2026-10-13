@@ -25,7 +25,7 @@ public partial class Trainer
 
     public long StudioId { get; set; }
 
-    public virtual AppUser? AppUser { get; set; }
+    public virtual AppUserStudio? AppUserStudio { get; set; }
 
     public virtual ICollection<ClassSession> ClassSessions { get; set; } = new List<ClassSession>();
 

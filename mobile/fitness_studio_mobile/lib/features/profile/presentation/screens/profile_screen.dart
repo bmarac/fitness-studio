@@ -125,6 +125,8 @@ class _ProfileContent extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
           _ProfileHeader(profile: profile, person: person),
+          const SizedBox(height: 16),
+          const _StudioSwitcherCard(),
           if (profile.membership case final membership?) ...[
             const SizedBox(height: 24),
             _MembershipCard(membership: membership, usage: profile.usage),
@@ -143,9 +145,11 @@ class _ProfileContent extends StatelessWidget {
           ],
           if (profile.user.roles.contains('admin')) ...[
             const SizedBox(height: 16),
-            const _PaymentsCard(admin: true),
+            const _TrainersCard(),
             const SizedBox(height: 16),
-            const _PaymentSettingsCard(),
+            const _StudioSettingsCard(),
+            const SizedBox(height: 16),
+            const _PaymentsCard(admin: true),
           ],
           if (profile.fixedSchedules.isNotEmpty) ...[
             const SizedBox(height: 16),
@@ -160,6 +164,50 @@ class _ProfileContent extends StatelessWidget {
       ),
     );
   }
+}
+
+class _TrainersCard extends StatelessWidget {
+  const _TrainersCard();
+
+  @override
+  Widget build(BuildContext context) => Card(
+    child: ListTile(
+      leading: const Icon(Icons.person_add_alt_1_outlined),
+      title: Text(context.l10n.trainersTitle),
+      subtitle: Text(context.l10n.trainerManagementSubtitle),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => context.push(AppRoutes.trainersPath),
+    ),
+  );
+}
+
+class _StudioSwitcherCard extends ConsumerWidget {
+  const _StudioSwitcherCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => Card(
+    child: ListTile(
+      leading: const Icon(Icons.swap_horiz),
+      title: Text(context.l10n.changeOrAddStudio),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () =>
+          ref.read(loginControllerProvider.notifier).showStudioPicker(),
+    ),
+  );
+}
+
+class _StudioSettingsCard extends StatelessWidget {
+  const _StudioSettingsCard();
+
+  @override
+  Widget build(BuildContext context) => Card(
+    child: ListTile(
+      leading: const Icon(Icons.store_outlined),
+      title: Text(context.l10n.studioSettingsTitle),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => context.push(AppRoutes.studioSettingsPath),
+    ),
+  );
 }
 
 class _MembersProgressCard extends StatelessWidget {
@@ -198,20 +246,6 @@ class _PaymentsCard extends StatelessWidget {
       ),
       trailing: const Icon(Icons.chevron_right),
       onTap: () => context.push('${AppRoutes.paymentsPath}?admin=$admin'),
-    ),
-  );
-}
-
-class _PaymentSettingsCard extends StatelessWidget {
-  const _PaymentSettingsCard();
-  @override
-  Widget build(BuildContext context) => Card(
-    child: ListTile(
-      leading: const Icon(Icons.account_balance_outlined),
-      title: Text(context.l10n.profilePaymentSettings),
-      subtitle: Text(context.l10n.profilePaymentSettingsSubtitle),
-      trailing: const Icon(Icons.chevron_right),
-      onTap: () => context.push(AppRoutes.paymentSettingsPath),
     ),
   );
 }

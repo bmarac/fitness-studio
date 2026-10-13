@@ -5,6 +5,7 @@ using FitnessStudio.Api.Dtos.StudioSettings;
 using FitnessStudio.Api.Entities;
 using FitnessStudio.Api.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace FitnessStudio.Api.Services.StudioSettings;
 
@@ -63,7 +64,9 @@ public partial class StudioSettingsService : IStudioSettingsService
     {
         var normalizedSetting = NormalizeSetting(setting);
         var valueType = request.ValueType.Trim().ToLowerInvariant();
-        var value = request.Value.Trim();
+        var value = normalizedSetting == "join_code"
+            ? request.Value.Trim().ToUpperInvariant()
+            : request.Value.Trim();
 
         if (!SettingKeyRegex().IsMatch(normalizedSetting))
         {
@@ -77,6 +80,21 @@ public partial class StudioSettingsService : IStudioSettingsService
             return ServiceResult<StudioSettingResponse>.Conflict(
                 "Invalid setting value.",
                 "The setting value does not match its declared value type.");
+        }
+
+        if (normalizedSetting == "join_code")
+        {
+            if (valueType != "string" || !JoinCodeRegex().IsMatch(value))
+                return ServiceResult<StudioSettingResponse>.Conflict(
+                    "Invalid studio code.",
+                    "The code must contain 3-32 uppercase letters, numbers, '_' or '-'.");
+            var occupied = await _dbContext.StudioSettings.AnyAsync(item =>
+                item.Setting == "join_code"
+                && item.StudioId != _currentUser.StudioId
+                && item.Value.ToUpper() == value);
+            if (occupied)
+                return ServiceResult<StudioSettingResponse>.Conflict(
+                    "Studio code already exists.", "Choose a different studio code.");
         }
 
         var entity = await _dbContext.StudioSettings.FirstOrDefaultAsync(item =>
@@ -98,7 +116,17 @@ public partial class StudioSettingsService : IStudioSettingsService
         entity.ValueType = valueType;
         entity.UpdatedAt = now;
 
-        await _dbContext.SaveChangesAsync();
+        try
+        {
+            await _dbContext.SaveChangesAsync();
+        }
+        catch (DbUpdateException exception)
+            when (normalizedSetting == "join_code"
+                && exception.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
+        {
+            return ServiceResult<StudioSettingResponse>.Conflict(
+                "Studio code already exists.", "Choose a different studio code.");
+        }
 
         return ServiceResult<StudioSettingResponse>.Success(ToResponse(entity));
     }
@@ -146,4 +174,7 @@ public partial class StudioSettingsService : IStudioSettingsService
 
     [GeneratedRegex("^[a-z][a-z0-9_.-]{0,99}$")]
     private static partial Regex SettingKeyRegex();
+
+    [GeneratedRegex("^[A-Z0-9][A-Z0-9_-]{2,31}$")]
+    private static partial Regex JoinCodeRegex();
 }

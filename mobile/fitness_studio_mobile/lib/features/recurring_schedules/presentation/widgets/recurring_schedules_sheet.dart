@@ -8,6 +8,7 @@ import '../../../../injection/service_locator.dart';
 import '../../domain/entities/recurring_schedule.dart';
 import '../../domain/usecases/change_recurring_schedule_status.dart';
 import '../../domain/usecases/get_recurring_schedules.dart';
+import 'create_schedule_form.dart';
 
 enum RecurringScheduleAction { pause, resume, end }
 
@@ -33,6 +34,7 @@ class _RecurringSchedulesSheetState extends State<RecurringSchedulesSheet> {
   List<RecurringSchedule>? _schedules;
   Failure? _failure;
   int? _changingScheduleId;
+  bool _showCreateForm = false;
 
   @override
   void initState() {
@@ -60,13 +62,29 @@ class _RecurringSchedulesSheetState extends State<RecurringSchedulesSheet> {
               padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
               child: Row(
                 children: [
+                  if (_showCreateForm)
+                    IconButton(
+                      tooltip: MaterialLocalizations.of(
+                        context,
+                      ).backButtonTooltip,
+                      onPressed: () => setState(() => _showCreateForm = false),
+                      icon: const Icon(Icons.arrow_back),
+                    ),
                   Expanded(
                     child: Text(
-                      context.l10n.schedulesTitle,
+                      _showCreateForm
+                          ? context.l10n.newScheduleTitle
+                          : context.l10n.schedulesTitle,
                       style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(fontWeight: FontWeight.w800),
                     ),
                   ),
+                  if (!_showCreateForm)
+                    IconButton(
+                      tooltip: context.l10n.newScheduleTitle,
+                      onPressed: () => setState(() => _showCreateForm = true),
+                      icon: const Icon(Icons.add),
+                    ),
                   IconButton(
                     tooltip: context.l10n.actionClose,
                     onPressed: () => Navigator.of(context).pop(),
@@ -75,7 +93,11 @@ class _RecurringSchedulesSheetState extends State<RecurringSchedulesSheet> {
                 ],
               ),
             ),
-            Expanded(child: _buildContent()),
+            Expanded(
+              child: _showCreateForm
+                  ? CreateScheduleForm(onCreated: _scheduleCreated)
+                  : _buildContent(),
+            ),
           ],
         ),
       ),
@@ -108,7 +130,23 @@ class _RecurringSchedulesSheetState extends State<RecurringSchedulesSheet> {
     }
 
     if (schedules!.isEmpty) {
-      return Center(child: Text(context.l10n.noSchedules));
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(context.l10n.noSchedules),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: () => setState(() => _showCreateForm = true),
+                icon: const Icon(Icons.add),
+                label: Text(context.l10n.newScheduleTitle),
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
     return ListView(
@@ -155,6 +193,16 @@ class _RecurringSchedulesSheetState extends State<RecurringSchedulesSheet> {
       case FailureResult(failure: final failure):
         setState(() => _failure = failure);
     }
+  }
+
+  Future<void> _scheduleCreated() async {
+    if (!mounted) return;
+    setState(() => _showCreateForm = false);
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(context.l10n.scheduleCreated)));
+    await widget.onChanged();
+    await _load();
   }
 
   Future<void> _changeStatus(

@@ -8,6 +8,7 @@
 !.env.example
 **/appsettings.Development.json
 **/appsettings.Local.json
+**/firebase-service-account*.json
 
 # .NET build output and user files
 **/bin/

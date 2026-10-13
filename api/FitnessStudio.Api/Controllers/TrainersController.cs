@@ -1,7 +1,9 @@
+using FitnessStudio.Api.Domain.Auth;
 using FitnessStudio.Api.Dtos.Trainers;
 using FitnessStudio.Api.Extensions;
 using FitnessStudio.Api.Services;
 using FitnessStudio.Api.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FitnessStudio.Api.Controllers;
@@ -33,6 +35,7 @@ public class TrainersController : ControllerBase
             : this.ToActionResult(result);
     }
 
+    [Authorize(Roles = AuthRoles.Admin)]
     [HttpPost]
     public async Task<ActionResult<TrainerResponse>> CreateTrainer(CreateTrainerRequest request)
     {
@@ -43,6 +46,7 @@ public class TrainersController : ControllerBase
             : this.ToActionResult(result);
     }
 
+    [Authorize(Roles = AuthRoles.Admin)]
     [HttpPut("{id:long}")]
     public async Task<IActionResult> UpdateTrainer(long id, UpdateTrainerRequest request)
     {
@@ -53,6 +57,7 @@ public class TrainersController : ControllerBase
             : this.ToActionResult(result);
     }
 
+    [Authorize(Roles = AuthRoles.Admin)]
     [HttpDelete("{id:long}")]
     public async Task<IActionResult> DeleteTrainer(long id)
     {

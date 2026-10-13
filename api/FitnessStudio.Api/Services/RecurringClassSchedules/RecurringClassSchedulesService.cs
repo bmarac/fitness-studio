@@ -54,6 +54,15 @@ public class RecurringClassSchedulesService : IRecurringClassSchedulesService
     public async Task<ServiceResult<RecurringClassScheduleResponse>> CreateScheduleAsync(
         CreateRecurringClassScheduleRequest request)
     {
+        var authorization = AuthorizeScheduleCreation(_currentUser, request.TrainerId);
+        if (authorization is not null)
+        {
+            return new ServiceResult<RecurringClassScheduleResponse>(
+                authorization.Status,
+                default,
+                authorization.Error);
+        }
+
         var validationResult = await ValidateRequestAsync(request);
         if (validationResult is not null)
         {
@@ -103,6 +112,26 @@ public class RecurringClassSchedulesService : IRecurringClassSchedulesService
         await transaction.CommitAsync();
 
         return await GetScheduleAsync(schedule.Id);
+    }
+
+    internal static ServiceResult? AuthorizeScheduleCreation(
+        ICurrentUserContext currentUser,
+        long requestedTrainerId)
+    {
+        if (currentUser.IsInRole(AuthRoles.Admin))
+        {
+            return null;
+        }
+
+        if (currentUser.IsInRole(AuthRoles.Trainer)
+            && currentUser.TrainerId == requestedTrainerId)
+        {
+            return null;
+        }
+
+        return ServiceResult.Forbidden(
+            "Recurring schedule cannot be created.",
+            "Trainers can create recurring schedules only for themselves.");
     }
 
     public async Task<ServiceResult> UpdateScheduleAsync(long id, UpdateRecurringClassScheduleRequest request)

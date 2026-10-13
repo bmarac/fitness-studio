@@ -36,4 +36,11 @@ void main() {
 
     expect(await dataSource.readSession(), isNull);
   });
+
+  test('keeps the selected studio id after logout', () async {
+    await dataSource.saveLastStudioId(7);
+    await dataSource.clearSession();
+
+    expect(await dataSource.readLastStudioId(), 7);
+  });
 }

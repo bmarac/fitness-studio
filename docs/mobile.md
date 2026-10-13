@@ -9,6 +9,7 @@ Flutter projekt nalazi se u `mobile/fitness_studio_mobile`.
 - Dio za HTTP pozive
 - GoRouter za navigaciju
 - Flutter Secure Storage za JWT sesiju
+- Firebase Messaging za push tokene i obavijesti
 
 ## Navigacija
 
@@ -21,25 +22,35 @@ Glavni tabovi su:
 Dodatne rute:
 
 - `/login`
+- `/registracija`
+- `/odabir-studija`
 - `/termini/termin/{id}`
-- `/termini/novi-termin`
 - `/profil/napredak`
 - `/profil/clanovi`
 - `/profil/clanovi/{memberId}/napredak`
 - `/profil/clanovi/{memberId}/novo-mjerenje`
 - `/profil/clanarine`
+- `/profil/treneri`
+- `/profil/treneri/novi-trener`
 - `/profil/postavke-placanja`
 - `/profil/obavijesti`
+- `/profil/postavke-studija`
 
 ## Trenutno implementirano
 
-- login i automatska obnova spremljene sesije
+- login i registracija samo emailom i lozinkom
+- povezivanje kodom nakon prijave, izbor izmedju vise studija i pamcenje zadnjeg
+- promjena ili dodavanje studija iz profila
+- administratorska postavka za promjenu ili iskljucivanje `join_code`
+- adminski popis trenera i unaprijed dodavanje trenera po emailu
+- clanovi nastaju samostalnim pridruzivanjem studiju kodom
 - tjedni pregled termina
 - detalji termina i popunjenost
 - rezerviranje termina za korisnika povezanog s clanom
-- forma za kreiranje ponavljajuceg rasporeda vidljiva adminu/treneru; API spremanje trenutno zahtijeva i ulogu `admin`
+- forma za kreiranje ponavljajuceg rasporeda nalazi se u panelu **Rasporedi**; admin bira
+  trenera, a trener moze kreirati raspored samo za sebe
 - upravljanje ponavljajucim rasporedima ostaje unutar ekrana **Termini**: donji panel
-  prikazuje aktivne, pauzirane i zavrsene rasporede, a detalji termina nude pauzu,
+  prikazuje aktivne, pauzirane i zavrsene rasporede te nudi pauzu,
   nastavak i trajni zavrsetak od odabranog datuma
 - otkazivanje konkretnog termina uz provjeru uloge
 - pregled polaznika za admina ili dodijeljenog trenera
@@ -66,11 +77,13 @@ Dodatne rute:
   listama **Naplata nije ukljucena** i **Aktivna naplata**
 - filtri **Za naplatu**, **Ceka potvrdu**, **Kasni**, **Placeno** i **Sve** te
   izravna akcija **Oznaci placeno** na svakom neplacenom mjesecnom obracunu
-- in-app centar obavijesti za clanarine
+- studio-scoped in-app centar obavijesti i FCM registracija tokena
 
-Push transport zahtijeva Firebase projektne datoteke i vjerodajnice koje se ne
-spremaju u repozitorij. API vec sprema tokene uredjaja i idempotentne obavijesti;
-bez Firebase konfiguracije obavijesti ostaju dostupne unutar aplikacije.
+Push transport zahtijeva Firebase projektne datoteke, iOS APNs kljuc i serverske
+vjerodajnice. Aplikacija registrira token nakon prijave, prikazuje foreground
+banner te otvara clanarinu ili centar obavijesti nakon dodira.
+Serverske vjerodajnice ne spremaju se u repozitorij. Bez Firebase konfiguracije
+in-app obavijesti i dalje rade.
 
 Ekran **Profil** koristi `GET /api/profile` i prilagodjava sadrzaj povezanim ulogama. Korisnik koji je istodobno clan i trener dobiva obje vrste podataka, dok se neprimjenjive sekcije ne prikazuju.
 
@@ -78,21 +91,23 @@ Sekcija **Napredak** na profilu prikazuje tezinu, BMI i opseg struka kada su dos
 
 Admin i trener na profilu vide akciju **Napredak clanova**. Nakon odabira clana mogu pregledati istu povijest koju clan vidi za sebe te dodati novo mjerenje. Obrazac prikazuje samo aktivne parametre sa `source = manual`, prihvaca decimalni zarez i zahtijeva barem jednu vrijednost. Izracunati parametri poput BMI-ja ne unose se rucno.
 
+Admin na profilu vidi akciju **Treneri**. Ekran prikazuje trenere studija i omogucuje
+unaprijed stvaranje trenerskog profila. Stara ruta `/profil/onboarding` preusmjerava
+na `/profil/treneri`; rucno stvaranje clana u mobilnoj aplikaciji nije dostupno.
+
 ## Konfiguracija
 
 Zadane vrijednosti su:
 
 ```text
 API_BASE_URL=http://localhost:5146
-CURRENT_STUDIO_ID=1
 ```
 
 Mogu se promijeniti pri pokretanju:
 
 ```bash
 flutter run \
-  --dart-define=API_BASE_URL=http://localhost:5146 \
-  --dart-define=CURRENT_STUDIO_ID=1
+  --dart-define=API_BASE_URL=http://localhost:5146
 ```
 
 Uloga odredjuje vidljive akcije, ali backend ponavlja sve sigurnosne provjere. Mobilna aplikacija ne smije biti jedino mjesto provedbe poslovnih pravila.

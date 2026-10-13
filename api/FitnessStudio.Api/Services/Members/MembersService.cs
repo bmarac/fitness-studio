@@ -52,27 +52,6 @@ public class MembersService : IMembersService
         return ServiceResult<MemberResponse>.Success(_mapper.Map<MemberResponse>(member));
     }
 
-    public async Task<ServiceResult<MemberResponse>> CreateMemberAsync(CreateMemberRequest request)
-    {
-        if (await EmailExistsAsync(request.Email))
-        {
-            return ServiceResult<MemberResponse>.Conflict(
-                "Member email already exists.",
-                "A member with this email already exists.");
-        }
-
-        var member = _mapper.Map<Member>(request);
-        member.StudioId = _currentUser.StudioId;
-        member.Status = NormalizeStatus(member.Status);
-        member.CreatedAt = DateTime.UtcNow;
-        member.UpdatedAt = DateTime.UtcNow;
-
-        _dbContext.Members.Add(member);
-        await _dbContext.SaveChangesAsync();
-
-        return ServiceResult<MemberResponse>.Success(_mapper.Map<MemberResponse>(member));
-    }
-
     public async Task<ServiceResult> UpdateMemberAsync(long id, UpdateMemberRequest request)
     {
         var member = await _dbContext.Members.FirstOrDefaultAsync(member =>

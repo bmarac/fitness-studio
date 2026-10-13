@@ -1,5 +1,5 @@
 import '../../../../core/error/result.dart';
-import '../entities/auth_session.dart';
+import '../entities/account_session.dart';
 import '../repositories/auth_repository.dart';
 
 class Login {
@@ -7,15 +7,10 @@ class Login {
 
   final AuthRepository _repository;
 
-  Future<Result<AuthSession>> call({
-    required int studioId,
+  Future<Result<AccountSession>> call({
     required String email,
     required String password,
   }) {
-    return _repository.login(
-      studioId: studioId,
-      email: email,
-      password: password,
-    );
+    return _repository.login(email: email, password: password);
   }
 }

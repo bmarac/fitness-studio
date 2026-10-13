@@ -63,6 +63,53 @@ public class BookingsControllerTests
     }
 
     [Fact]
+    public async Task GetMemberBookingsReturnsPageAndForwardsQuery()
+    {
+        var page = new MemberBookingsPageResponse
+        {
+            Items = [Booking()],
+            Page = 2,
+            PageSize = 20,
+            HasNextPage = true
+        };
+        var query = new MemberBookingsQuery
+        {
+            Filter = "completed",
+            Page = 2,
+            PageSize = 20
+        };
+        var service = new FakeBookingsService
+        {
+            GetMemberBookingsResult = ServiceResult<MemberBookingsPageResponse>.Success(page)
+        };
+        var controller = new BookingsController(service);
+
+        var action = await controller.GetMemberBookings(query);
+
+        var ok = Assert.IsType<OkObjectResult>(action.Result);
+        Assert.Same(page, ok.Value);
+        Assert.Same(query, service.LastMemberBookingsQuery);
+    }
+
+    [Fact]
+    public async Task GetMemberBookingsMapsForbidden()
+    {
+        var service = new FakeBookingsService
+        {
+            GetMemberBookingsResult = ServiceResult<MemberBookingsPageResponse>.Forbidden(
+                "Member bookings cannot be viewed.",
+                "This endpoint is available only to members.")
+        };
+        var controller = new BookingsController(service);
+
+        var action = await controller.GetMemberBookings(new MemberBookingsQuery());
+
+        SchedulingControllerTestAssertions.Problem(
+            action.Result,
+            StatusCodes.Status403Forbidden);
+    }
+
+    [Fact]
     public async Task GetBookingReturnsItemAndForwardsId()
     {
         var booking = Booking();
@@ -222,6 +269,7 @@ public class BookingsControllerTests
     private sealed class FakeBookingsService : IBookingsService
     {
         public List<BookingResponse> GetBookingsResult { get; init; } = [];
+        public ServiceResult<MemberBookingsPageResponse> GetMemberBookingsResult { get; init; } = null!;
         public ServiceResult<List<BookingResponse>> GetByClassSessionResult { get; init; } = null!;
         public ServiceResult<BookingResponse> GetBookingResult { get; init; } = null!;
         public ServiceResult<BookingResponse> CreateBookingResult { get; init; } = null!;
@@ -229,6 +277,7 @@ public class BookingsControllerTests
         public ServiceResult CancelBookingResult { get; init; } = null!;
         public int GetBookingsCalls { get; private set; }
         public long? LastClassSessionId { get; private set; }
+        public MemberBookingsQuery? LastMemberBookingsQuery { get; private set; }
         public long? LastBookingId { get; private set; }
         public CreateBookingRequest? LastCreateRequest { get; private set; }
         public long? LastUpdateBookingId { get; private set; }
@@ -239,6 +288,13 @@ public class BookingsControllerTests
         {
             GetBookingsCalls++;
             return Task.FromResult(GetBookingsResult);
+        }
+
+        public Task<ServiceResult<MemberBookingsPageResponse>> GetMemberBookingsAsync(
+            MemberBookingsQuery query)
+        {
+            LastMemberBookingsQuery = query;
+            return Task.FromResult(GetMemberBookingsResult);
         }
 
         public Task<ServiceResult<List<BookingResponse>>> GetBookingsByClassSessionIdAsync(

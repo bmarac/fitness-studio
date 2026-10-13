@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../core/l10n/localization.dart';
 import '../features/auth/presentation/screens/auth_splash_screen.dart';
 import '../features/auth/presentation/screens/login_screen.dart';
+import '../features/auth/presentation/screens/register_screen.dart';
+import '../features/auth/presentation/screens/studio_selection_screen.dart';
 import '../features/auth/presentation/state/login_controller.dart';
 import '../features/auth/presentation/state/login_state.dart';
 import '../features/bookings/presentation/screens/my_workouts_screen.dart';
@@ -12,12 +14,12 @@ import '../features/class_sessions/presentation/screens/class_session_details_sc
 import '../features/class_sessions/presentation/screens/class_sessions_screen.dart';
 import '../features/profile/presentation/screens/profile_screen.dart';
 import '../features/payments/presentation/screens/payments_screen.dart';
-import '../features/payments/presentation/screens/payment_settings_screen.dart';
 import '../features/payments/presentation/screens/notifications_screen.dart';
 import '../features/progress/presentation/screens/progress_screen.dart';
 import '../features/progress/presentation/screens/members_progress_screen.dart';
 import '../features/progress/presentation/screens/create_measurement_screen.dart';
-import '../features/recurring_schedules/presentation/screens/create_schedule_screen.dart';
+import '../features/studio_settings/presentation/screens/studio_settings_screen.dart';
+import '../features/trainers/presentation/screens/trainers_screen.dart';
 import 'app_shell.dart';
 import 'app_routes.dart';
 
@@ -42,14 +44,25 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
 
       if (authState is LoginSuccess) {
-        if (location == AppRoutes.login || location == AppRoutes.splash) {
+        if (location == AppRoutes.login ||
+            location == AppRoutes.register ||
+            location == AppRoutes.studioSelection ||
+            location == AppRoutes.splash) {
           return AppRoutes.myWorkouts;
         }
 
         return null;
       }
 
-      return location == AppRoutes.login ? null : AppRoutes.login;
+      if (authState is LoginAccountReady) {
+        return location == AppRoutes.studioSelection
+            ? null
+            : AppRoutes.studioSelection;
+      }
+
+      return location == AppRoutes.login || location == AppRoutes.register
+          ? null
+          : AppRoutes.login;
     },
     routes: [
       GoRoute(
@@ -59,6 +72,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.login,
         builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.register,
+        builder: (context, state) => const RegisterScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.studioSelection,
+        builder: (context, state) => const StudioSelectionScreen(),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
@@ -71,10 +92,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 path: AppRoutes.classSessions,
                 builder: (context, state) => const ClassSessionsScreen(),
                 routes: [
-                  GoRoute(
-                    path: AppRoutes.createSchedule,
-                    builder: (context, state) => const CreateScheduleScreen(),
-                  ),
                   GoRoute(
                     path: AppRoutes.classSessionDetails,
                     builder: (context, state) {
@@ -147,12 +164,35 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     ),
                   ),
                   GoRoute(
-                    path: AppRoutes.paymentSettings,
-                    builder: (context, state) => const PaymentSettingsScreen(),
-                  ),
-                  GoRoute(
                     path: AppRoutes.notifications,
                     builder: (context, state) => const NotificationsScreen(),
+                  ),
+                  GoRoute(
+                    path: AppRoutes.trainers,
+                    builder: (context, state) => const TrainersScreen(),
+                    routes: [
+                      GoRoute(
+                        path: AppRoutes.createTrainer,
+                        builder: (context, state) =>
+                            const CreateTrainerScreen(),
+                      ),
+                    ],
+                  ),
+                  GoRoute(
+                    path: AppRoutes.studioSettings,
+                    builder: (context, state) => const StudioSettingsScreen(),
+                  ),
+                  GoRoute(
+                    path: AppRoutes.legacyOnboarding,
+                    redirect: (context, state) => AppRoutes.trainersPath,
+                  ),
+                  GoRoute(
+                    path: AppRoutes.legacyCreateMemberOnboarding,
+                    redirect: (context, state) => AppRoutes.trainersPath,
+                  ),
+                  GoRoute(
+                    path: AppRoutes.legacyCreateTrainerOnboarding,
+                    redirect: (context, state) => AppRoutes.createTrainerPath,
                   ),
                 ],
               ),

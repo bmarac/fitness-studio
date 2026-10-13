@@ -9,7 +9,6 @@ public class MemberProfile : Profile
     public MemberProfile()
     {
         CreateMap<Member, MemberResponse>();
-        CreateMap<CreateMemberRequest, Member>();
         CreateMap<UpdateMemberRequest, Member>();
     }
 }

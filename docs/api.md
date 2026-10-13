@@ -2,23 +2,25 @@
 
 Lokalna adresa API-ja je `http://localhost:5146`. Swagger UI dostupan je u Development okruzenju na `/swagger`, a OpenAPI dokument na `/openapi/v1.json`.
 
-Svi endpointi osim prijave zahtijevaju valjani JWT zbog globalne fallback authorization policy. Podaci se ogranicavaju na studio iz JWT-a.
+Registracija i prijava su anonimne. Account endpointi traze account JWT, a svi
+poslovni endpointi studio-scoped JWT. Podaci se ogranicavaju na studio iz JWT-a.
 
 ## Endpointi
 
 | Resurs | Endpointi |
 | --- | --- |
-| Auth | `POST /api/auth/login` |
+| Auth | `POST /api/auth/register`, `POST /api/auth/login` |
+| Studiji racuna | `GET`, `lookup`, `join` i `{studioId}/select` na `/api/account/studios` |
 | Profil | `GET /api/profile` |
 | Parametri mjerenja | CRUD na `/api/measurement-parameters` |
 | Mjerenja clanova | povijest, posljednje stanje i unos na `/api/members/{memberId}/measurements` |
 | Studio | `GET/PUT /api/studios/current` |
-| Postavke | `GET /api/studio-settings`, `GET/PUT/DELETE /api/studio-settings/{setting}` |
-| Postavke placanja | `GET/PUT /api/payment-settings` |
+| Postavke studija | objedinjeni `GET/PUT /api/studio-settings/configuration`; genericki `GET /api/studio-settings` i `GET/PUT/DELETE /api/studio-settings/{setting}` |
+| Naslijedene postavke placanja | `GET/PUT /api/payment-settings` ostaje radi kompatibilnosti; mobilna aplikacija koristi objedinjenu konfiguraciju |
 | Clanarine | `GET /api/membership-payments/mine`; administratorski pregled s `view=pending|reported|overdue|paid|all`; prijava, potvrda i HUB3 barkod |
 | Obavijesti | `GET /api/notifications`, oznacavanje procitanog i registracija tokena uredjaja |
-| Clanovi | CRUD na `/api/members` |
-| Treneri | CRUD na `/api/trainers` |
+| Clanovi | `GET`, `PUT` i `DELETE` na `/api/members`; novi clan nastaje pridruzivanjem studiju |
+| Treneri | CRUD na `/api/trainers`; samo admin mijenja podatke |
 | Vrste treninga | CRUD na `/api/class-types` |
 | Paketi | CRUD na `/api/membership-plans` |
 | Clanarine | CRUD na `/api/member-memberships` |
@@ -35,7 +37,14 @@ obracuni, a odgovor vraca clanstvo, `createdObligations` i `nextBillingOn`.
 
 ### Clanovi
 
-Pregled popisa i pojedinog clana dostupan je adminu i treneru unutar istog studija. Kreiranje, izmjena i brisanje clana dostupni su samo adminu. Obican clan nema pristup `/api/members`, nego vlastite podatke dobiva preko `/api/profile`.
+Pregled popisa i pojedinog clana dostupan je adminu i treneru unutar istog studija. Novi clan nastaje iskljucivo kada se registrirani racun pridruzi studiju kodom. Izmjena i brisanje clana dostupni su samo adminu. Obican clan nema pristup `/api/members`, nego vlastite podatke dobiva preko `/api/profile`.
+
+### Treneri
+
+Prijavljeni korisnici studija mogu citati trenere. Samo admin moze unaprijed
+kreirati, mijenjati ili brisati trenerski profil. Email se normalizira i ne smije
+vec pripadati clanu ili treneru istog studija. Kada se racun s tim emailom
+pridruzi studiju kodom, povezuje se s pripremljenim profilom i dobiva ulogu trenera.
 
 ### Parametri mjerenja
 
@@ -76,6 +85,7 @@ Razdoblje iskoristenosti prati `sessionLimitPeriod` paketa: `week`, `month` ili 
 ### Ogranicenje rezervacija paketom
 
 `POST /api/bookings` zahtijeva clanstvo koje pokriva lokalni datum termina.
+
 Isto pravilo vrijedi kada admin rezervira za clana i kada se rezervacija iz
 `waitlisted` ili `cancelled` statusa prebacuje u status koji trosi paket.
 Dosegnuti limit ili nepostojece clanstvo vracaju `409 Problem Details` s posebnim
@@ -95,6 +105,10 @@ Ponavljajucim rasporedom upravlja se kroz `PATCH /api/recurring-class-schedules/
 svim rasporedima studija, a trener samo vlastitima. Pauza otkazuje buduce generirane
 termine i rezervacije uz cuvanje razloga otkazivanja; nastavak vraca samo termine i
 fiksne rezervacije otkazane pauzom. Zavrseni raspored nije moguce ponovno aktivirati.
+
+`POST /api/recurring-class-schedules` dostupan je adminu i treneru. Admin moze odabrati
+bilo kojeg trenera svojeg studija, dok trener moze kreirati raspored samo za
+`trainer_id` iz vlastitog JWT-a.
 
 ### Polaznici termina
 

@@ -6,7 +6,7 @@ Projekt koristi database-first pristup. SQL datoteke predstavljaju izvor struktu
 
 | Tablica | Svrha |
 | --- | --- |
-| `studios` | Fitness studiji i njihova vremenska zona |
+| `studios` | Fitness studiji i vremenska zona |
 | `studio_settings` | Prosirive postavke studija zapisane kao kljuc, vrijednost i tip |
 | `members` | Clanovi studija |
 | `trainers` | Treneri studija |
@@ -21,7 +21,8 @@ Projekt koristi database-first pristup. SQL datoteke predstavljaju izvor struktu
 | `app_notifications` | In-app podsjetnici clanovima i adminima |
 | `app_user_device_tokens` | Registrirani mobilni uredjaji za buduci FCM transport |
 | `app_users` | Korisnicki racuni za prijavu |
-| `app_user_roles` | Vise uloga po korisnickom racunu |
+| `app_user_studios` | Veze globalnog racuna sa studijima i profilima |
+| `app_user_studio_roles` | Uloge racuna unutar pojedinog studija |
 | `measurement_parameters` | Parametri napretka koje definira pojedini studio |
 | `member_measurements` | Jedan dogadjaj mjerenja clana |
 | `member_measurement_values` | Vrijednosti parametara unutar jednog mjerenja |
@@ -34,8 +35,9 @@ studios
   -> recurring_class_schedules -> class_sessions -> bookings
   -> membership_plans -> member_memberships
 
-app_users -> app_user_roles
-app_users -> member ili trainer profil
+app_users -> app_user_studios -> studios
+app_user_studios -> app_user_studio_roles
+app_user_studios -> member ili trainer profil
 
 measurement_parameters -> member_measurement_values
 members -> member_measurements -> member_measurement_values
@@ -59,6 +61,7 @@ Trenutno vazne postavke:
 - `class_session_generation_weeks_ahead`: broj tjedana unaprijed za generiranje termina
 - `payment_recipient_name`, `payment_iban`, `payment_model`, `payment_reference`, `payment_description`: podaci za HUB3 uplatu
 - `payment_member_reminder_days`, `payment_admin_reminder_days`, `payment_notification_time`: raspored podsjetnika
+- `join_code`: globalno jedinstven kod za povezivanje; uklanjanje iskljucuje join
 
 Servis je odgovoran za provjeru dopustenog kljuca, tipa i vrijednosti.
 

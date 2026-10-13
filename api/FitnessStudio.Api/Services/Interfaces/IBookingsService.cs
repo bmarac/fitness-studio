@@ -6,6 +6,8 @@ public interface IBookingsService
 {
     Task<List<BookingResponse>> GetBookingsAsync();
 
+    Task<ServiceResult<MemberBookingsPageResponse>> GetMemberBookingsAsync(
+        MemberBookingsQuery query);
 
     Task<ServiceResult<List<BookingResponse>>> GetBookingsByClassSessionIdAsync(
         long classSessionId);

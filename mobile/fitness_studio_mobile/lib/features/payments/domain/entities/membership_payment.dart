@@ -90,43 +90,6 @@ class MembershipPaymentSummary {
       );
 }
 
-class PaymentSettings {
-  const PaymentSettings({
-    required this.recipientName,
-    required this.iban,
-    required this.paymentModel,
-    required this.paymentReference,
-    required this.paymentDescription,
-    required this.memberReminderDays,
-    required this.adminReminderDays,
-    required this.notificationTime,
-    required this.isComplete,
-  });
-  final String recipientName;
-  final String iban;
-  final String paymentModel;
-  final String paymentReference;
-  final String paymentDescription;
-  final List<int> memberReminderDays;
-  final List<int> adminReminderDays;
-  final String notificationTime;
-  final bool isComplete;
-  factory PaymentSettings.fromJson(Map<String, dynamic> json) =>
-      PaymentSettings(
-        recipientName: json['recipientName'] as String,
-        iban: json['iban'] as String,
-        paymentModel: json['paymentModel'] as String,
-        paymentReference: json['paymentReference'] as String,
-        paymentDescription: json['paymentDescription'] as String,
-        memberReminderDays: (json['memberReminderDays'] as List<dynamic>)
-            .cast<int>(),
-        adminReminderDays: (json['adminReminderDays'] as List<dynamic>)
-            .cast<int>(),
-        notificationTime: json['notificationTime'] as String,
-        isComplete: json['isComplete'] as bool,
-      );
-}
-
 class MembershipBillingItem {
   const MembershipBillingItem({
     required this.id,

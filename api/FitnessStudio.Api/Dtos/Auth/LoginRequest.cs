@@ -4,9 +4,6 @@ namespace FitnessStudio.Api.Dtos.Auth;
 
 public class LoginRequest
 {
-    [Range(1, long.MaxValue)]
-    public long StudioId { get; set; }
-
     [Required]
     [EmailAddress]
     [StringLength(255)]
@@ -14,4 +11,5 @@ public class LoginRequest
 
     [Required]
     public string Password { get; set; } = null!;
+
 }

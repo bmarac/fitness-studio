@@ -8,8 +8,6 @@ public interface IMembersService
 
     Task<ServiceResult<MemberResponse>> GetMemberAsync(long id);
 
-    Task<ServiceResult<MemberResponse>> CreateMemberAsync(CreateMemberRequest request);
-
     Task<ServiceResult> UpdateMemberAsync(long id, UpdateMemberRequest request);
 
     Task<ServiceResult> DeleteMemberAsync(long id);

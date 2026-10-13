@@ -1,5 +1,6 @@
 import 'package:fitness_studio_mobile/app.dart';
 import 'package:fitness_studio_mobile/injection/service_locator.dart';
+import 'package:fitness_studio_mobile/features/trainers/domain/repositories/trainers_management_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -19,9 +20,16 @@ void main() {
     expect(find.text('Sign in'), findsOneWidget);
 
     final fields = tester.widgetList<TextFormField>(find.byType(TextFormField));
-    expect(
-      fields.map((field) => field.controller?.text),
-      everyElement(isEmpty),
-    );
+    expect(fields.length, 2);
+    expect(serviceLocator<TrainersManagementRepository>(), isNotNull);
+
+    await tester.enterText(find.byType(TextFormField).first, '');
+    await tester.tap(find.text('Sign in'));
+    await tester.pump();
+    expect(find.text('Enter a valid email address.'), findsOneWidget);
+
+    await tester.tap(find.text('Create account'));
+    await tester.pumpAndSettle();
+    expect(find.text('Registration'), findsOneWidget);
   });
 }

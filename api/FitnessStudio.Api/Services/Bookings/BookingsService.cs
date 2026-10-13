@@ -51,6 +51,79 @@ public class BookingsService : IBookingsService
             .ToListAsync();
     }
 
+    public async Task<ServiceResult<MemberBookingsPageResponse>> GetMemberBookingsAsync(
+        MemberBookingsQuery query)
+    {
+        if (!_currentUser.IsMemberOnly)
+        {
+            return ServiceResult<MemberBookingsPageResponse>.Forbidden(
+                "Member bookings cannot be viewed.",
+                "This endpoint is available only to members.");
+        }
+
+        var bookings = _dbContext.Bookings
+            .AsNoTracking()
+            .Where(booking =>
+                booking.StudioId == _currentUser.StudioId
+                && booking.MemberId == GetCurrentMemberId());
+
+        var ordered = FilterAndOrderMemberBookings(
+            bookings,
+            query.Filter,
+            DateTime.UtcNow);
+        var pageItems = await ordered
+            .Skip((query.Page - 1) * query.PageSize)
+            .Take(query.PageSize + 1)
+            .ProjectTo<BookingResponse>(_configurationProvider)
+            .ToListAsync();
+        var hasNextPage = pageItems.Count > query.PageSize;
+
+        if (hasNextPage)
+        {
+            pageItems.RemoveAt(pageItems.Count - 1);
+        }
+
+        return ServiceResult<MemberBookingsPageResponse>.Success(
+            new MemberBookingsPageResponse
+            {
+                Items = pageItems,
+                Page = query.Page,
+                PageSize = query.PageSize,
+                HasNextPage = hasNextPage
+            });
+    }
+
+    internal static IOrderedQueryable<Booking> FilterAndOrderMemberBookings(
+        IQueryable<Booking> bookings,
+        string filter,
+        DateTime now)
+    {
+        var filtered = filter switch
+        {
+            "active" => bookings.Where(booking =>
+                (booking.Status == BookingStatuses.Booked
+                    || booking.Status == BookingStatuses.Waitlisted)
+                && booking.ClassSession.EndsAt > now),
+            "completed" => bookings.Where(booking =>
+                booking.Status != BookingStatuses.Cancelled
+                && (booking.Status == BookingStatuses.Attended
+                    || booking.Status == BookingStatuses.NoShow
+                    || booking.ClassSession.EndsAt <= now)),
+            "cancelled" => bookings.Where(booking =>
+                booking.Status == BookingStatuses.Cancelled),
+            "all" => bookings,
+            _ => throw new ArgumentOutOfRangeException(nameof(filter), filter, null)
+        };
+
+        return filter == "active"
+            ? filtered
+                .OrderBy(booking => booking.ClassSession.StartsAt)
+                .ThenBy(booking => booking.Id)
+            : filtered
+                .OrderByDescending(booking => booking.ClassSession.StartsAt)
+                .ThenByDescending(booking => booking.Id);
+    }
+
     public async Task<ServiceResult<List<BookingResponse>>> GetBookingsByClassSessionIdAsync(
         long classSessionId)
     {

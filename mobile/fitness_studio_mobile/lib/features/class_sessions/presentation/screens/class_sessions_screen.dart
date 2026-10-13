@@ -7,9 +7,9 @@ import '../../../../core/l10n/localization.dart';
 import '../../../../core/widgets/empty_view.dart';
 import '../../../../core/widgets/error_view.dart';
 import '../../../../core/widgets/loading_view.dart';
+import '../../../../navigation/app_routes.dart';
 import '../../../auth/presentation/state/login_controller.dart';
 import '../../../auth/presentation/state/login_state.dart';
-import '../../../../navigation/app_routes.dart';
 import '../../domain/entities/class_session.dart';
 import '../state/class_sessions_controller.dart';
 import '../state/class_sessions_state.dart';
@@ -17,7 +17,9 @@ import '../widgets/class_session_card.dart';
 import '../../../recurring_schedules/presentation/widgets/recurring_schedules_sheet.dart';
 
 class ClassSessionsScreen extends ConsumerStatefulWidget {
-  const ClassSessionsScreen({super.key});
+  const ClassSessionsScreen({super.key, this.referenceDate});
+
+  final DateTime? referenceDate;
 
   @override
   ConsumerState<ClassSessionsScreen> createState() =>
@@ -25,7 +27,15 @@ class ClassSessionsScreen extends ConsumerStatefulWidget {
 }
 
 class _ClassSessionsScreenState extends ConsumerState<ClassSessionsScreen> {
-  late DateTime _weekStart = _startOfWeek(DateTime.now());
+  late final DateTime _today;
+  late DateTime _weekStart;
+
+  @override
+  void initState() {
+    super.initState();
+    _today = DateUtils.dateOnly(widget.referenceDate ?? DateTime.now());
+    _weekStart = _startOfWeek(_today);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,6 +70,7 @@ class _ClassSessionsScreenState extends ConsumerState<ClassSessionsScreen> {
                   key: ValueKey(_weekStart),
                   classSessions: classSessions,
                   weekStart: _weekStart,
+                  today: _today,
                   onPreviousWeek: () {
                     setState(() {
                       _weekStart = _weekStart.subtract(const Duration(days: 7));
@@ -81,24 +92,7 @@ class _ClassSessionsScreenState extends ConsumerState<ClassSessionsScreen> {
               .loadClassSessions(),
         ),
       },
-      floatingActionButton: canManageSchedules
-          ? FloatingActionButton(
-              tooltip: context.l10n.newClassSessionTooltip,
-              onPressed: _openCreateSchedule,
-              child: const Icon(Icons.add),
-            )
-          : null,
     );
-  }
-
-  Future<void> _openCreateSchedule() async {
-    final created = await context.push<bool>(AppRoutes.createSchedulePath);
-
-    if (created == true) {
-      await ref
-          .read(classSessionsControllerProvider.notifier)
-          .loadClassSessions();
-    }
   }
 
   Future<void> _openSchedules() async {
@@ -125,6 +119,7 @@ class _ClassSessionsByWeekdayView extends StatefulWidget {
     super.key,
     required this.classSessions,
     required this.weekStart,
+    required this.today,
     required this.onPreviousWeek,
     required this.onNextWeek,
     required this.onRefresh,
@@ -132,6 +127,7 @@ class _ClassSessionsByWeekdayView extends StatefulWidget {
 
   final List<ClassSession> classSessions;
   final DateTime weekStart;
+  final DateTime today;
   final VoidCallback onPreviousWeek;
   final VoidCallback onNextWeek;
   final Future<void> Function() onRefresh;
@@ -146,13 +142,17 @@ class _ClassSessionsByWeekdayViewState
   final _scrollController = ScrollController();
   final _scrollViewportKey = GlobalKey();
   final _dayKeys = List.generate(7, (_) => GlobalKey());
-  var _selectedDayIndex = 0;
+  late final int _initialDayIndex;
+  late int _selectedDayIndex;
   var _isScrollingToDay = false;
 
   @override
   void initState() {
     super.initState();
+    _initialDayIndex = _dayIndexInDisplayedWeek();
+    _selectedDayIndex = _initialDayIndex;
     _scrollController.addListener(_syncSelectedDayWithScrollPosition);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _jumpToInitialDay());
   }
 
   @override
@@ -195,6 +195,7 @@ class _ClassSessionsByWeekdayViewState
           weekStart: widget.weekStart,
           days: days,
           sessionsByDay: sessionsByDay,
+          today: widget.today,
           selectedDayIndex: _selectedDayIndex,
           onDaySelected: _scrollToDay,
           onPreviousWeek: widget.onPreviousWeek,
@@ -202,28 +203,77 @@ class _ClassSessionsByWeekdayViewState
         ),
         Expanded(
           key: _scrollViewportKey,
-          child: RefreshIndicator(
-            onRefresh: widget.onRefresh,
-            child: SingleChildScrollView(
-              controller: _scrollController,
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-              child: Column(
-                children: [
-                  for (var index = 0; index < days.length; index++)
-                    _DaySection(
-                      key: _dayKeys[index],
-                      title: context.formatWeekday(days[index]),
-                      date: days[index],
-                      sessions: sessionsByDay[days[index]]!,
-                    ),
-                ],
-              ),
-            ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final lastDayMinimumHeight = constraints.maxHeight > 24
+                  ? constraints.maxHeight - 24
+                  : 0.0;
+
+              return RefreshIndicator(
+                onRefresh: widget.onRefresh,
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                  child: Column(
+                    children: [
+                      for (var index = 0; index < days.length; index++)
+                        ConstrainedBox(
+                          key: ValueKey(
+                            'class-sessions-day-section-${days[index].toIso8601String()}',
+                          ),
+                          constraints: BoxConstraints(
+                            minHeight: index == days.length - 1
+                                ? lastDayMinimumHeight
+                                : 0,
+                          ),
+                          child: _DaySection(
+                            key: _dayKeys[index],
+                            title: context.formatWeekday(days[index]),
+                            date: days[index],
+                            sessions: sessionsByDay[days[index]]!,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ],
     );
+  }
+
+  int _dayIndexInDisplayedWeek() {
+    final weekEnd = widget.weekStart.add(const Duration(days: 7));
+    if (widget.today.isBefore(widget.weekStart) ||
+        !widget.today.isBefore(weekEnd)) {
+      return 0;
+    }
+
+    return widget.today.difference(widget.weekStart).inDays;
+  }
+
+  Future<void> _jumpToInitialDay() async {
+    if (!mounted || _initialDayIndex == 0) {
+      return;
+    }
+
+    final dayContext = _dayKeys[_initialDayIndex].currentContext;
+    if (dayContext == null) {
+      return;
+    }
+
+    _isScrollingToDay = true;
+    await Scrollable.ensureVisible(dayContext, alignment: 0);
+
+    if (!mounted) {
+      return;
+    }
+
+    _isScrollingToDay = false;
+    _syncSelectedDayWithScrollPosition();
   }
 
   void _syncSelectedDayWithScrollPosition() {
@@ -304,6 +354,7 @@ class _WeekHeader extends StatelessWidget {
     required this.weekStart,
     required this.days,
     required this.sessionsByDay,
+    required this.today,
     required this.selectedDayIndex,
     required this.onDaySelected,
     required this.onPreviousWeek,
@@ -313,6 +364,7 @@ class _WeekHeader extends StatelessWidget {
   final DateTime weekStart;
   final List<DateTime> days;
   final Map<DateTime, List<ClassSession>> sessionsByDay;
+  final DateTime today;
   final int selectedDayIndex;
   final ValueChanged<int> onDaySelected;
   final VoidCallback onPreviousWeek;
@@ -360,6 +412,7 @@ class _WeekHeader extends StatelessWidget {
                     child: _DaySummary(
                       label: context.formatWeekday(days[index], short: true),
                       date: days[index],
+                      today: today,
                       count: sessionsByDay[days[index]]!.length,
                       isSelected: index == selectedDayIndex,
                       onTap: () => onDaySelected(index),
@@ -378,6 +431,7 @@ class _DaySummary extends StatelessWidget {
   const _DaySummary({
     required this.label,
     required this.date,
+    required this.today,
     required this.count,
     required this.isSelected,
     required this.onTap,
@@ -385,6 +439,7 @@ class _DaySummary extends StatelessWidget {
 
   final String label;
   final DateTime date;
+  final DateTime today;
   final int count;
   final bool isSelected;
   final VoidCallback onTap;
@@ -392,13 +447,15 @@ class _DaySummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final now = DateTime.now();
     final isToday =
-        date.year == now.year && date.month == now.month && date.day == now.day;
+        date.year == today.year &&
+        date.month == today.month &&
+        date.day == today.day;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 2),
       child: Semantics(
+        key: ValueKey('class-sessions-day-summary-${date.toIso8601String()}'),
         selected: isSelected,
         button: true,
         label: context.l10n.daySessionsSemantics(

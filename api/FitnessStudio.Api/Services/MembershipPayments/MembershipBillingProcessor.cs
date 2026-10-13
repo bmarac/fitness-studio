@@ -37,14 +37,14 @@ public class MembershipBillingProcessor : IMembershipBillingProcessor
     private async Task CreateNotificationsAsync(long studioId, DateOnly today, TimeSpan localTime, Dtos.Payments.PaymentSettingsResponse settings, CancellationToken ct)
     {
         if (localTime < settings.NotificationTime.ToTimeSpan()) return;
-        var obligations = await _db.MembershipPaymentObligations.Include(x => x.MemberMembership).ThenInclude(x => x.Member).ThenInclude(x => x.AppUser)
+        var obligations = await _db.MembershipPaymentObligations.Include(x => x.MemberMembership).ThenInclude(x => x.Member).ThenInclude(x => x.AppUserStudio).ThenInclude(x => x!.AppUser)
             .Where(x => x.StudioId == studioId && x.Status != "paid" && x.DueOn <= today).ToListAsync(ct);
-        var admins = await _db.AppUserRoles.Where(x => x.Role == "admin" && x.AppUser.StudioId == studioId && x.AppUser.Status == "active").Select(x => x.AppUserId).ToListAsync(ct);
+        var admins = await _db.AppUserRoles.Where(x => x.Role == "admin" && x.AppUserStudio.StudioId == studioId && x.AppUserStudio.Status == "active").Select(x => x.AppUserStudio.AppUserId).ToListAsync(ct);
         foreach (var payment in obligations)
         {
             var offset = today.DayNumber - payment.DueOn.DayNumber;
-            if (payment.Status == "pending" && settings.MemberReminderDays.Contains(offset) && payment.MemberMembership.Member.AppUser is { } user)
-                AddNotification(user.Id, payment, "member_payment_reminder", offset, "Članarina čeka uplatu", $"Iznos {payment.AmountDue:0.00} EUR dospio je {payment.DueOn:dd.MM.yyyy}.");
+            if (payment.Status == "pending" && settings.MemberReminderDays.Contains(offset) && payment.MemberMembership.Member.AppUserStudio is { } membership)
+                AddNotification(membership.AppUserId, payment, "member_payment_reminder", offset, "Članarina čeka uplatu", $"Iznos {payment.AmountDue:0.00} EUR dospio je {payment.DueOn:dd.MM.yyyy}.");
             if (settings.AdminReminderDays.Contains(offset))
                 foreach (var adminId in admins) AddNotification(adminId, payment, "admin_payment_reminder", offset, "Nepotvrđena članarina", $"{payment.MemberMembership.Member.FirstName} {payment.MemberMembership.Member.LastName}: {payment.AmountDue:0.00} EUR.");
         }

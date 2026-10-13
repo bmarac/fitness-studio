@@ -14,6 +14,8 @@ public partial class FitnessStudioDbContext : DbContext
 
     public virtual DbSet<AppUser> AppUsers { get; set; }
 
+    public virtual DbSet<AppUserStudio> AppUserStudios { get; set; }
+
     public virtual DbSet<AppUserRole> AppUserRoles { get; set; }
 
     public virtual DbSet<AppNotification> AppNotifications { get; set; }
@@ -52,6 +54,27 @@ public partial class FitnessStudioDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<AppUserStudio>(entity =>
+        {
+            entity.ToTable("app_user_studios");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.AppUserId, e.StudioId }).IsUnique();
+            entity.HasIndex(e => e.MemberId).IsUnique().HasFilter("member_id IS NOT NULL");
+            entity.HasIndex(e => e.TrainerId).IsUnique().HasFilter("trainer_id IS NOT NULL");
+            entity.Property(e => e.Id).UseIdentityAlwaysColumn().HasColumnName("id");
+            entity.Property(e => e.AppUserId).HasColumnName("app_user_id");
+            entity.Property(e => e.StudioId).HasColumnName("studio_id");
+            entity.Property(e => e.MemberId).HasColumnName("member_id");
+            entity.Property(e => e.TrainerId).HasColumnName("trainer_id");
+            entity.Property(e => e.Status).HasMaxLength(30).HasDefaultValue("active").HasColumnName("status");
+            entity.Property(e => e.JoinedAt).HasDefaultValueSql("now()").HasColumnName("joined_at");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("now()").HasColumnName("updated_at");
+            entity.HasOne(e => e.AppUser).WithMany(e => e.StudioMemberships).HasForeignKey(e => e.AppUserId);
+            entity.HasOne(e => e.Studio).WithMany(e => e.AppUserStudios).HasForeignKey(e => e.StudioId);
+            entity.HasOne(e => e.Member).WithOne(e => e.AppUserStudio).HasForeignKey<AppUserStudio>(e => e.MemberId);
+            entity.HasOne(e => e.Trainer).WithOne(e => e.AppUserStudio).HasForeignKey<AppUserStudio>(e => e.TrainerId);
+        });
+
         modelBuilder.Entity<AppNotification>(entity =>
         {
             entity.ToTable("app_notifications");
@@ -92,17 +115,8 @@ public partial class FitnessStudioDbContext : DbContext
 
             entity.ToTable("app_users");
 
-            entity.HasIndex(e => e.MemberId, "app_users_member_id_unique")
-                .IsUnique()
-                .HasFilter("(member_id IS NOT NULL)");
-
-            entity.HasIndex(e => new { e.StudioId, e.Email }, "app_users_studio_email_unique").IsUnique();
-
-            entity.HasIndex(e => new { e.StudioId, e.Status }, "app_users_studio_status_idx");
-
-            entity.HasIndex(e => e.TrainerId, "app_users_trainer_id_unique")
-                .IsUnique()
-                .HasFilter("(trainer_id IS NOT NULL)");
+            entity.HasIndex(e => e.Email, "app_users_email_unique").IsUnique();
+            entity.HasIndex(e => e.Status, "app_users_status_idx");
 
             entity.Property(e => e.Id)
                 .UseIdentityAlwaysColumn()
@@ -114,41 +128,25 @@ public partial class FitnessStudioDbContext : DbContext
                 .HasMaxLength(255)
                 .HasColumnName("email");
             entity.Property(e => e.LastLoginAt).HasColumnName("last_login_at");
-            entity.Property(e => e.MemberId).HasColumnName("member_id");
             entity.Property(e => e.PasswordHash).HasColumnName("password_hash");
             entity.Property(e => e.Status)
                 .HasMaxLength(30)
                 .HasDefaultValueSql("'active'::character varying")
                 .HasColumnName("status");
-            entity.Property(e => e.StudioId).HasColumnName("studio_id");
-            entity.Property(e => e.TrainerId).HasColumnName("trainer_id");
             entity.Property(e => e.UpdatedAt)
                 .HasDefaultValueSql("now()")
                 .HasColumnName("updated_at");
-
-            entity.HasOne(d => d.Member).WithOne(p => p.AppUser)
-                .HasForeignKey<AppUser>(d => d.MemberId)
-                .HasConstraintName("app_users_member_id_fkey");
-
-            entity.HasOne(d => d.Studio).WithMany(p => p.AppUsers)
-                .HasForeignKey(d => d.StudioId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("app_users_studio_id_fkey");
-
-            entity.HasOne(d => d.Trainer).WithOne(p => p.AppUser)
-                .HasForeignKey<AppUser>(d => d.TrainerId)
-                .HasConstraintName("app_users_trainer_id_fkey");
         });
 
         modelBuilder.Entity<AppUserRole>(entity =>
         {
-            entity.HasKey(e => new { e.AppUserId, e.Role }).HasName("app_user_roles_pkey");
+            entity.HasKey(e => new { e.AppUserStudioId, e.Role }).HasName("app_user_studio_roles_pkey");
 
-            entity.ToTable("app_user_roles");
+            entity.ToTable("app_user_studio_roles");
 
-            entity.HasIndex(e => e.Role, "app_user_roles_role_idx");
+            entity.HasIndex(e => e.Role, "app_user_studio_roles_role_idx");
 
-            entity.Property(e => e.AppUserId).HasColumnName("app_user_id");
+            entity.Property(e => e.AppUserStudioId).HasColumnName("app_user_studio_id");
             entity.Property(e => e.Role)
                 .HasMaxLength(30)
                 .HasColumnName("role");
@@ -156,9 +154,9 @@ public partial class FitnessStudioDbContext : DbContext
                 .HasDefaultValueSql("now()")
                 .HasColumnName("created_at");
 
-            entity.HasOne(d => d.AppUser).WithMany(p => p.AppUserRoles)
-                .HasForeignKey(d => d.AppUserId)
-                .HasConstraintName("app_user_roles_app_user_id_fkey");
+            entity.HasOne(d => d.AppUserStudio).WithMany(p => p.Roles)
+                .HasForeignKey(d => d.AppUserStudioId)
+                .HasConstraintName("app_user_studio_roles_app_user_studio_id_fkey");
         });
 
         modelBuilder.Entity<Booking>(entity =>

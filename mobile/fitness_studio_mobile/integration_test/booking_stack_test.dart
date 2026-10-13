@@ -32,7 +32,7 @@ void main() {
           Platform.environment['FITNESS_STUDIO_TEST_PASSWORD'] ?? 'Fitness123!';
       final tokenProvider = _MutableAccessTokenProvider();
       final apiClient = ApiClient(
-        config: AppConfig(apiBaseUrl: apiBaseUrl, currentStudioId: 1),
+        config: AppConfig(apiBaseUrl: apiBaseUrl),
         accessTokenProvider: tokenProvider,
       );
 
@@ -158,11 +158,9 @@ Future<AuthSession> _login(
   required String password,
 }) async {
   try {
-    return await dataSource.login(
-      studioId: 1,
-      email: email,
-      password: password,
-    );
+    final account = await dataSource.login(email: email, password: password);
+    final studio = account.studios.singleWhere((item) => item.studioId == 1);
+    return await dataSource.selectStudio(studio.studioId);
   } on ApiException catch (error) {
     throw TestFailure(
       'Could not log in as $email through $apiBaseUrl: ${error.message}',

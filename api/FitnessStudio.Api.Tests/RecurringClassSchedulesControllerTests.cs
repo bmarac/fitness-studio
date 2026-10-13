@@ -228,7 +228,7 @@ public class RecurringClassSchedulesControllerTests
         SchedulingControllerTestAssertions.MethodRequiresRole(
             type,
             nameof(RecurringClassSchedulesController.CreateSchedule),
-            AuthRoles.Admin);
+            AuthRoles.Staff);
         SchedulingControllerTestAssertions.MethodRequiresRole(
             type,
             nameof(RecurringClassSchedulesController.UpdateSchedule),

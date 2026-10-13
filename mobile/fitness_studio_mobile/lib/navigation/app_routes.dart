@@ -4,12 +4,14 @@ class AppRoutes {
   static const splash = '/splash';
 
   static const login = '/login';
+  static const register = '/registracija';
+  static const registerPath = register;
+  static const studioSelection = '/odabir-studija';
+  static const studioSelectionPath = studioSelection;
 
   static const classSessions = '/termini';
 
   static const classSessionDetails = 'termin/:id';
-
-  static const createSchedule = 'novi-termin';
 
   static const myWorkouts = '/moji-treninzi';
 
@@ -26,11 +28,18 @@ class AppRoutes {
   static const createMeasurement = 'clanovi/:memberId/novo-mjerenje';
 
   static const payments = 'clanarine';
-  static const paymentSettings = 'postavke-placanja';
   static const notifications = 'obavijesti';
+  static const trainers = 'treneri';
+  static const legacyOnboarding = 'onboarding';
+  static const studioSettings = 'postavke-studija';
+  static const createTrainer = 'novi-trener';
+  static const legacyCreateMemberOnboarding = 'onboarding/novi-clan';
+  static const legacyCreateTrainerOnboarding = 'onboarding/novi-trener';
   static const paymentsPath = '$profile/clanarine';
-  static const paymentSettingsPath = '$profile/postavke-placanja';
   static const notificationsPath = '$profile/obavijesti';
+  static const trainersPath = '$profile/treneri';
+  static const studioSettingsPath = '$profile/postavke-studija';
+  static const createTrainerPath = '$profile/treneri/novi-trener';
 
   static const membersProgressPath = '$profile/clanovi';
 
@@ -45,6 +54,4 @@ class AppRoutes {
   static String classSessionDetailsPath(int id) {
     return '$classSessions/termin/$id';
   }
-
-  static const createSchedulePath = '$classSessions/novi-termin';
 }

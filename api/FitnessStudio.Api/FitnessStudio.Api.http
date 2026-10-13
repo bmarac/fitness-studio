@@ -94,20 +94,6 @@ Accept: application/json
 
 ###
 
-POST {{FitnessStudio.Api_HostAddress}}/api/members
-Content-Type: application/json
-
-{
-  "firstName": "Ana",
-  "lastName": "Horvat",
-  "email": "ana.horvat@example.com",
-  "phone": "+385 91 123 4567",
-  "dateOfBirth": "1992-04-15",
-  "status": "active"
-}
-
-###
-
 PUT {{FitnessStudio.Api_HostAddress}}/api/members/1
 Content-Type: application/json
 

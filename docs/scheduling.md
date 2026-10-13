@@ -37,10 +37,13 @@ Admin moze otkazati svaki termin svojeg studija. Trener moze otkazati samo vlast
 
 ## Mobilni tijek
 
-Tab **Termini** prikazuje tjedni raspored. Trener i admin vide gumb za novi ponavljajuci
-termin te akciju **Rasporedi**, koja otvara upravljanje aktivnim, pauziranim i zavrsenim
-rasporedima. Detalji konkretnog termina nude odvojene akcije za otkazivanje samo te
-izvedbe te za pauzu ili zavrsetak cijelog ponavljajuceg rasporeda.
+Tab **Termini** prikazuje tjedni pregled konkretnih izvedbi. Trener i admin kroz akciju
+**Upravljaj rasporedima** otvaraju donji panel za kreiranje te upravljanje aktivnim,
+pauziranim i zavrsenim ponavljajucim rasporedima. Detalji konkretnog termina nude samo
+otkazivanje te izvedbe; akcije koje utjecu na cijelu seriju dostupne su u panelu rasporeda.
+
+Admin pri kreiranju rasporeda moze odabrati bilo kojeg trenera svojeg studija. Trener
+moze kreirati raspored samo za sebe, a API tu vezu provjerava prema `trainer_id` claimu.
 
 ## Planirano
 

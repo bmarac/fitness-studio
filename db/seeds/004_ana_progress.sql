@@ -34,8 +34,7 @@ inserted_measurements AS (
     ON members.email = 'ana.horvat@stayfitjoyful.demo'
     AND members.studio_id = (SELECT id FROM studios WHERE name = 'Stay Fit & Joyful')
   LEFT JOIN app_users
-    ON app_users.studio_id = members.studio_id
-    AND app_users.email = 'filip.saric@stayfitjoyful.demo'
+    ON app_users.email = 'filip.saric@stayfitjoyful.demo'
   RETURNING id, measured_at
 ),
 measurement_numbered AS (

@@ -1,6 +1,9 @@
 using FitnessStudio.Api.Domain.Bookings;
 using FitnessStudio.Api.Domain.ClassSessions;
+using FitnessStudio.Api.Domain.Auth;
 using FitnessStudio.Api.Entities;
+using FitnessStudio.Api.Services;
+using FitnessStudio.Api.Services.Interfaces;
 using FitnessStudio.Api.Services.RecurringClassSchedules;
 using Xunit;
 
@@ -8,6 +11,27 @@ namespace FitnessStudio.Api.Tests;
 
 public class RecurringScheduleLifecycleTests
 {
+    [Fact]
+    public void CreationAllowsAdminAndAssignedTrainerButRejectsOtherUsers()
+    {
+        Assert.Null(RecurringClassSchedulesService.AuthorizeScheduleCreation(
+            new UserContext(AuthRoles.Admin),
+            8));
+        Assert.Null(RecurringClassSchedulesService.AuthorizeScheduleCreation(
+            new UserContext(AuthRoles.Trainer, trainerId: 8),
+            8));
+
+        var otherTrainer = RecurringClassSchedulesService.AuthorizeScheduleCreation(
+            new UserContext(AuthRoles.Trainer, trainerId: 7),
+            8);
+        var member = RecurringClassSchedulesService.AuthorizeScheduleCreation(
+            new UserContext(AuthRoles.Member),
+            8);
+
+        Assert.Equal(ServiceResultStatus.Forbidden, otherTrainer?.Status);
+        Assert.Equal(ServiceResultStatus.Forbidden, member?.Status);
+    }
+
     [Fact]
     public void PauseMarksOnlyActiveBookingsAndIdentifiesRestorableFixedBooking()
     {
@@ -87,5 +111,17 @@ public class RecurringScheduleLifecycleTests
             StartsOn = new DateOnly(2026, 1, 1),
             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
         };
+    }
+
+    private sealed class UserContext(string role, long? trainerId = null) : ICurrentUserContext
+    {
+        public long UserId => 10;
+        public string Email => "user@example.com";
+        public long StudioId => 1;
+        public long? MemberId => null;
+        public long? TrainerId => trainerId;
+        public IReadOnlySet<string> Roles { get; } = new HashSet<string> { role };
+        public bool IsMemberOnly => role == AuthRoles.Member;
+        public bool IsInRole(string expectedRole) => Roles.Contains(expectedRole);
     }
 }

@@ -13,15 +13,16 @@ import '../../domain/entities/schedule_form_data.dart';
 import '../state/create_schedule_controller.dart';
 import '../state/create_schedule_state.dart';
 
-class CreateScheduleScreen extends ConsumerStatefulWidget {
-  const CreateScheduleScreen({super.key});
+class CreateScheduleForm extends ConsumerStatefulWidget {
+  const CreateScheduleForm({super.key, required this.onCreated});
+
+  final Future<void> Function() onCreated;
 
   @override
-  ConsumerState<CreateScheduleScreen> createState() =>
-      _CreateScheduleScreenState();
+  ConsumerState<CreateScheduleForm> createState() => _CreateScheduleFormState();
 }
 
-class _CreateScheduleScreenState extends ConsumerState<CreateScheduleScreen> {
+class _CreateScheduleFormState extends ConsumerState<CreateScheduleForm> {
   final _formKey = GlobalKey<FormState>();
   final _durationController = TextEditingController();
   final _capacityController = TextEditingController();
@@ -44,11 +45,7 @@ class _CreateScheduleScreenState extends ConsumerState<CreateScheduleScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(createScheduleControllerProvider);
 
-    ref.listen(createScheduleControllerProvider, (previous, next) {
-      if (next is CreateScheduleSuccess) {
-        Navigator.of(context).pop(true);
-      }
-
+    ref.listen(createScheduleControllerProvider, (previous, next) async {
       if (next case CreateScheduleReady(
         failure: final failure?,
       ) when previous is! CreateScheduleReady || previous.failure != failure) {
@@ -56,30 +53,30 @@ class _CreateScheduleScreenState extends ConsumerState<CreateScheduleScreen> {
           context,
         ).showSnackBar(SnackBar(content: Text(failure.localized(context))));
       }
+
+      if (next is CreateScheduleSuccess && previous is! CreateScheduleSuccess) {
+        await widget.onCreated();
+      }
     });
 
     if (state case CreateScheduleReady(formData: final formData)) {
       _initialize(formData);
     }
 
-    return Scaffold(
-      appBar: AppBar(title: Text(context.l10n.newScheduleTitle)),
-      body: switch (state) {
-        CreateScheduleLoading() => const LoadingView(),
-        CreateScheduleLoadError(failure: final failure) => ErrorView(
-          message: failure.localized(context),
-          onRetry: () => ref
-              .read(createScheduleControllerProvider.notifier)
-              .loadFormData(),
-        ),
-        CreateScheduleReady(
-          formData: final formData,
-          isSubmitting: final isSubmitting,
-        ) =>
-          _buildForm(formData, isSubmitting),
-        CreateScheduleSuccess() => const LoadingView(),
-      },
-    );
+    return switch (state) {
+      CreateScheduleLoading() => const LoadingView(),
+      CreateScheduleLoadError(failure: final failure) => ErrorView(
+        message: failure.localized(context),
+        onRetry: () =>
+            ref.read(createScheduleControllerProvider.notifier).loadFormData(),
+      ),
+      CreateScheduleReady(
+        formData: final formData,
+        isSubmitting: final isSubmitting,
+      ) =>
+        _buildForm(formData, isSubmitting),
+      CreateScheduleSuccess() => const LoadingView(),
+    };
   }
 
   Widget _buildForm(ScheduleFormData formData, bool isSubmitting) {
@@ -87,9 +84,15 @@ class _CreateScheduleScreenState extends ConsumerState<CreateScheduleScreen> {
       return Center(child: Text(context.l10n.missingClassTypesOrTrainers));
     }
 
+    final authState = ref.read(loginControllerProvider);
+    final user = authState is LoginSuccess ? authState.session.user : null;
+    final trainerOwnSchedule =
+        user?.hasRole('trainer') == true && user?.hasRole('admin') != true;
+
     return SafeArea(
+      top: false,
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 560),
@@ -98,6 +101,11 @@ class _CreateScheduleScreenState extends ConsumerState<CreateScheduleScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  Text(
+                    context.l10n.recurringScheduleDescription,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 20),
                   DropdownButtonFormField<int>(
                     initialValue: _classTypeId,
                     decoration: InputDecoration(
@@ -141,7 +149,7 @@ class _CreateScheduleScreenState extends ConsumerState<CreateScheduleScreen> {
                           ),
                         )
                         .toList(),
-                    onChanged: isSubmitting
+                    onChanged: isSubmitting || trainerOwnSchedule
                         ? null
                         : (value) => setState(() => _trainerId = value),
                   ),
@@ -246,11 +254,16 @@ class _CreateScheduleScreenState extends ConsumerState<CreateScheduleScreen> {
     final currentTrainerId = authState is LoginSuccess
         ? authState.session.user.trainerId
         : null;
+    final isTrainerOnly =
+        authState is LoginSuccess &&
+        authState.session.user.hasRole('trainer') &&
+        !authState.session.user.hasRole('admin');
     final classType = formData.classTypes.first;
 
     _classTypeId = classType.id;
-    _trainerId =
-        formData.trainers.any((trainer) => trainer.id == currentTrainerId)
+    _trainerId = isTrainerOnly
+        ? currentTrainerId
+        : formData.trainers.any((trainer) => trainer.id == currentTrainerId)
         ? currentTrainerId
         : formData.trainers.first.id;
     _applyClassTypeDefaults(classType);

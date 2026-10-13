@@ -79,7 +79,11 @@ expect_status() {
 
 login() {
   email="$1"
-  request POST /api/auth/login "" "{\"studioId\":1,\"email\":\"$email\",\"password\":\"Fitness123!\"}"
+  request POST /api/auth/login "" "{\"email\":\"$email\",\"password\":\"Fitness123!\"}"
+  expect_status 200
+  account_token=$(printf '%s' "$response_body" | jq -er '.accessToken')
+  studio_id=$(printf '%s' "$response_body" | jq -er '.studios[0].studioId')
+  request POST "/api/account/studios/$studio_id/select" "$account_token"
   expect_status 200
   printf '%s' "$response_body" | jq -er '.accessToken'
 }
@@ -112,7 +116,7 @@ until docker exec "$container_name" psql \
   --dbname "$postgres_database" \
   --tuples-only \
   --no-align \
-  --command "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'member_memberships' AND column_name = 'billing_starts_on';" \
+  --command "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'app_user_studios';" \
   2>/dev/null | grep -qx '1'; do
   attempt=$((attempt + 1))
   if [ "$attempt" -ge 60 ]; then
@@ -130,11 +134,56 @@ seed_count=$(docker exec "$container_name" psql \
   --command "SELECT COUNT(*) FROM members WHERE studio_id = 1;")
 [ "$seed_count" = "8" ] || fail "expected 8 seeded members, found $seed_count"
 
+echo "Verifying migration of existing multi-studio accounts..."
+docker exec "$container_name" createdb \
+  --username fitness fitness_studio_migration_verify
+docker exec "$container_name" psql \
+  --set ON_ERROR_STOP=1 \
+  --username fitness \
+  --dbname fitness_studio_migration_verify \
+  --file /fitness-studio-db/schema/001_initial_schema.sql >/dev/null
+for migration in \
+  002_multi_studio_scheduling.sql \
+  003_authentication.sql \
+  004_studio_scoped_unique_constraints.sql \
+  005_membership_plan_pricing.sql \
+  006_multi_role_users.sql \
+  007_remove_rooms.sql \
+  008_member_measurements.sql \
+  009_membership_billing.sql \
+  010_recurring_schedule_lifecycle.sql \
+  011_membership_billing_start.sql; do
+  docker exec "$container_name" psql \
+    --set ON_ERROR_STOP=1 \
+    --username fitness \
+    --dbname fitness_studio_migration_verify \
+    --file "/fitness-studio-db/migrations/$migration" >/dev/null
+done
+docker exec "$container_name" psql \
+  --set ON_ERROR_STOP=1 \
+  --username fitness \
+  --dbname fitness_studio_migration_verify \
+  --command "INSERT INTO studios (name, timezone, status) VALUES ('Second studio', 'Europe/Zagreb', 'active'); INSERT INTO app_users (studio_id, email, password_hash, status) VALUES (1, 'shared@example.test', 'first-hash', 'active'), (2, 'SHARED@example.test', 'second-hash', 'active'); INSERT INTO app_user_roles (app_user_id, role) SELECT id, CASE studio_id WHEN 1 THEN 'member' ELSE 'admin' END FROM app_users;" \
+  >/dev/null
+docker exec "$container_name" psql \
+  --set ON_ERROR_STOP=1 \
+  --username fitness \
+  --dbname fitness_studio_migration_verify \
+  --file /fitness-studio-db/migrations/012_global_accounts.sql >/dev/null
+migrated_accounts=$(docker exec "$container_name" psql \
+  --username fitness \
+  --dbname fitness_studio_migration_verify \
+  --tuples-only \
+  --no-align \
+  --command "SELECT COUNT(*) || ':' || (SELECT COUNT(*) FROM app_user_studios) || ':' || (SELECT COUNT(*) FROM app_user_studio_roles) FROM app_users WHERE email = 'shared@example.test';")
+[ "$migrated_accounts" = "1:2:2" ] \
+  || fail "global account migration did not preserve both studio memberships and roles: $migrated_accounts"
+
 docker exec "$container_name" psql \
   --set ON_ERROR_STOP=1 \
   --username fitness \
   --dbname "$postgres_database" \
-  --command "INSERT INTO studios (name, timezone, status) VALUES ('Isolation verification', 'Europe/Zagreb', 'active'); INSERT INTO members (studio_id, first_name, last_name, email, status) SELECT id, 'Other', 'Studio', 'other.studio@example.test', 'active' FROM studios WHERE name = 'Isolation verification';" \
+  --command "INSERT INTO studios (name, timezone, status) VALUES ('Isolation verification', 'Europe/Zagreb', 'active'); INSERT INTO studio_settings (studio_id, setting, value, value_type) SELECT id, 'join_code', 'ISOLATION', 'string' FROM studios WHERE name = 'Isolation verification'; INSERT INTO members (studio_id, first_name, last_name, email, status) SELECT id, 'Other', 'Studio', 'other.studio@example.test', 'active' FROM studios WHERE name = 'Isolation verification';" \
   >/dev/null
 
 postgres_port=$(docker port "$container_name" 5432/tcp | sed -n '1s/.*://p')
@@ -174,7 +223,7 @@ until curl \
   --silent \
   --fail \
   --header 'Content-Type: application/json' \
-  --data '{"studioId":1,"email":"ana.horvat@stayfitjoyful.demo","password":"Fitness123!"}' \
+  --data '{"email":"ana.horvat@stayfitjoyful.demo","password":"Fitness123!"}' \
   "$api_base_url/api/auth/login" >/dev/null 2>&1; do
   attempt=$((attempt + 1))
   if [ "$attempt" -ge 60 ] || ! kill -0 "$api_pid" 2>/dev/null; then
@@ -228,6 +277,49 @@ request PATCH "/api/recurring-class-schedules/$schedule_id/pause" "$filip_token"
 expect_status 204
 request PATCH "/api/recurring-class-schedules/$schedule_id/resume" "$filip_token" "{\"effectiveFrom\":\"$today\"}"
 expect_status 204
+
+echo "Verifying registration, code join, admin notification and studio selection..."
+request GET /api/membership-plans "$filip_token"
+expect_status 200
+pilot_plan_id=$(printf '%s' "$response_body" | jq -er '.[0].id')
+request POST /api/auth/register "" '{"email":"pilot.member@example.test","password":"PilotPass123!"}'
+expect_status 201
+pilot_account_token=$(printf '%s' "$response_body" | jq -er '.accessToken')
+[ "$(printf '%s' "$response_body" | jq -r '.studios | length')" = "0" ] \
+  || fail "new account unexpectedly belongs to a studio"
+
+request POST /api/account/studios/lookup "$pilot_account_token" '{"code":"stayfit"}'
+expect_status 200
+[ "$(printf '%s' "$response_body" | jq -r '.requiresProfileDetails')" = "true" ] \
+  || fail "new account did not request profile details"
+
+request POST /api/account/studios/join "$pilot_account_token" \
+  '{"code":"STAYFIT","firstName":"Pilot","lastName":"Member"}'
+expect_status 200
+pilot_studio_id=$(printf '%s' "$response_body" | jq -er '.studioId')
+pilot_member_id=$(printf '%s' "$response_body" | jq -er '.memberId')
+request POST /api/account/studios/join "$pilot_account_token" '{"code":"STAYFIT"}'
+expect_status 200
+request GET /api/notifications "$filip_token"
+expect_status 200
+printf '%s' "$response_body" | jq -e 'any(.[]; .type == "member_joined")' >/dev/null \
+  || fail "admin did not receive member_joined notification"
+request POST "/api/account/studios/$pilot_studio_id/select" "$pilot_account_token"
+expect_status 200
+pilot_token=$(printf '%s' "$response_body" | jq -er '.accessToken')
+request GET /api/profile "$pilot_token"
+expect_status 200
+request POST /api/member-memberships "$filip_token" \
+  "{\"memberId\":$pilot_member_id,\"membershipPlanId\":$pilot_plan_id,\"startsOn\":\"$today\"}"
+expect_status 201
+request GET /api/class-sessions "$pilot_token"
+expect_status 200
+now_utc=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+pilot_session_id=$(printf '%s' "$response_body" | jq -er \
+  --arg now "$now_utc" \
+  '[.[] | select(.status == "scheduled" and .bookedCount < .capacity and .startsAt > $now)][0].id')
+request POST /api/bookings "$pilot_token" "{\"memberId\":$pilot_member_id,\"classSessionId\":$pilot_session_id}"
+expect_status 201
 
 echo "Verifying booking cancellation and membership limit..."
 request GET /api/profile "$ana_token"

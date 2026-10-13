@@ -1,7 +1,8 @@
 BEGIN;
 
 TRUNCATE TABLE
-  app_user_roles,
+  app_user_studio_roles,
+  app_user_studios,
   app_users,
   bookings,
   member_fixed_schedules,
@@ -23,6 +24,7 @@ INSERT INTO studio_settings (studio_id, setting, value, value_type)
 SELECT id, setting, value, value_type
 FROM studios
 CROSS JOIN (VALUES
+  ('join_code', 'STAYFIT', 'string'),
   ('booking_mode', 'fixed_schedule', 'enum'),
   ('allow_makeups', 'true', 'boolean'),
   ('class_session_generation_weeks_ahead', '4', 'integer')

@@ -12,10 +12,7 @@ void main() {
     final adapter = _CapturingAdapter();
     dio.httpClientAdapter = adapter;
     final client = ApiClient(
-      config: const AppConfig(
-        apiBaseUrl: 'http://example.test',
-        currentStudioId: 1,
-      ),
+      config: const AppConfig(apiBaseUrl: 'http://example.test'),
       accessTokenProvider: const _FakeAccessTokenProvider('token-value'),
       dio: dio,
     );

@@ -75,18 +75,15 @@ public static class DevelopmentAuthSeeder
         }
 
         var user = await dbContext.AppUsers
-            .Include(existingUser => existingUser.AppUserRoles)
-            .FirstOrDefaultAsync(existingUser =>
-                existingUser.StudioId == account.StudioId && existingUser.Email == email);
+            .Include(existingUser => existingUser.StudioMemberships)
+            .ThenInclude(membership => membership.Roles)
+            .FirstOrDefaultAsync(existingUser => existingUser.Email == email);
         var now = DateTime.UtcNow;
 
         if (user is null)
         {
             user = new AppUser
             {
-                StudioId = account.StudioId,
-                MemberId = memberId,
-                TrainerId = trainerId,
                 Email = email,
                 Status = AuthStatuses.Active,
                 CreatedAt = now,
@@ -96,9 +93,24 @@ public static class DevelopmentAuthSeeder
             dbContext.AppUsers.Add(user);
         }
 
-        foreach (var role in roles.Except(user.AppUserRoles.Select(userRole => userRole.Role)))
+        var membership = user.StudioMemberships.FirstOrDefault(item => item.StudioId == account.StudioId);
+        if (membership is null)
         {
-            user.AppUserRoles.Add(new AppUserRole { Role = role, CreatedAt = now });
+            membership = new AppUserStudio
+            {
+                StudioId = account.StudioId,
+                MemberId = memberId,
+                TrainerId = trainerId,
+                Status = AuthStatuses.Active,
+                JoinedAt = now,
+                UpdatedAt = now
+            };
+            user.StudioMemberships.Add(membership);
+        }
+
+        foreach (var role in roles.Except(membership.Roles.Select(userRole => userRole.Role)))
+        {
+            membership.Roles.Add(new AppUserRole { Role = role, CreatedAt = now });
         }
 
         await dbContext.SaveChangesAsync();

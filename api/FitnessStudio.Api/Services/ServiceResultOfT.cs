@@ -17,6 +17,11 @@ public record ServiceResult<T>(ServiceResultStatus Status, T? Value = default, S
         return new ServiceResult<T>(ServiceResultStatus.Unauthorized, default, new ServiceError(title, detail));
     }
 
+    public static ServiceResult<T> Forbidden(string title, string detail)
+    {
+        return new ServiceResult<T>(ServiceResultStatus.Forbidden, default, new ServiceError(title, detail));
+    }
+
     public static ServiceResult<T> Conflict(string title, string detail)
     {
         return new ServiceResult<T>(ServiceResultStatus.Conflict, default, new ServiceError(title, detail));

@@ -41,6 +41,18 @@ Aktualna lokalna veza:
 Host=localhost;Port=5432;Database=fitness_studio;Username=fitness;Password=fitness_dev
 ```
 
+Novi studio i prvi admin mogu se sigurno provisionirati bez javnog HTTP
+endpointa. Lozinka se ne stavlja u argumente naredbe:
+
+```bash
+FITNESS_STUDIO_ADMIN_PASSWORD='sigurna-lozinka' \
+dotnet run --project api/FitnessStudio.Api -- provision-studio \
+  --name 'Novi studio' \
+  --code NOVISTUDIO \
+  --timezone Europe/Zagreb \
+  --email admin@example.com
+```
+
 Nova SQL promjena dobiva novu datoteku u `db/migrations/`. Nakon primjene migracije EF model treba ponovno scaffoldati:
 
 ```bash
@@ -67,7 +79,8 @@ Iz korijena repozitorija:
 
 Skripta zahtijeva Docker, .NET SDK, `curl` i `jq`. Pokrece zaseban PostgreSQL
 container na nasumicnom portu i API na `127.0.0.1:55146`, provjerava migracije,
-seedove, demo prijave, multi-studio granicu, rasporede, rezervacije i naplatu te
+seedove, demo prijave, multi-studio granicu, registraciju i join kodom, rasporede,
+rezervacije i naplatu te
 na kraju uklanja privremeni container. Razvojna baza `fitness_studio` ostaje
 netaknuta. Ako je port zauzet, moze se zadati drugi:
 
@@ -102,6 +115,24 @@ HTTP profil koristi `http://localhost:5146`. Swagger UI je na `http://localhost:
 
 API se zaustavlja s `Ctrl+C` u terminalu u kojem je pokrenut.
 
+Za FCM na Docker/VPS posluzitelju service-account JSON se montira kao read-only
+secret, primjerice na `/run/secrets/firebase-service-account.json`, te se po
+okruzenju postavljaju:
+
+```text
+FirebaseMessaging__Enabled=true
+FirebaseMessaging__ProjectId=<firebase-project-id>
+FirebaseMessaging__CredentialPath=/run/secrets/firebase-service-account.json
+FirebaseMessaging__UseApplicationDefaultCredentials=false
+FirebaseMessaging__PollSeconds=30
+```
+
+Vjerodajnica se ne sprema u repozitorij. Na Google Cloud infrastrukturi moze se
+koristiti identitet servisa postavljanjem
+`FirebaseMessaging__UseApplicationDefaultCredentials=true` bez
+`CredentialPath` vrijednosti. API pri pokretanju odbija nepotpunu ili nepostojecu
+FCM konfiguraciju kada je slanje ukljuceno.
+
 ## Mobilna aplikacija
 
 ```bash
@@ -113,6 +144,24 @@ flutter run
 ```
 
 Na iOS simulatoru `localhost` pokazuje na Mac pa zadani API URL radi izravno.
+Prije Firebase registracije treba zamijeniti razvojne `com.example...`
+identifikatore konacnim Android application ID-em i iOS bundle ID-em. Zatim se
+iz korijena Flutter projekta pokrece `flutterfire configure` za Android i iOS.
+Time se aplikacije registriraju u Firebase projektu i generira se njihova
+klijentska konfiguracija. Alternativno, Android `google-services.json` ide u
+`android/app/`, a iOS `GoogleService-Info.plist` mora biti dodan u Runner target
+kroz Xcode. Te klijentske datoteke nisu service-account vjerodajnice.
+
+Za iOS se u Firebase Console ucitava APNs `.p8` authentication key s pripadnim
+Key ID-em i Apple Team ID-em. Runner vec ima Push Notifications i Background
+Modes (`fetch` i `remote-notification`) konfiguraciju. Zbog aktualnog Firebase
+iOS SDK-a minimalno podrzana verzija aplikacije je iOS 15. Aplikacija bez
+Firebase projektnih datoteka nastavlja raditi bez push registracije.
+
+Dozvola za obavijesti trazi se nakon uspjesne prijave. Push u pozadini prikazuje
+FCM, a poruka zaprimljena dok je aplikacija otvorena prikazuje se preko lokalne
+visokoprioritetne obavijesti. Dodir na podsjetnik clanarine otvara odgovarajuci
+ekran clanarine; ostale vrste otvaraju centar obavijesti.
 
 Za fizicki Android uredjaj spojen USB kabelom najjednostavnije je prije
 `flutter run` proslijediti API port:

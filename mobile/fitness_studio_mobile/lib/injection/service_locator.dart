@@ -4,6 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../core/auth/access_token_provider.dart';
 import '../core/config/app_config.dart';
 import '../core/network/api_client.dart';
+import '../core/notifications/push_notifications_service.dart';
 import '../features/auth/data/datasources/auth_local_data_source.dart';
 import '../features/auth/data/datasources/auth_remote_data_source.dart';
 import '../features/auth/data/repositories/auth_repository_impl.dart';
@@ -19,6 +20,7 @@ import '../features/bookings/domain/usecases/cancel_booking.dart';
 import '../features/bookings/domain/usecases/cancel_fixed_schedule.dart';
 import '../features/bookings/domain/usecases/create_booking.dart';
 import '../features/bookings/domain/usecases/get_bookings.dart';
+import '../features/bookings/domain/usecases/get_member_bookings_page.dart';
 import '../features/bookings/domain/usecases/get_class_session_bookings.dart';
 import '../features/bookings/domain/usecases/update_booking_status.dart';
 import '../features/class_sessions/data/datasources/class_sessions_remote_data_source.dart';
@@ -43,6 +45,9 @@ import '../features/recurring_schedules/domain/repositories/recurring_schedules_
 import '../features/recurring_schedules/domain/usecases/change_recurring_schedule_status.dart';
 import '../features/recurring_schedules/domain/usecases/get_recurring_schedules.dart';
 import '../features/recurring_schedules/domain/usecases/get_trainers.dart';
+import '../features/trainers/data/trainers_management_remote_data_source.dart';
+import '../features/trainers/data/trainers_management_repository_impl.dart';
+import '../features/trainers/domain/repositories/trainers_management_repository.dart';
 
 final serviceLocator = GetIt.instance;
 
@@ -67,10 +72,14 @@ Future<void> configureDependencies() async {
     ..registerLazySingleton<AuthRemoteDataSource>(
       () => AuthRemoteDataSource(serviceLocator<ApiClient>()),
     )
+    ..registerLazySingleton<PushNotificationsService>(
+      () => PushNotificationsService(serviceLocator<ApiClient>()),
+    )
     ..registerLazySingleton<AuthRepository>(
       () => AuthRepositoryImpl(
         serviceLocator<AuthRemoteDataSource>(),
         serviceLocator<AuthLocalDataSource>(),
+        serviceLocator<PushNotificationsService>(),
       ),
     )
     ..registerLazySingleton<Login>(
@@ -134,6 +143,9 @@ Future<void> configureDependencies() async {
     ..registerLazySingleton<GetBookings>(
       () => GetBookings(serviceLocator<BookingsRepository>()),
     )
+    ..registerLazySingleton<GetMemberBookingsPage>(
+      () => GetMemberBookingsPage(serviceLocator<BookingsRepository>()),
+    )
     ..registerLazySingleton<CancelFixedSchedule>(
       () => CancelFixedSchedule(serviceLocator<BookingsRepository>()),
     )
@@ -157,6 +169,14 @@ Future<void> configureDependencies() async {
     )
     ..registerLazySingleton<GetProfile>(
       () => GetProfile(serviceLocator<ProfileRepository>()),
+    )
+    ..registerLazySingleton<TrainersManagementRemoteDataSource>(
+      () => TrainersManagementRemoteDataSource(serviceLocator<ApiClient>()),
+    )
+    ..registerLazySingleton<TrainersManagementRepository>(
+      () => TrainersManagementRepositoryImpl(
+        serviceLocator<TrainersManagementRemoteDataSource>(),
+      ),
     )
     ..registerLazySingleton<ProgressRemoteDataSource>(
       () => ProgressRemoteDataSource(serviceLocator<ApiClient>()),

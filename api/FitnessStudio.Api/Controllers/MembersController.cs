@@ -39,17 +39,6 @@ public class MembersController : ControllerBase
     }
 
     [Authorize(Roles = AuthRoles.Admin)]
-    [HttpPost]
-    public async Task<ActionResult<MemberResponse>> CreateMember(CreateMemberRequest request)
-    {
-        var result = await _membersService.CreateMemberAsync(request);
-
-        return result.Status == ServiceResultStatus.Success
-            ? CreatedAtAction(nameof(GetMember), new { id = result.Value!.Id }, result.Value)
-            : this.ToActionResult(result);
-    }
-
-    [Authorize(Roles = AuthRoles.Admin)]
     [HttpPut("{id:long}")]
     public async Task<IActionResult> UpdateMember(long id, UpdateMemberRequest request)
     {

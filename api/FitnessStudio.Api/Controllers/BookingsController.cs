@@ -34,6 +34,17 @@ public class BookingsController : ControllerBase
             : this.ToActionResult(result);
     }
 
+    [HttpGet("mine")]
+    public async Task<ActionResult<MemberBookingsPageResponse>> GetMemberBookings(
+        [FromQuery] MemberBookingsQuery query)
+    {
+        var result = await _bookingsService.GetMemberBookingsAsync(query);
+
+        return result.Status == ServiceResultStatus.Success
+            ? Ok(result.Value)
+            : this.ToActionResult(result);
+    }
+
     [HttpGet("{id:long}")]
     public async Task<ActionResult<BookingResponse>> GetBooking(long id)
     {

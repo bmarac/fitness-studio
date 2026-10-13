@@ -7,12 +7,6 @@ public partial class AppUser
 {
     public long Id { get; set; }
 
-    public long StudioId { get; set; }
-
-    public long? MemberId { get; set; }
-
-    public long? TrainerId { get; set; }
-
     public string Email { get; set; } = null!;
 
     public string PasswordHash { get; set; } = null!;
@@ -25,17 +19,11 @@ public partial class AppUser
 
     public DateTime UpdatedAt { get; set; }
 
-    public virtual ICollection<AppUserRole> AppUserRoles { get; set; } = new List<AppUserRole>();
+    public virtual ICollection<AppUserStudio> StudioMemberships { get; set; } = new List<AppUserStudio>();
 
     public virtual ICollection<AppNotification> AppNotifications { get; set; } = new List<AppNotification>();
 
     public virtual ICollection<AppUserDeviceToken> DeviceTokens { get; set; } = new List<AppUserDeviceToken>();
 
-    public virtual Member? Member { get; set; }
-
     public virtual ICollection<MemberMeasurement> MemberMeasurements { get; set; } = new List<MemberMeasurement>();
-
-    public virtual Studio Studio { get; set; } = null!;
-
-    public virtual Trainer? Trainer { get; set; }
 }

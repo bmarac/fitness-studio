@@ -5,11 +5,11 @@ namespace FitnessStudio.Api.Entities;
 
 public partial class AppUserRole
 {
-    public long AppUserId { get; set; }
+    public long AppUserStudioId { get; set; }
 
     public string Role { get; set; } = null!;
 
     public DateTime CreatedAt { get; set; }
 
-    public virtual AppUser AppUser { get; set; } = null!;
+    public virtual AppUserStudio AppUserStudio { get; set; } = null!;
 }

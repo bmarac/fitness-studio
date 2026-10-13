@@ -1,5 +1,6 @@
 import '../../../../core/network/api_client.dart';
 import '../models/booking_model.dart';
+import '../models/member_bookings_page_model.dart';
 
 class BookingsRemoteDataSource {
   const BookingsRemoteDataSource(this._apiClient);
@@ -12,6 +13,24 @@ class BookingsRemoteDataSource {
     return (response.data ?? [])
         .map((item) => BookingModel.fromJson(item as Map<String, dynamic>))
         .toList();
+  }
+
+  Future<MemberBookingsPageModel> getMemberBookingsPage({
+    required String filter,
+    required int page,
+    required int pageSize,
+  }) async {
+    final response = await _apiClient.get<Map<String, dynamic>>(
+      '/api/bookings/mine',
+      queryParameters: {'filter': filter, 'page': page, 'pageSize': pageSize},
+    );
+    final data = response.data;
+
+    if (data == null) {
+      throw const FormatException('Member bookings response is empty.');
+    }
+
+    return MemberBookingsPageModel.fromJson(data);
   }
 
   Future<void> cancelBooking(int id) async {

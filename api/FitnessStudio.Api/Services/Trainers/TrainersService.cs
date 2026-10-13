@@ -53,14 +53,16 @@ public class TrainersService : ITrainersService
 
     public async Task<ServiceResult<TrainerResponse>> CreateTrainerAsync(CreateTrainerRequest request)
     {
-        if (await EmailExistsAsync(request.Email))
+        var email = NormalizeEmail(request.Email);
+        if (await EmailExistsAsync(email))
         {
             return ServiceResult<TrainerResponse>.Conflict(
-                "Trainer email already exists.",
-                "A trainer with this email already exists.");
+                "Profile email already exists.",
+                "A member or trainer with this email already exists in the studio.");
         }
 
         var trainer = _mapper.Map<Trainer>(request);
+        trainer.Email = email;
         trainer.StudioId = _currentUser.StudioId;
         trainer.Status = NormalizeStatus(trainer.Status);
         trainer.CreatedAt = DateTime.UtcNow;
@@ -84,14 +86,16 @@ public class TrainersService : ITrainersService
                 "A trainer with this id does not exist.");
         }
 
-        if (await EmailExistsAsync(request.Email, id))
+        var email = NormalizeEmail(request.Email);
+        if (await EmailExistsAsync(email, id))
         {
             return ServiceResult.Conflict(
-                "Trainer email already exists.",
-                "A trainer with this email already exists.");
+                "Profile email already exists.",
+                "A member or trainer with this email already exists in the studio.");
         }
 
         _mapper.Map(request, trainer);
+        trainer.Email = email;
         trainer.Status = NormalizeStatus(trainer.Status);
         trainer.UpdatedAt = DateTime.UtcNow;
 
@@ -133,11 +137,16 @@ public class TrainersService : ITrainersService
         return status.ToLowerInvariant();
     }
 
-    private Task<bool> EmailExistsAsync(string email, long? ignoredTrainerId = null)
+    private async Task<bool> EmailExistsAsync(string email, long? ignoredTrainerId = null)
     {
-        return _dbContext.Trainers.AnyAsync(trainer =>
+        return await _dbContext.Trainers.AnyAsync(trainer =>
             trainer.StudioId == _currentUser.StudioId
-            && trainer.Email == email
-            && (!ignoredTrainerId.HasValue || trainer.Id != ignoredTrainerId.Value));
+            && trainer.Email.ToLower() == email
+            && (!ignoredTrainerId.HasValue || trainer.Id != ignoredTrainerId.Value))
+            || await _dbContext.Members.AnyAsync(member =>
+                member.StudioId == _currentUser.StudioId
+                && member.Email.ToLower() == email);
     }
+
+    private static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
 }

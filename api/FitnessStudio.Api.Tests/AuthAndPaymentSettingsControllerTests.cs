@@ -17,15 +17,14 @@ public class AuthAndPaymentSettingsControllerTests
     [Fact]
     public async Task LoginReturnsSessionAndForwardsRequest()
     {
-        var response = LoginResponse();
+        var response = AccountSessionResponse();
         var service = new FakeAuthService
         {
-            Result = ServiceResult<LoginResponse>.Success(response)
+            Result = ServiceResult<AccountSessionResponse>.Success(response)
         };
         var controller = new AuthController(service);
         var request = new LoginRequest
         {
-            StudioId = 7,
             Email = "member@example.com",
             Password = "secret"
         };
@@ -42,9 +41,9 @@ public class AuthAndPaymentSettingsControllerTests
     {
         var service = new FakeAuthService
         {
-            Result = ServiceResult<LoginResponse>.Unauthorized(
+            Result = ServiceResult<AccountSessionResponse>.Unauthorized(
                 "Login failed.",
-                "Studio, email or password is incorrect.")
+                "Email or password is incorrect.")
         };
         var controller = new AuthController(service);
 
@@ -117,18 +116,13 @@ public class AuthAndPaymentSettingsControllerTests
         AssertAdminMethod(typeof(PaymentSettingsController), nameof(PaymentSettingsController.Update));
     }
 
-    private static LoginResponse LoginResponse()
+    private static AccountSessionResponse AccountSessionResponse()
     {
-        return new LoginResponse(
+        return new AccountSessionResponse(
             "access-token",
             new DateTime(2026, 10, 12, 12, 0, 0, DateTimeKind.Utc),
-            new AuthenticatedUserResponse(
-                42,
-                7,
-                11,
-                null,
-                "member@example.com",
-                [AuthRoles.Member]));
+            new AccountUserResponse(42, "member@example.com"),
+            [new AccountStudioResponse(7, "Stay Fit", 11, null, [AuthRoles.Member])]);
     }
 
     private static PaymentSettingsResponse PaymentSettingsResponse()
@@ -162,14 +156,20 @@ public class AuthAndPaymentSettingsControllerTests
 
     private sealed class FakeAuthService : IAuthService
     {
-        public ServiceResult<LoginResponse> Result { get; init; } = null!;
+        public ServiceResult<AccountSessionResponse> Result { get; init; } = null!;
         public LoginRequest? LastRequest { get; private set; }
 
-        public Task<ServiceResult<LoginResponse>> LoginAsync(LoginRequest request)
+        public Task<ServiceResult<AccountSessionResponse>> LoginAsync(LoginRequest request)
         {
             LastRequest = request;
             return Task.FromResult(Result);
         }
+
+        public Task<ServiceResult<AccountSessionResponse>> RegisterAsync(RegisterRequest request) =>
+            Task.FromResult(Result);
+
+        public Task<ServiceResult<LoginResponse>> CreateStudioSessionAsync(long userId, long studioId) =>
+            Task.FromResult(ServiceResult<LoginResponse>.Forbidden("Denied", "Denied"));
     }
 
     private sealed class FakePaymentSettingsService : IPaymentSettingsService

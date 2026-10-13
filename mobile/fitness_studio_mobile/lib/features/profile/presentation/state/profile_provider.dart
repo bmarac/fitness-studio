@@ -5,7 +5,7 @@ import '../../../../injection/service_locator.dart';
 import '../../domain/entities/profile.dart';
 import '../../domain/usecases/get_profile.dart';
 
-final profileProvider = FutureProvider<Profile>((ref) async {
+final profileProvider = FutureProvider.autoDispose<Profile>((ref) async {
   final result = await serviceLocator<GetProfile>()();
 
   return switch (result) {

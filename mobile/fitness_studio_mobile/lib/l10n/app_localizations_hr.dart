@@ -163,7 +163,8 @@ class AppLocalizationsHr extends AppLocalizations {
   String get profilePaymentSettings => 'Postavke plaćanja';
 
   @override
-  String get profilePaymentSettingsSubtitle => 'Primatelj, IBAN i podsjetnici';
+  String get profilePaymentSettingsSubtitle =>
+      'Primatelj, IBAN i podaci za uplatu';
 
   @override
   String get profileProgress => 'Napredak';
@@ -217,10 +218,7 @@ class AppLocalizationsHr extends AppLocalizations {
   String get classSessionsTitle => 'Termini';
 
   @override
-  String get schedulesTooltip => 'Rasporedi';
-
-  @override
-  String get newClassSessionTooltip => 'Novi termin';
+  String get schedulesTooltip => 'Upravljaj rasporedima';
 
   @override
   String get noClassSessionsTitle => 'Nema termina';
@@ -377,13 +375,6 @@ class AppLocalizationsHr extends AppLocalizations {
 
   @override
   String get scheduleEnded => 'Raspored je završen.';
-
-  @override
-  String get fixedScheduleTitle => 'Fiksni raspored';
-
-  @override
-  String get scheduleActionScope =>
-      'Ova akcija odnosi se na ovaj i sve buduće termine rasporeda.';
 
   @override
   String get attendeesTitle => 'Polaznici';
@@ -598,7 +589,11 @@ class AppLocalizationsHr extends AppLocalizations {
   String get enterOneValue => 'Unesi barem jednu vrijednost.';
 
   @override
-  String get newScheduleTitle => 'Novi termin';
+  String get newScheduleTitle => 'Novi raspored';
+
+  @override
+  String get recurringScheduleDescription =>
+      'Termin će se ponavljati svaki tjedan od odabranog datuma.';
 
   @override
   String get missingClassTypesOrTrainers =>
@@ -623,7 +618,10 @@ class AppLocalizationsHr extends AppLocalizations {
   String get validFromLabel => 'Vrijedi od';
 
   @override
-  String get saveSchedule => 'Spremi termin';
+  String get saveSchedule => 'Spremi raspored';
+
+  @override
+  String get scheduleCreated => 'Raspored je spremljen.';
 
   @override
   String get schedulesTitle => 'Rasporedi';
@@ -674,7 +672,7 @@ class AppLocalizationsHr extends AppLocalizations {
   String get sendTimeLabel => 'Vrijeme slanja (HH:mm)';
 
   @override
-  String get requiredField => 'Obavezno polje';
+  String get requiredField => 'Ovo polje je obvezno.';
 
   @override
   String get settingsSaved => 'Postavke su spremljene.';
@@ -867,4 +865,93 @@ class AppLocalizationsHr extends AppLocalizations {
 
   @override
   String get failureNetwork => 'Mrežni zahtjev nije uspio.';
+
+  @override
+  String get labelStudioCode => 'Kod studija';
+
+  @override
+  String get studioCodeRequired => 'Unesi kod studija.';
+
+  @override
+  String get trainersTitle => 'Treneri';
+
+  @override
+  String get trainerManagementSubtitle => 'Pregledaj i unaprijed dodaj trenere';
+
+  @override
+  String get addTrainer => 'Novi trener';
+
+  @override
+  String get noTrainersYet => 'Još nema trenera.';
+
+  @override
+  String get firstName => 'Ime';
+
+  @override
+  String get lastName => 'Prezime';
+
+  @override
+  String get phoneLabel => 'Telefon';
+
+  @override
+  String get bioLabel => 'Biografija';
+
+  @override
+  String get saveAction => 'Spremi';
+
+  @override
+  String get registerTitle => 'Registracija';
+
+  @override
+  String get registerAction => 'Kreiraj račun';
+
+  @override
+  String get passwordMinimumLength => 'Lozinka mora imati najmanje 10 znakova.';
+
+  @override
+  String get chooseStudioTitle => 'Odaberi studio';
+
+  @override
+  String get yourStudios => 'Tvoji studiji';
+
+  @override
+  String get joinStudioTitle => 'Pridruži se studiju';
+
+  @override
+  String joinStudioConfirmation(String studioName) {
+    return 'Pridruživanje studiju $studioName';
+  }
+
+  @override
+  String get checkStudioCode => 'Provjeri kod';
+
+  @override
+  String get joinStudioAction => 'Pridruži se';
+
+  @override
+  String get firstAndLastNameRequired => 'Unesi ime i prezime.';
+
+  @override
+  String profileCreated(String displayName) {
+    return 'Profil $displayName je kreiran.';
+  }
+
+  @override
+  String get changeOrAddStudio => 'Promijeni ili dodaj studio';
+
+  @override
+  String get studioSettingsTitle => 'Postavke studija';
+
+  @override
+  String get studioAccessSettingsTitle => 'Pristup studiju';
+
+  @override
+  String get reminderSettingsTitle => 'Podsjetnici';
+
+  @override
+  String get allowJoinByCode => 'Dopusti povezivanje kodom';
+
+  @override
+  String get allowJoinByCodeDescription =>
+      'Korisnici se mogu pridružiti unosom koda studija.';
 }

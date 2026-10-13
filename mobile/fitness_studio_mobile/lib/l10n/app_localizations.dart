@@ -401,7 +401,7 @@ abstract class AppLocalizations {
   /// No description provided for @profilePaymentSettingsSubtitle.
   ///
   /// In hr, this message translates to:
-  /// **'Primatelj, IBAN i podsjetnici'**
+  /// **'Primatelj, IBAN i podaci za uplatu'**
   String get profilePaymentSettingsSubtitle;
 
   /// No description provided for @profileProgress.
@@ -503,14 +503,8 @@ abstract class AppLocalizations {
   /// No description provided for @schedulesTooltip.
   ///
   /// In hr, this message translates to:
-  /// **'Rasporedi'**
+  /// **'Upravljaj rasporedima'**
   String get schedulesTooltip;
-
-  /// No description provided for @newClassSessionTooltip.
-  ///
-  /// In hr, this message translates to:
-  /// **'Novi termin'**
-  String get newClassSessionTooltip;
 
   /// No description provided for @noClassSessionsTitle.
   ///
@@ -727,18 +721,6 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Raspored je završen.'**
   String get scheduleEnded;
-
-  /// No description provided for @fixedScheduleTitle.
-  ///
-  /// In hr, this message translates to:
-  /// **'Fiksni raspored'**
-  String get fixedScheduleTitle;
-
-  /// No description provided for @scheduleActionScope.
-  ///
-  /// In hr, this message translates to:
-  /// **'Ova akcija odnosi se na ovaj i sve buduće termine rasporeda.'**
-  String get scheduleActionScope;
 
   /// No description provided for @attendeesTitle.
   ///
@@ -1121,8 +1103,14 @@ abstract class AppLocalizations {
   /// No description provided for @newScheduleTitle.
   ///
   /// In hr, this message translates to:
-  /// **'Novi termin'**
+  /// **'Novi raspored'**
   String get newScheduleTitle;
+
+  /// No description provided for @recurringScheduleDescription.
+  ///
+  /// In hr, this message translates to:
+  /// **'Termin će se ponavljati svaki tjedan od odabranog datuma.'**
+  String get recurringScheduleDescription;
 
   /// No description provided for @missingClassTypesOrTrainers.
   ///
@@ -1169,8 +1157,14 @@ abstract class AppLocalizations {
   /// No description provided for @saveSchedule.
   ///
   /// In hr, this message translates to:
-  /// **'Spremi termin'**
+  /// **'Spremi raspored'**
   String get saveSchedule;
+
+  /// No description provided for @scheduleCreated.
+  ///
+  /// In hr, this message translates to:
+  /// **'Raspored je spremljen.'**
+  String get scheduleCreated;
 
   /// No description provided for @schedulesTitle.
   ///
@@ -1265,7 +1259,7 @@ abstract class AppLocalizations {
   /// No description provided for @requiredField.
   ///
   /// In hr, this message translates to:
-  /// **'Obavezno polje'**
+  /// **'Ovo polje je obvezno.'**
   String get requiredField;
 
   /// No description provided for @settingsSaved.
@@ -1591,6 +1585,174 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Mrežni zahtjev nije uspio.'**
   String get failureNetwork;
+
+  /// No description provided for @labelStudioCode.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kod studija'**
+  String get labelStudioCode;
+
+  /// No description provided for @studioCodeRequired.
+  ///
+  /// In hr, this message translates to:
+  /// **'Unesi kod studija.'**
+  String get studioCodeRequired;
+
+  /// No description provided for @trainersTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Treneri'**
+  String get trainersTitle;
+
+  /// No description provided for @trainerManagementSubtitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pregledaj i unaprijed dodaj trenere'**
+  String get trainerManagementSubtitle;
+
+  /// No description provided for @addTrainer.
+  ///
+  /// In hr, this message translates to:
+  /// **'Novi trener'**
+  String get addTrainer;
+
+  /// No description provided for @noTrainersYet.
+  ///
+  /// In hr, this message translates to:
+  /// **'Još nema trenera.'**
+  String get noTrainersYet;
+
+  /// No description provided for @firstName.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ime'**
+  String get firstName;
+
+  /// No description provided for @lastName.
+  ///
+  /// In hr, this message translates to:
+  /// **'Prezime'**
+  String get lastName;
+
+  /// No description provided for @phoneLabel.
+  ///
+  /// In hr, this message translates to:
+  /// **'Telefon'**
+  String get phoneLabel;
+
+  /// No description provided for @bioLabel.
+  ///
+  /// In hr, this message translates to:
+  /// **'Biografija'**
+  String get bioLabel;
+
+  /// No description provided for @saveAction.
+  ///
+  /// In hr, this message translates to:
+  /// **'Spremi'**
+  String get saveAction;
+
+  /// No description provided for @registerTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Registracija'**
+  String get registerTitle;
+
+  /// No description provided for @registerAction.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kreiraj račun'**
+  String get registerAction;
+
+  /// No description provided for @passwordMinimumLength.
+  ///
+  /// In hr, this message translates to:
+  /// **'Lozinka mora imati najmanje 10 znakova.'**
+  String get passwordMinimumLength;
+
+  /// No description provided for @chooseStudioTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Odaberi studio'**
+  String get chooseStudioTitle;
+
+  /// No description provided for @yourStudios.
+  ///
+  /// In hr, this message translates to:
+  /// **'Tvoji studiji'**
+  String get yourStudios;
+
+  /// No description provided for @joinStudioTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pridruži se studiju'**
+  String get joinStudioTitle;
+
+  /// No description provided for @joinStudioConfirmation.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pridruživanje studiju {studioName}'**
+  String joinStudioConfirmation(String studioName);
+
+  /// No description provided for @checkStudioCode.
+  ///
+  /// In hr, this message translates to:
+  /// **'Provjeri kod'**
+  String get checkStudioCode;
+
+  /// No description provided for @joinStudioAction.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pridruži se'**
+  String get joinStudioAction;
+
+  /// No description provided for @firstAndLastNameRequired.
+  ///
+  /// In hr, this message translates to:
+  /// **'Unesi ime i prezime.'**
+  String get firstAndLastNameRequired;
+
+  /// No description provided for @profileCreated.
+  ///
+  /// In hr, this message translates to:
+  /// **'Profil {displayName} je kreiran.'**
+  String profileCreated(String displayName);
+
+  /// No description provided for @changeOrAddStudio.
+  ///
+  /// In hr, this message translates to:
+  /// **'Promijeni ili dodaj studio'**
+  String get changeOrAddStudio;
+
+  /// No description provided for @studioSettingsTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Postavke studija'**
+  String get studioSettingsTitle;
+
+  /// No description provided for @studioAccessSettingsTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pristup studiju'**
+  String get studioAccessSettingsTitle;
+
+  /// No description provided for @reminderSettingsTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Podsjetnici'**
+  String get reminderSettingsTitle;
+
+  /// No description provided for @allowJoinByCode.
+  ///
+  /// In hr, this message translates to:
+  /// **'Dopusti povezivanje kodom'**
+  String get allowJoinByCode;
+
+  /// No description provided for @allowJoinByCodeDescription.
+  ///
+  /// In hr, this message translates to:
+  /// **'Korisnici se mogu pridružiti unosom koda studija.'**
+  String get allowJoinByCodeDescription;
 }
 
 class _AppLocalizationsDelegate

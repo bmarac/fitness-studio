@@ -16,9 +16,11 @@ using FitnessStudio.Api.Services.Memberships;
 using FitnessStudio.Api.Services.MembershipPlans;
 using FitnessStudio.Api.Services.Profile;
 using FitnessStudio.Api.Services.MembershipPayments;
+using FitnessStudio.Api.Services.Notifications;
 using FitnessStudio.Api.Services.PaymentSettings;
 using FitnessStudio.Api.Services.RecurringClassSchedules;
 using FitnessStudio.Api.Services.StudioSettings;
+using FitnessStudio.Api.Services.Startup;
 using FitnessStudio.Api.Services.Studios;
 using FitnessStudio.Api.Services.Trainers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -37,9 +39,11 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddProblemDetails();
+builder.Services.AddApiInfrastructure();
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetRequiredSection(JwtOptions.SectionName));
 builder.Services.Configure<DevelopmentSeedUserOptions>(
     builder.Configuration.GetSection(DevelopmentSeedUserOptions.SectionName));
+builder.Services.AddFirebaseMessagingConfiguration(builder.Configuration);
 
 var jwtOptions = builder.Configuration.GetRequiredSection(JwtOptions.SectionName).Get<JwtOptions>()
     ?? throw new InvalidOperationException("JWT configuration is missing.");
@@ -62,6 +66,11 @@ builder.Services
     });
 builder.Services.AddAuthorization(options =>
 {
+    options.AddPolicy("AccountAccess", policy => policy.RequireAuthenticatedUser());
+    options.DefaultPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .RequireClaim(FitnessStudio.Api.Domain.Auth.AuthClaimTypes.StudioId)
+        .Build();
     options.FallbackPolicy = options.DefaultPolicy;
 });
 builder.Services.Configure<ApiBehaviorOptions>(options =>
@@ -86,8 +95,10 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
 builder.Services.AddScoped<ICurrentUserContext, CurrentUserContext>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IAccountStudiosService, AccountStudiosService>();
 builder.Services.AddScoped<IStudiosService, StudiosService>();
 builder.Services.AddScoped<IStudioSettingsService, StudioSettingsService>();
+builder.Services.AddScoped<IStudioConfigurationService, StudioConfigurationService>();
 builder.Services.AddScoped<IMembershipPlansService, MembershipPlansService>();
 builder.Services.AddScoped<IMemberMembershipsService, MemberMembershipsService>();
 builder.Services.AddScoped<IMembershipBookingPolicy, MembershipBookingPolicy>();
@@ -95,6 +106,9 @@ builder.Services.AddScoped<IPaymentSettingsService, PaymentSettingsService>();
 builder.Services.AddScoped<IMembershipPaymentsService, MembershipPaymentsService>();
 builder.Services.AddScoped<IMembershipBillingProcessor, MembershipBillingProcessor>();
 builder.Services.AddHostedService<MembershipBillingWorker>();
+builder.Services.AddSingleton<IPushNotificationSender, FirebasePushNotificationSender>();
+builder.Services.AddScoped<IPushNotificationProcessor, PushNotificationProcessor>();
+builder.Services.AddHostedService<PushNotificationWorker>();
 builder.Services.AddScoped<IRecurringClassSchedulesService, RecurringClassSchedulesService>();
 builder.Services.AddScoped<IMemberFixedSchedulesService, MemberFixedSchedulesService>();
 builder.Services.AddScoped<IMembersService, MembersService>();
@@ -107,6 +121,8 @@ builder.Services.AddScoped<IMeasurementParametersService, MeasurementParametersS
 builder.Services.AddScoped<IMemberMeasurementsService, MemberMeasurementsService>();
 
 var app = builder.Build();
+
+if (await app.UseApiInfrastructureAsync(args)) return;
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/error/failure_localization.dart';
 import '../../../../core/l10n/localization.dart';
+import '../../../../navigation/app_routes.dart';
 import '../state/login_controller.dart';
 import '../state/login_state.dart';
 
@@ -17,7 +19,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-
   bool _obscurePassword = true;
 
   @override
@@ -43,7 +44,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text(failure.localized(context))));
-        case LoginChecking() || LoginInitial() || LoginLoading():
+        case LoginChecking() ||
+            LoginInitial() ||
+            LoginLoading() ||
+            LoginAccountReady():
           break;
       }
     });
@@ -159,6 +163,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                       : context.l10n.loginAction,
                                 ),
                               ),
+                            ),
+                            const SizedBox(height: 12),
+                            TextButton(
+                              onPressed: isLoading
+                                  ? null
+                                  : () => context.push(AppRoutes.registerPath),
+                              child: Text(context.l10n.registerAction),
                             ),
                           ],
                         ),

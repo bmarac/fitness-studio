@@ -15,33 +15,27 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../../helpers/localized_test_app.dart';
 
 void main() {
-  testWidgets('member sees chronological bookings and cancellation dialog', (
+  testWidgets('member defaults to active bookings and can filter history', (
     tester,
   ) async {
-    final bookings =
-        [
-          _booking(
-            id: 2,
-            startsAt: DateTime(2030, 10, 12, 19),
-            status: 'booked',
-            classTypeName: 'Budući trening',
-          ),
-          _booking(
-            id: 1,
-            startsAt: DateTime(2020, 10, 5, 19),
-            status: 'attended',
-            classTypeName: 'Prošli trening',
-          ),
-          _booking(
-            id: 3,
-            startsAt: DateTime(2021, 10, 7, 19),
-            status: 'cancelled',
-            classTypeName: 'Otkazani trening',
-          ),
-        ]..sort(
-          (first, second) =>
-              first.classSessionStartsAt.compareTo(second.classSessionStartsAt),
-        );
+    final future = _booking(
+      id: 2,
+      startsAt: DateTime(2030, 10, 12, 19),
+      status: 'booked',
+      classTypeName: 'Budući trening',
+    );
+    final past = _booking(
+      id: 1,
+      startsAt: DateTime(2020, 10, 5, 19),
+      status: 'attended',
+      classTypeName: 'Prošli trening',
+    );
+    final cancelled = _booking(
+      id: 3,
+      startsAt: DateTime(2021, 10, 7, 19),
+      status: 'cancelled',
+      classTypeName: 'Otkazani trening',
+    );
 
     await tester.pumpWidget(
       ProviderScope(
@@ -49,21 +43,38 @@ void main() {
           loginControllerProvider.overrideWith(
             () => _FakeLoginController(['member']),
           ),
-          memberBookingsProvider.overrideWith((ref) async => bookings),
+          memberBookingsProvider.overrideWith(
+            () => _FakeMemberBookingsController({
+              WorkoutFilter.active: [future],
+              WorkoutFilter.completed: [past],
+              WorkoutFilter.cancelled: [cancelled],
+              WorkoutFilter.all: [future, cancelled, past],
+            }),
+          ),
         ],
         child: localizedTestApp(home: const MyWorkoutsScreen()),
       ),
     );
     await tester.pumpAndSettle();
 
+    expect(find.text('Budući trening'), findsOneWidget);
+    expect(find.text('Rezervirano'), findsOneWidget);
+    expect(find.text('Prošli trening'), findsNothing);
+    expect(find.text('Otkazani trening'), findsNothing);
+
+    await tester.tap(find.byTooltip('Filtriraj treninge'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Završeni').last);
+    await tester.pumpAndSettle();
+
     expect(find.text('Prošli trening'), findsOneWidget);
     expect(find.text('Odrađeno'), findsOneWidget);
-    expect(find.text('Otkazano'), findsOneWidget);
-    expect(find.text('Rezervirano'), findsOneWidget);
-    expect(
-      tester.getTopLeft(find.text('Prošli trening')).dy,
-      lessThan(tester.getTopLeft(find.text('Budući trening')).dy),
-    );
+    expect(find.text('Budući trening'), findsNothing);
+
+    await tester.tap(find.byTooltip('Filtriraj treninge'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Aktivni').last);
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Otkaži termin'));
     await tester.pumpAndSettle();
@@ -80,7 +91,9 @@ void main() {
           loginControllerProvider.overrideWith(
             () => _FakeLoginController(['member']),
           ),
-          memberBookingsProvider.overrideWith((ref) async => []),
+          memberBookingsProvider.overrideWith(
+            () => _FakeMemberBookingsController(const {}),
+          ),
         ],
         child: localizedTestApp(home: const MyWorkoutsScreen()),
       ),
@@ -156,6 +169,30 @@ void main() {
     expect(find.text('Pilates'), findsNothing);
     expect(find.text('TRX'), findsOneWidget);
   });
+}
+
+class _FakeMemberBookingsController extends MemberBookingsController {
+  _FakeMemberBookingsController(this.itemsByFilter);
+
+  final Map<WorkoutFilter, List<Booking>> itemsByFilter;
+
+  @override
+  MemberBookingsState build() => MemberBookingsState(
+    items: itemsByFilter[WorkoutFilter.active] ?? const [],
+    isInitialLoading: false,
+  );
+
+  @override
+  Future<void> selectFilter(WorkoutFilter filter) async {
+    state = MemberBookingsState(
+      filter: filter,
+      items: itemsByFilter[filter] ?? const [],
+      isInitialLoading: false,
+    );
+  }
+
+  @override
+  Future<void> refresh() async {}
 }
 
 class _FakeLoginController extends LoginController {

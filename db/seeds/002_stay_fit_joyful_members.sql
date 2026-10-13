@@ -18,8 +18,7 @@ WHERE member_id IN (
 );
 
 DELETE FROM app_users
-WHERE studio_id = (SELECT id FROM studios WHERE name = 'Stay Fit & Joyful')
-  AND email IN (
+WHERE email IN (
     'ana.horvat@stayfitjoyful.demo',
     'ivan.kovac@stayfitjoyful.demo',
     'marija.babic@stayfitjoyful.demo',

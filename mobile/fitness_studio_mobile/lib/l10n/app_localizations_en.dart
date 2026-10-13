@@ -163,7 +163,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profilePaymentSettings => 'Payment settings';
 
   @override
-  String get profilePaymentSettingsSubtitle => 'Recipient, IBAN and reminders';
+  String get profilePaymentSettingsSubtitle =>
+      'Recipient, IBAN and payment details';
 
   @override
   String get profileProgress => 'Progress';
@@ -217,10 +218,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get classSessionsTitle => 'Classes';
 
   @override
-  String get schedulesTooltip => 'Schedules';
-
-  @override
-  String get newClassSessionTooltip => 'New class';
+  String get schedulesTooltip => 'Manage schedules';
 
   @override
   String get noClassSessionsTitle => 'No classes';
@@ -373,13 +371,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get scheduleEnded => 'The schedule has ended.';
-
-  @override
-  String get fixedScheduleTitle => 'Fixed schedule';
-
-  @override
-  String get scheduleActionScope =>
-      'This action applies to this and all future classes in the schedule.';
 
   @override
   String get attendeesTitle => 'Attendees';
@@ -593,7 +584,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get enterOneValue => 'Enter at least one value.';
 
   @override
-  String get newScheduleTitle => 'New class';
+  String get newScheduleTitle => 'New schedule';
+
+  @override
+  String get recurringScheduleDescription =>
+      'The class will repeat every week from the selected date.';
 
   @override
   String get missingClassTypesOrTrainers =>
@@ -618,7 +613,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get validFromLabel => 'Valid from';
 
   @override
-  String get saveSchedule => 'Save class';
+  String get saveSchedule => 'Save schedule';
+
+  @override
+  String get scheduleCreated => 'Schedule saved.';
 
   @override
   String get schedulesTitle => 'Schedules';
@@ -669,7 +667,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendTimeLabel => 'Send time (HH:mm)';
 
   @override
-  String get requiredField => 'Required field';
+  String get requiredField => 'This field is required.';
 
   @override
   String get settingsSaved => 'Settings saved.';
@@ -860,4 +858,94 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get failureNetwork => 'The network request failed.';
+
+  @override
+  String get labelStudioCode => 'Studio code';
+
+  @override
+  String get studioCodeRequired => 'Enter the studio code.';
+
+  @override
+  String get trainersTitle => 'Trainers';
+
+  @override
+  String get trainerManagementSubtitle => 'View and pre-register trainers';
+
+  @override
+  String get addTrainer => 'New trainer';
+
+  @override
+  String get noTrainersYet => 'There are no trainers yet.';
+
+  @override
+  String get firstName => 'First name';
+
+  @override
+  String get lastName => 'Last name';
+
+  @override
+  String get phoneLabel => 'Phone';
+
+  @override
+  String get bioLabel => 'Bio';
+
+  @override
+  String get saveAction => 'Save';
+
+  @override
+  String get registerTitle => 'Registration';
+
+  @override
+  String get registerAction => 'Create account';
+
+  @override
+  String get passwordMinimumLength =>
+      'Password must contain at least 10 characters.';
+
+  @override
+  String get chooseStudioTitle => 'Choose a studio';
+
+  @override
+  String get yourStudios => 'Your studios';
+
+  @override
+  String get joinStudioTitle => 'Join a studio';
+
+  @override
+  String joinStudioConfirmation(String studioName) {
+    return 'Join $studioName';
+  }
+
+  @override
+  String get checkStudioCode => 'Check code';
+
+  @override
+  String get joinStudioAction => 'Join studio';
+
+  @override
+  String get firstAndLastNameRequired => 'Enter first name and last name.';
+
+  @override
+  String profileCreated(String displayName) {
+    return 'Profile $displayName was created.';
+  }
+
+  @override
+  String get changeOrAddStudio => 'Change or add studio';
+
+  @override
+  String get studioSettingsTitle => 'Studio settings';
+
+  @override
+  String get studioAccessSettingsTitle => 'Studio access';
+
+  @override
+  String get reminderSettingsTitle => 'Reminders';
+
+  @override
+  String get allowJoinByCode => 'Allow joining by code';
+
+  @override
+  String get allowJoinByCodeDescription =>
+      'Users can join by entering the studio code.';
 }

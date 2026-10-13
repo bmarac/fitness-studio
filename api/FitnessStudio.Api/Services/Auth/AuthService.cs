@@ -16,106 +16,140 @@ namespace FitnessStudio.Api.Services.Auth;
 
 public class AuthService : IAuthService
 {
-    private readonly FitnessStudioDbContext _dbContext;
-    private readonly JwtOptions _jwtOptions;
-    private readonly IPasswordHasher<AppUser> _passwordHasher;
+    private readonly FitnessStudioDbContext _db;
+    private readonly JwtOptions _jwt;
+    private readonly IPasswordHasher<AppUser> _hasher;
 
-    public AuthService(
-        FitnessStudioDbContext dbContext,
-        IOptions<JwtOptions> jwtOptions,
-        IPasswordHasher<AppUser> passwordHasher)
+    public AuthService(FitnessStudioDbContext db, IOptions<JwtOptions> jwt, IPasswordHasher<AppUser> hasher)
     {
-        _dbContext = dbContext;
-        _jwtOptions = jwtOptions.Value;
-        _passwordHasher = passwordHasher;
+        _db = db;
+        _jwt = jwt.Value;
+        _hasher = hasher;
     }
 
-    public async Task<ServiceResult<LoginResponse>> LoginAsync(LoginRequest request)
+    public async Task<ServiceResult<AccountSessionResponse>> LoginAsync(LoginRequest request)
     {
-        var email = request.Email.Trim().ToLowerInvariant();
-        var user = await _dbContext.AppUsers
-            .Include(appUser => appUser.Studio)
-            .Include(appUser => appUser.AppUserRoles)
-            .FirstOrDefaultAsync(appUser =>
-                appUser.StudioId == request.StudioId
-                && appUser.Email == email);
+        var email = NormalizeEmail(request.Email);
+        var user = await AccountQuery().FirstOrDefaultAsync(item => item.Email == email);
+        if (user is null || user.Status != AuthStatuses.Active)
+            return InvalidAccountCredentials();
 
-        if (user is null
-            || user.Status != AuthStatuses.Active
-            || user.Studio.Status != AuthStatuses.Active)
-        {
-            return InvalidCredentials();
-        }
-
-        var verificationResult = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
-
-        if (verificationResult == PasswordVerificationResult.Failed)
-        {
-            return InvalidCredentials();
-        }
-
-        if (verificationResult == PasswordVerificationResult.SuccessRehashNeeded)
-        {
-            user.PasswordHash = _passwordHasher.HashPassword(user, request.Password);
-        }
+        var verification = _hasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
+        if (verification == PasswordVerificationResult.Failed)
+            return InvalidAccountCredentials();
+        if (verification == PasswordVerificationResult.SuccessRehashNeeded)
+            user.PasswordHash = _hasher.HashPassword(user, request.Password);
 
         user.LastLoginAt = DateTime.UtcNow;
-        user.UpdatedAt = DateTime.UtcNow;
-        await _dbContext.SaveChangesAsync();
-
-        var expiresAt = DateTime.UtcNow.AddMinutes(_jwtOptions.ExpirationMinutes);
-        var accessToken = CreateAccessToken(user, expiresAt);
-
-        return ServiceResult<LoginResponse>.Success(new LoginResponse(
-            accessToken,
-            expiresAt,
-            new AuthenticatedUserResponse(
-                user.Id,
-                user.StudioId,
-                user.MemberId,
-                user.TrainerId,
-                user.Email,
-                user.AppUserRoles.Select(userRole => userRole.Role).ToArray())));
+        user.UpdatedAt = user.LastLoginAt.Value;
+        await _db.SaveChangesAsync();
+        return ServiceResult<AccountSessionResponse>.Success(CreateAccountSession(user));
     }
 
-    private string CreateAccessToken(AppUser user, DateTime expiresAt)
+    public async Task<ServiceResult<AccountSessionResponse>> RegisterAsync(RegisterRequest request)
+    {
+        var email = NormalizeEmail(request.Email);
+        if (await _db.AppUsers.AnyAsync(item => item.Email == email))
+            return ServiceResult<AccountSessionResponse>.Conflict(
+                "Account already exists.", "An account with this email already exists.");
+
+        var now = DateTime.UtcNow;
+        var user = new AppUser
+        {
+            Email = email,
+            PasswordHash = string.Empty,
+            Status = AuthStatuses.Active,
+            CreatedAt = now,
+            UpdatedAt = now,
+            LastLoginAt = now
+        };
+        user.PasswordHash = _hasher.HashPassword(user, request.Password);
+        _db.AppUsers.Add(user);
+        await _db.SaveChangesAsync();
+        return ServiceResult<AccountSessionResponse>.Success(CreateAccountSession(user));
+    }
+
+    public async Task<ServiceResult<LoginResponse>> CreateStudioSessionAsync(long userId, long studioId)
+    {
+        var membership = await _db.AppUserStudios
+            .Include(item => item.AppUser)
+            .Include(item => item.Studio)
+            .Include(item => item.Roles)
+            .FirstOrDefaultAsync(item => item.AppUserId == userId && item.StudioId == studioId);
+        if (membership is null
+            || membership.Status != AuthStatuses.Active
+            || membership.AppUser.Status != AuthStatuses.Active
+            || membership.Studio.Status != AuthStatuses.Active)
+            return ServiceResult<LoginResponse>.Forbidden(
+                "Studio access denied.", "The account is not active in this studio.");
+
+        var expiresAt = DateTime.UtcNow.AddMinutes(_jwt.ExpirationMinutes);
+        return ServiceResult<LoginResponse>.Success(new LoginResponse(
+            CreateToken(membership.AppUser, expiresAt, membership),
+            expiresAt,
+            new AuthenticatedUserResponse(
+                membership.AppUserId,
+                membership.StudioId,
+                membership.MemberId,
+                membership.TrainerId,
+                membership.AppUser.Email,
+                membership.Roles.Select(item => item.Role).OrderBy(role => role).ToArray())));
+    }
+
+    private IQueryable<AppUser> AccountQuery() => _db.AppUsers
+        .Include(item => item.StudioMemberships).ThenInclude(item => item.Studio)
+        .Include(item => item.StudioMemberships).ThenInclude(item => item.Roles);
+
+    private AccountSessionResponse CreateAccountSession(AppUser user)
+    {
+        var expiresAt = DateTime.UtcNow.AddMinutes(_jwt.ExpirationMinutes);
+        return new AccountSessionResponse(
+            CreateToken(user, expiresAt),
+            expiresAt,
+            new AccountUserResponse(user.Id, user.Email),
+            user.StudioMemberships
+                .Where(item => item.Status == AuthStatuses.Active && item.Studio.Status == AuthStatuses.Active)
+                .OrderBy(item => item.Studio.Name)
+                .Select(item => new AccountStudioResponse(
+                    item.StudioId,
+                    item.Studio.Name,
+                    item.MemberId,
+                    item.TrainerId,
+                    item.Roles.Select(role => role.Role).OrderBy(role => role).ToArray()))
+                .ToArray());
+    }
+
+    private string CreateToken(AppUser user, DateTime expiresAt, AppUserStudio? membership = null)
     {
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new(ClaimTypes.Email, user.Email),
-            new(AuthClaimTypes.StudioId, user.StudioId.ToString())
+            new(ClaimTypes.Email, user.Email)
         };
-
-        claims.AddRange(user.AppUserRoles.Select(userRole =>
-            new Claim(ClaimTypes.Role, userRole.Role)));
-
-        if (user.MemberId.HasValue)
+        if (membership is not null)
         {
-            claims.Add(new Claim(AuthClaimTypes.MemberId, user.MemberId.Value.ToString()));
+            claims.Add(new Claim(AuthClaimTypes.StudioId, membership.StudioId.ToString()));
+            claims.AddRange(membership.Roles.Select(item => new Claim(ClaimTypes.Role, item.Role)));
+            if (membership.MemberId.HasValue)
+                claims.Add(new Claim(AuthClaimTypes.MemberId, membership.MemberId.Value.ToString()));
+            if (membership.TrainerId.HasValue)
+                claims.Add(new Claim(AuthClaimTypes.TrainerId, membership.TrainerId.Value.ToString()));
         }
 
-        if (user.TrainerId.HasValue)
-        {
-            claims.Add(new Claim(AuthClaimTypes.TrainerId, user.TrainerId.Value.ToString()));
-        }
-
-        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.SigningKey));
-        var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-        var token = new JwtSecurityToken(
-            issuer: _jwtOptions.Issuer,
-            audience: _jwtOptions.Audience,
+        var credentials = new SigningCredentials(
+            new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwt.SigningKey)),
+            SecurityAlgorithms.HmacSha256);
+        return new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(
+            issuer: _jwt.Issuer,
+            audience: _jwt.Audience,
             claims: claims,
             expires: expiresAt,
-            signingCredentials: credentials);
-
-        return new JwtSecurityTokenHandler().WriteToken(token);
+            signingCredentials: credentials));
     }
 
-    private static ServiceResult<LoginResponse> InvalidCredentials()
-    {
-        return ServiceResult<LoginResponse>.Unauthorized(
-            "Login failed.",
-            "Studio, email or password is incorrect.");
-    }
+    private static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
+
+    private static ServiceResult<AccountSessionResponse> InvalidAccountCredentials() =>
+        ServiceResult<AccountSessionResponse>.Unauthorized(
+            "Login failed.", "Email or password is incorrect.");
 }

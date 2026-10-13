@@ -75,26 +75,6 @@ class PaymentsRemoteDataSource {
     (await _api.getBytes('/api/membership-payments/$id/barcode')).data ?? [],
   );
 
-  Future<PaymentSettings> getSettings() async {
-    final response = await _api.get<Map<String, dynamic>>(
-      '/api/payment-settings',
-    );
-    return PaymentSettings.fromJson(response.data!);
-  }
-
-  Future<void> updateSettings(PaymentSettings value) => _api.put<void>(
-    '/api/payment-settings',
-    data: {
-      'recipientName': value.recipientName,
-      'iban': value.iban,
-      'paymentModel': value.paymentModel,
-      'paymentReference': value.paymentReference,
-      'paymentDescription': value.paymentDescription,
-      'memberReminderDays': value.memberReminderDays,
-      'adminReminderDays': value.adminReminderDays,
-      'notificationTime': value.notificationTime,
-    },
-  );
   static String _date(DateTime value) =>
       '${value.year.toString().padLeft(4, '0')}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')}';
 }
