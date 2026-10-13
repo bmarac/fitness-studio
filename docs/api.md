@@ -110,6 +110,10 @@ fiksne rezervacije otkazane pauzom. Zavrseni raspored nije moguce ponovno aktivi
 bilo kojeg trenera svojeg studija, dok trener moze kreirati raspored samo za
 `trainer_id` iz vlastitog JWT-a.
 
+`GET /api/recurring-class-schedules/{id}/members` vraca trenutno aktivne clanove
+fiksne grupe, sortirane po prezimenu i imenu. Admin moze otvoriti svaki raspored
+studija, a trener samo vlastiti.
+
 ### Polaznici termina
 
 ```http
@@ -138,6 +142,23 @@ Content-Type: application/json
 ```
 
 Admin moze prekinuti svaku fiksnu dodjelu u studiju, a trener samo dodjelu koja pripada njegovom ponavljajucem rasporedu. Operacija otkazuje aktivne buduce rezervacije te dodjele od zadanog datuma. Promjena dodjele i rezervacija izvodi se u jednoj transakciji.
+
+### Premjestanje fiksne dodjele
+
+```http
+PATCH /api/member-fixed-schedules/{id}/move
+Content-Type: application/json
+
+{
+  "targetRecurringScheduleId": 42
+}
+```
+
+Premjestanje vrijedi od danas u vremenskoj zoni studija. Izvorna dodjela i njene
+buduce rezervacije se otkazuju, a na aktivnom odredisnom rasporedu stvara se nova
+dodjela i rezervacije vec generiranih termina. Puni raspored nije dopusteno odabrati.
+Admin moze premjestati izmedu svih rasporeda studija, a trener samo izmedu vlastitih.
+Promjena je transakcijska i ne mijenja povijesne dolaske.
 
 ### Termini prijavljenog trenera
 

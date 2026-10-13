@@ -7,13 +7,10 @@ import '../../../../core/l10n/localization.dart';
 import '../../../../core/widgets/error_view.dart';
 import '../../../../core/widgets/loading_view.dart';
 import '../../../../navigation/app_routes.dart';
-import '../../../auth/presentation/state/login_controller.dart';
-import '../../../auth/presentation/state/login_state.dart';
 import '../../domain/entities/class_session.dart';
 import '../state/class_sessions_controller.dart';
 import '../state/class_sessions_state.dart';
 import '../widgets/class_session_card.dart';
-import '../../../recurring_schedules/presentation/widgets/recurring_schedules_sheet.dart';
 
 class ClassSessionsScreen extends ConsumerStatefulWidget {
   const ClassSessionsScreen({super.key, this.referenceDate});
@@ -44,24 +41,8 @@ class _ClassSessionsScreenState extends ConsumerState<ClassSessionsScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(classSessionsControllerProvider);
-    final authState = ref.watch(loginControllerProvider);
-    final canManageSchedules =
-        authState is LoginSuccess &&
-        (authState.session.user.hasRole('trainer') ||
-            authState.session.user.hasRole('admin'));
-
     return Scaffold(
-      appBar: AppBar(
-        title: Text(context.l10n.classSessionsTitle),
-        actions: [
-          if (canManageSchedules)
-            IconButton(
-              tooltip: context.l10n.schedulesTooltip,
-              onPressed: _openSchedules,
-              icon: const Icon(Icons.calendar_month_outlined),
-            ),
-        ],
-      ),
+      appBar: AppBar(title: Text(context.l10n.classSessionsTitle)),
       body: switch (state) {
         ClassSessionsInitial() || ClassSessionsLoading() => const LoadingView(),
         ClassSessionsLoaded(classSessions: final classSessions) =>
@@ -83,19 +64,6 @@ class _ClassSessionsScreenState extends ConsumerState<ClassSessionsScreen> {
               .loadClassSessions(),
         ),
       },
-    );
-  }
-
-  Future<void> _openSchedules() async {
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: false,
-      builder: (context) => RecurringSchedulesSheet(
-        onChanged: () => ref
-            .read(classSessionsControllerProvider.notifier)
-            .loadClassSessions(),
-      ),
     );
   }
 

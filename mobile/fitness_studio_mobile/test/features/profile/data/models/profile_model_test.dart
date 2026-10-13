@@ -31,11 +31,11 @@ void main() {
         'sessionLimitPeriod': 'week',
       },
       'usage': {
-        'periodStartsOn': '2026-09-21',
-        'periodEndsOn': '2026-09-27',
-        'used': 2,
-        'allowed': 2,
-        'period': 'week',
+        'periodStartsOn': '2026-09-19',
+        'periodEndsOn': '2026-10-18',
+        'used': 7,
+        'allowed': 9,
+        'period': 'billing_cycle',
       },
       'fixedSchedules': [
         {
@@ -50,7 +50,9 @@ void main() {
 
     expect(model.primaryPerson?.fullName, 'Ana Horvat');
     expect(model.membership?.sessionLimit, 2);
-    expect(model.usage?.used, 2);
+    expect(model.usage?.used, 7);
+    expect(model.usage?.allowed, 9);
+    expect(model.usage?.period, 'billing_cycle');
     expect(model.fixedSchedules.single.dayOfWeek, 1);
   });
 

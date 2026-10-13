@@ -16,6 +16,29 @@ public static class MembershipCycle
         return Math.Round(fullAmount * usedDays / totalDays, 2, MidpointRounding.AwayFromZero);
     }
 
+    public static (DateOnly StartsOn, DateOnly EndsOnExclusive)? FindContainingPeriod(
+        DateOnly billingStartsOn,
+        DateOnly date)
+    {
+        if (date < billingStartsOn)
+        {
+            return null;
+        }
+
+        var anchorDay = billingStartsOn.Day;
+        var periodStart = billingStartsOn;
+        while (true)
+        {
+            var periodEnd = NextMonth(periodStart, anchorDay);
+            if (date < periodEnd)
+            {
+                return (periodStart, periodEnd);
+            }
+
+            periodStart = periodEnd;
+        }
+    }
+
     public static IReadOnlyList<DateOnly> DueStarts(
         DateOnly nextBillingOn,
         DateOnly today,

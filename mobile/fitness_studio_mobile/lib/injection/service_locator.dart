@@ -48,6 +48,8 @@ import '../features/recurring_schedules/domain/repositories/recurring_schedules_
 import '../features/recurring_schedules/domain/usecases/change_recurring_schedule_status.dart';
 import '../features/recurring_schedules/domain/usecases/get_recurring_schedules.dart';
 import '../features/recurring_schedules/domain/usecases/get_trainers.dart';
+import '../features/recurring_schedules/domain/usecases/get_fixed_schedule_members.dart';
+import '../features/recurring_schedules/domain/usecases/move_fixed_schedule_member.dart';
 import '../features/trainers/data/trainers_management_remote_data_source.dart';
 import '../features/trainers/data/trainers_management_repository_impl.dart';
 import '../features/trainers/domain/repositories/trainers_management_repository.dart';
@@ -131,6 +133,16 @@ Future<void> configureDependencies() async {
     )
     ..registerLazySingleton<ChangeRecurringScheduleStatus>(
       () => ChangeRecurringScheduleStatus(
+        serviceLocator<RecurringSchedulesRepository>(),
+      ),
+    )
+    ..registerLazySingleton<GetFixedScheduleMembers>(
+      () => GetFixedScheduleMembers(
+        serviceLocator<RecurringSchedulesRepository>(),
+      ),
+    )
+    ..registerLazySingleton<MoveFixedScheduleMember>(
+      () => MoveFixedScheduleMember(
         serviceLocator<RecurringSchedulesRepository>(),
       ),
     )

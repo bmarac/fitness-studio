@@ -94,8 +94,8 @@ public class ProfileService : IProfileService
                     entitlement.PeriodStartsOn!.Value,
                     entitlement.PeriodEndsOn!.Value,
                     entitlement.Used,
-                    plan.SessionLimit.Value,
-                    plan.SessionLimitPeriod);
+                    entitlement.Allowed!.Value,
+                    entitlement.Period ?? plan.SessionLimitPeriod);
             }
         }
 

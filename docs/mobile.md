@@ -15,7 +15,8 @@ Flutter projekt nalazi se u `mobile/fitness_studio_mobile`.
 
 Glavni tabovi su:
 
-- **Termini**: tjedni pregled grupnih treninga
+- **Termini**: članski tjedni pregled grupnih treninga
+- **Rasporedi**: trenerski i administratorski tjedni pregled ponavljajućih rasporeda
 - **Moji treninzi**: korisnikove rezervacije i fiksni termini
 - **Profil**: osobni podaci i podatak o paketu
 
@@ -25,6 +26,7 @@ Dodatne rute:
 - `/registracija`
 - `/odabir-studija`
 - `/termini/termin/{id}`
+- `/rasporedi`
 - `/profil/antropometrija`
 - `/profil/clanovi`
 - `/profil/clanovi/{memberId}/antropometrija`
@@ -47,23 +49,26 @@ Dodatne rute:
 - tjedni pregled termina
 - detalji termina i popunjenost
 - rezerviranje termina za korisnika povezanog s clanom
-- forma za kreiranje ponavljajuceg rasporeda nalazi se u panelu **Rasporedi**; admin bira
+- forma za kreiranje ponavljajuceg rasporeda nalazi se na ekranu **Rasporedi**; admin bira
   trenera, a trener moze kreirati raspored samo za sebe
-- upravljanje ponavljajucim rasporedima ostaje unutar ekrana **Termini**: donji panel
-  prikazuje aktivne, pauzirane i zavrsene rasporede te nudi pauzu,
-  nastavak i trajni zavrsetak od odabranog datuma
+- clan u prvom tabu vidi **Termine**, dok trener i admin na istom mjestu vide
+  zasebnu rutu **Rasporedi** s tjednom mrezom, popunjenoscu fiksnih grupa i filtrima
+  za aktivne, pauzirane i zavrsene rasporede
+- upravljanje rasporedima nudi pauzu, nastavak i trajni zavrsetak od odabranog datuma
 - otkazivanje konkretnog termina uz provjeru uloge
 - pregled polaznika za admina ili dodijeljenog trenera
 - upravljanje polaznicima s detalja termina preko izbornika uz svakog clana
 - **Ukloni s ovog termina** otkazuje samo odabranu rezervaciju
 - **Ukloni iz fiksne grupe** otkazuje odabrani i buduce termine iste fiksne dodjele
 - trenerski pregled **Moji treninzi** s današnjim, nadolazećim i završenim terminima
-- **Moji treninzi** je početni tab nakon prijave: član vidi sve svoje rezervacije
+- **Rasporedi** je početni i srednji tab za trenera/admina, dok član nakon prijave
+  i dalje prvo vidi **Moje treninge**; član ondje vidi sve svoje rezervacije
   kronološki i može otkazati pojedini budući termin, dok admin može filtrirati
   pregled termina po aktivnom treneru ili odabrati **Svi treneri**
 - evidencija prisutnosti i nedolaska na zapocetim terminima
 - profil prijavljenog korisnika s osobnim podacima, ulogama i studijem
-- clanski prikaz aktivnog paketa, iskoristenosti i fiksnih termina
+- clanski prikaz aktivnog paketa, iskoristenosti u mjesecnom obracunskom
+  periodu te fiksnih termina
 - trenerski profil bez praznih clanskih sekcija
 - povlacenje za osvjezavanje profila i odjava uz potvrdu
 - sazetak posljednjih mjerenja i promjene na profilu clana
@@ -117,3 +122,8 @@ Uloga odredjuje vidljive akcije, ali backend ponavlja sve sigurnosne provjere. M
 Sekcija **Polaznici** prikazuje se na detaljima termina samo adminu ili treneru kojem je termin dodijeljen. Izbornik s tri tocke uz polaznika uvijek nudi uklanjanje s konkretnog termina. Uklanjanje iz fiksne grupe prikazuje se samo kada API za rezervaciju vrati `memberFixedScheduleId`.
 
 Kod prekida fiksne dodjele aplikacija koristi datum trenutno otvorenog termina kao `effectiveFrom`. Prije obje akcije prikazuje se potvrda. Nakon uspjeha osvjezavaju se popis polaznika, popunjenost detalja i popis termina.
+
+Na ekranu **Rasporedi** klik na karticu otvara modal s aktivnim clanovima fiksne
+grupe. Akcije pauziranja, nastavka i zavrsavanja nalaze se na dnu modala. Akcija
+**Premjesti** uz clana zatvara modal i prebacuje mrezu u odabir aktivnog odredista;
+izvorni i puni rasporedi su onemoguceni, a promjena se izvrsava tek nakon potvrde.

@@ -1,6 +1,7 @@
 using FitnessStudio.Api.Controllers;
 using FitnessStudio.Api.Domain.Auth;
 using FitnessStudio.Api.Dtos.RecurringClassSchedules;
+using FitnessStudio.Api.Dtos.MemberFixedSchedules;
 using FitnessStudio.Api.Services;
 using FitnessStudio.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
@@ -57,6 +58,23 @@ public class RecurringClassSchedulesControllerTests
         SchedulingControllerTestAssertions.Problem(
             action.Result,
             StatusCodes.Status404NotFound);
+    }
+
+    [Fact]
+    public async Task GetScheduleMembersReturnsItemsAndForwardsId()
+    {
+        var members = new List<MemberFixedScheduleResponse>();
+        var service = new FakeRecurringClassSchedulesService
+        {
+            GetScheduleMembersResult = ServiceResult<List<MemberFixedScheduleResponse>>.Success(members)
+        };
+        var controller = new RecurringClassSchedulesController(service);
+
+        var action = await controller.GetScheduleMembers(41);
+
+        var ok = Assert.IsType<OkObjectResult>(action.Result);
+        Assert.Same(members, ok.Value);
+        Assert.Equal(41, service.LastGetScheduleMembersId);
     }
 
     [Fact]
@@ -227,6 +245,10 @@ public class RecurringClassSchedulesControllerTests
             nameof(RecurringClassSchedulesController.GetSchedule));
         SchedulingControllerTestAssertions.MethodRequiresRole(
             type,
+            nameof(RecurringClassSchedulesController.GetScheduleMembers),
+            AuthRoles.Staff);
+        SchedulingControllerTestAssertions.MethodRequiresRole(
+            type,
             nameof(RecurringClassSchedulesController.CreateSchedule),
             AuthRoles.Staff);
         SchedulingControllerTestAssertions.MethodRequiresRole(
@@ -265,7 +287,8 @@ public class RecurringClassSchedulesControllerTests
             new DateOnly(2026, 10, 12),
             null,
             "active",
-            null);
+            null,
+            7);
 
     private static CreateRecurringClassScheduleRequest CreateRequest()
         => new()
@@ -300,6 +323,7 @@ public class RecurringClassSchedulesControllerTests
     {
         public List<RecurringClassScheduleResponse> GetSchedulesResult { get; init; } = [];
         public ServiceResult<RecurringClassScheduleResponse> GetScheduleResult { get; init; } = null!;
+        public ServiceResult<List<MemberFixedScheduleResponse>> GetScheduleMembersResult { get; init; } = null!;
         public ServiceResult<RecurringClassScheduleResponse> CreateScheduleResult { get; init; } = null!;
         public ServiceResult UpdateScheduleResult { get; init; } = null!;
         public ServiceResult PauseResult { get; init; } = null!;
@@ -307,6 +331,7 @@ public class RecurringClassSchedulesControllerTests
         public ServiceResult EndResult { get; init; } = null!;
         public ServiceResult DeleteScheduleResult { get; init; } = null!;
         public long? LastGetScheduleId { get; private set; }
+        public long? LastGetScheduleMembersId { get; private set; }
         public CreateRecurringClassScheduleRequest? LastCreateRequest { get; private set; }
         public long? LastUpdateScheduleId { get; private set; }
         public UpdateRecurringClassScheduleRequest? LastUpdateRequest { get; private set; }
@@ -325,6 +350,12 @@ public class RecurringClassSchedulesControllerTests
         {
             LastGetScheduleId = id;
             return Task.FromResult(GetScheduleResult);
+        }
+
+        public Task<ServiceResult<List<MemberFixedScheduleResponse>>> GetScheduleMembersAsync(long id)
+        {
+            LastGetScheduleMembersId = id;
+            return Task.FromResult(GetScheduleMembersResult);
         }
 
         public Task<ServiceResult<RecurringClassScheduleResponse>> CreateScheduleAsync(

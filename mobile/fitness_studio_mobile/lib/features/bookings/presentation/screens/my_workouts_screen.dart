@@ -17,6 +17,7 @@ import '../state/member_bookings_provider.dart';
 import '../../../class_sessions/domain/entities/class_session.dart';
 import '../../../class_sessions/presentation/state/my_class_sessions_provider.dart';
 import '../../../recurring_schedules/domain/entities/trainer_option.dart';
+import '../../../profile/presentation/state/profile_provider.dart';
 
 class MyWorkoutsScreen extends ConsumerStatefulWidget {
   const MyWorkoutsScreen({super.key});
@@ -382,6 +383,7 @@ class _MemberWorkoutCardState extends ConsumerState<_MemberWorkoutCard> {
     switch (result) {
       case Success():
         await ref.read(memberBookingsProvider.notifier).refresh();
+        ref.invalidate(profileProvider);
         if (!mounted) return;
         ScaffoldMessenger.of(
           context,
@@ -469,8 +471,6 @@ class _TrainerWorkoutsContent extends ConsumerWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
-          _WeekSummary(classSessions: classSessions, now: now),
-          const SizedBox(height: 24),
           _WorkoutList(
             title: _filterLabel(context, filter),
             items: visibleItems,
@@ -517,102 +517,6 @@ class _TrainerWorkoutsContent extends ConsumerWidget {
       WorkoutFilter.cancelled => context.l10n.cancelledWorkouts,
       WorkoutFilter.all => context.l10n.allWorkouts,
     };
-  }
-}
-
-class _WeekSummary extends StatelessWidget {
-  const _WeekSummary({required this.classSessions, required this.now});
-
-  final List<ClassSession> classSessions;
-  final DateTime now;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final startOfWeek = DateUtils.dateOnly(
-      now.subtract(Duration(days: now.weekday - 1)),
-    );
-    final endOfWeek = startOfWeek.add(const Duration(days: 7));
-    final thisWeek = classSessions
-        .where(
-          (item) =>
-              !item.startsAt.isBefore(startOfWeek) &&
-              item.startsAt.isBefore(endOfWeek),
-        )
-        .toList();
-    final upcoming = classSessions.where(
-      (item) => item.startsAt.isAfter(now) && item.status == 'scheduled',
-    );
-    final next = upcoming.isEmpty ? null : upcoming.first;
-    final participantCount = thisWeek.fold<int>(
-      0,
-      (sum, item) => sum + item.bookedCount,
-    );
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          context.l10n.thisWeek,
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: _SummaryValue(
-                value: '${thisWeek.length}',
-                label: context.l10n.workoutsMetric,
-              ),
-            ),
-            const SizedBox(height: 44, child: VerticalDivider()),
-            Expanded(
-              child: _SummaryValue(
-                value: '$participantCount',
-                label: context.l10n.bookingsMetric,
-              ),
-            ),
-            const SizedBox(height: 44, child: VerticalDivider()),
-            Expanded(
-              child: _SummaryValue(
-                value: next == null
-                    ? '-'
-                    : context.formatShortDate(next.startsAt),
-                label: context.l10n.nextMetric,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _SummaryValue extends StatelessWidget {
-  const _SummaryValue({required this.value, required this.label});
-
-  final String value;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Column(
-      children: [
-        Text(
-          value,
-          textAlign: TextAlign.center,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(label, style: theme.textTheme.bodySmall),
-      ],
-    );
   }
 }
 

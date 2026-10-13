@@ -11,6 +11,8 @@ class AppRoutes {
 
   static const classSessions = '/termini';
 
+  static const recurringSchedules = '/rasporedi';
+
   static const classSessionDetails = 'termin/:id';
 
   static const myWorkouts = '/moji-treninzi';

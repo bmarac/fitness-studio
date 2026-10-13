@@ -12,7 +12,8 @@ public sealed record MembershipBookingDecision(
     DateOnly? PeriodStartsOn = null,
     DateOnly? PeriodEndsOn = null,
     int Used = 0,
-    int? Allowed = null)
+    int? Allowed = null,
+    string? Period = null)
 {
     public bool IsAllowed => Status == MembershipBookingDecisionStatus.Allowed;
 }

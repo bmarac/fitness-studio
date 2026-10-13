@@ -3,12 +3,23 @@ import 'package:fitness_studio_mobile/features/auth/domain/entities/authenticate
 import 'package:fitness_studio_mobile/features/auth/presentation/state/login_controller.dart';
 import 'package:fitness_studio_mobile/features/auth/presentation/state/login_state.dart';
 import 'package:fitness_studio_mobile/features/bookings/presentation/state/member_bookings_provider.dart';
+import 'package:fitness_studio_mobile/features/class_sessions/presentation/state/class_sessions_controller.dart';
+import 'package:fitness_studio_mobile/features/class_sessions/presentation/state/class_sessions_state.dart';
 import 'package:fitness_studio_mobile/features/membership_plans/presentation/state/membership_plans_providers.dart';
 import 'package:fitness_studio_mobile/features/profile/domain/entities/profile.dart';
 import 'package:fitness_studio_mobile/features/profile/presentation/state/profile_provider.dart';
 import 'package:fitness_studio_mobile/features/progress/domain/entities/member_progress.dart';
 import 'package:fitness_studio_mobile/features/progress/presentation/state/member_progress_provider.dart';
 import 'package:fitness_studio_mobile/features/progress/presentation/state/progress_management_providers.dart';
+import 'package:fitness_studio_mobile/features/recurring_schedules/domain/entities/recurring_schedule.dart';
+import 'package:fitness_studio_mobile/features/recurring_schedules/domain/entities/fixed_schedule_member.dart';
+import 'package:fitness_studio_mobile/features/recurring_schedules/domain/usecases/get_recurring_schedules.dart';
+import 'package:fitness_studio_mobile/features/recurring_schedules/domain/repositories/recurring_schedules_repository.dart';
+import 'package:fitness_studio_mobile/features/recurring_schedules/domain/entities/recurring_schedule_draft.dart';
+import 'package:fitness_studio_mobile/features/recurring_schedules/domain/entities/schedule_form_data.dart';
+import 'package:fitness_studio_mobile/features/recurring_schedules/domain/entities/trainer_option.dart';
+import 'package:fitness_studio_mobile/core/error/result.dart';
+import 'package:fitness_studio_mobile/injection/service_locator.dart';
 import 'package:fitness_studio_mobile/features/trainers/presentation/state/trainers_management_providers.dart';
 import 'package:fitness_studio_mobile/navigation/app_router.dart';
 import 'package:fitness_studio_mobile/navigation/app_routes.dart';
@@ -19,6 +30,8 @@ import 'package:flutter_test/flutter_test.dart';
 import '../helpers/localized_test_app.dart';
 
 void main() {
+  tearDown(() => serviceLocator.reset());
+
   testWidgets('authenticated app starts on My Workouts tab', (tester) async {
     final container = ProviderContainer(
       overrides: [
@@ -42,6 +55,86 @@ void main() {
       AppRoutes.myWorkouts,
     );
     expect(find.text('Moji treninzi'), findsWidgets);
+    expect(find.text('Termini'), findsOneWidget);
+  });
+
+  testWidgets('admin starts on the centered schedules tab', (tester) async {
+    final repository = _EmptyRecurringSchedulesRepository();
+    serviceLocator.registerSingleton<GetRecurringSchedules>(
+      GetRecurringSchedules(repository),
+    );
+    final container = ProviderContainer(
+      overrides: [
+        loginControllerProvider.overrideWith(_LoggedInAdminController.new),
+        memberBookingsProvider.overrideWith(_EmptyMemberBookingsController.new),
+      ],
+    );
+    addTearDown(container.dispose);
+    final router = container.read(appRouterProvider);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: localizedRouterTestApp(router: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      AppRoutes.recurringSchedules,
+    );
+    expect(find.text('Rasporedi'), findsWidgets);
+
+    final navigationBar = tester.widget<NavigationBar>(
+      find.byType(NavigationBar),
+    );
+    expect(navigationBar.selectedIndex, 1);
+    expect(navigationBar.destinations[1], isA<NavigationDestination>());
+    expect(
+      (navigationBar.destinations[1] as NavigationDestination).label,
+      'Rasporedi',
+    );
+
+    router.go(AppRoutes.classSessions);
+    await tester.pumpAndSettle();
+
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      AppRoutes.recurringSchedules,
+    );
+    expect(find.text('Rasporedi'), findsWidgets);
+  });
+
+  testWidgets('member schedules root redirects to termini', (tester) async {
+    final container = ProviderContainer(
+      overrides: [
+        loginControllerProvider.overrideWith(_LoggedInMemberController.new),
+        memberBookingsProvider.overrideWith(_EmptyMemberBookingsController.new),
+        classSessionsControllerProvider.overrideWith(
+          _EmptyClassSessionsController.new,
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    final router = container.read(appRouterProvider);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: localizedRouterTestApp(router: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    router.go(AppRoutes.recurringSchedules);
+    await tester.pumpAndSettle();
+
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      AppRoutes.classSessions,
+    );
+    expect(find.text('Termini'), findsWidgets);
   });
 
   testWidgets('logged-out user can open registration', (tester) async {
@@ -248,6 +341,50 @@ class _EmptyMemberBookingsController extends MemberBookingsController {
   @override
   MemberBookingsState build() =>
       const MemberBookingsState(isInitialLoading: false);
+}
+
+class _EmptyClassSessionsController extends ClassSessionsController {
+  @override
+  ClassSessionsState build() => const ClassSessionsLoaded([]);
+
+  @override
+  Future<void> loadClassSessions({DateTime? from, DateTime? to}) async {}
+}
+
+class _EmptyRecurringSchedulesRepository
+    implements RecurringSchedulesRepository {
+  @override
+  Future<Result<List<RecurringSchedule>>> getSchedules() async =>
+      const Success([]);
+
+  @override
+  Future<Result<List<FixedScheduleMember>>> getScheduleMembers(
+    int scheduleId,
+  ) async => const Success([]);
+
+  @override
+  Future<Result<void>> moveFixedScheduleMember({
+    required int assignmentId,
+    required int targetScheduleId,
+  }) async => const Success(null);
+
+  @override
+  Future<Result<void>> changeScheduleStatus({
+    required int id,
+    required String action,
+    required DateTime effectiveFrom,
+  }) async => const Success(null);
+
+  @override
+  Future<Result<void>> createSchedule(RecurringScheduleDraft draft) async =>
+      const Success(null);
+
+  @override
+  Future<Result<ScheduleFormData>> getFormData() async =>
+      const Success(ScheduleFormData(classTypes: [], trainers: []));
+
+  @override
+  Future<Result<List<TrainerOption>>> getTrainers() async => const Success([]);
 }
 
 class _LoggedOutController extends LoginController {

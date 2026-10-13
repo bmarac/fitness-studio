@@ -14,6 +14,7 @@ import '../features/class_sessions/presentation/screens/class_session_details_sc
 import '../features/class_sessions/presentation/screens/class_sessions_screen.dart';
 import '../features/membership_plans/presentation/screens/membership_plans_screen.dart';
 import '../features/profile/presentation/screens/profile_screen.dart';
+import '../features/recurring_schedules/presentation/screens/recurring_schedules_screen.dart';
 import '../features/payments/presentation/screens/payments_screen.dart';
 import '../features/payments/presentation/screens/notifications_screen.dart';
 import '../features/progress/presentation/screens/progress_screen.dart';
@@ -45,11 +46,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
 
       if (authState is LoginSuccess) {
+        final isStaff =
+            authState.session.user.hasRole('trainer') ||
+            authState.session.user.hasRole('admin');
         if (location == AppRoutes.login ||
             location == AppRoutes.register ||
             location == AppRoutes.studioSelection ||
             location == AppRoutes.splash) {
-          return AppRoutes.myWorkouts;
+          return isStaff ? AppRoutes.recurringSchedules : AppRoutes.myWorkouts;
+        }
+
+        if (location == AppRoutes.classSessions && isStaff) {
+          return AppRoutes.recurringSchedules;
+        }
+        if (location == AppRoutes.recurringSchedules && !isStaff) {
+          return AppRoutes.classSessions;
         }
 
         return null;
@@ -90,6 +101,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
+                path: AppRoutes.myWorkouts,
+                builder: (context, state) => const MyWorkoutsScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
                 path: AppRoutes.classSessions,
                 builder: (context, state) => const ClassSessionsScreen(),
                 routes: [
@@ -107,13 +126,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                   ),
                 ],
               ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
               GoRoute(
-                path: AppRoutes.myWorkouts,
-                builder: (context, state) => const MyWorkoutsScreen(),
+                path: AppRoutes.recurringSchedules,
+                builder: (context, state) => const RecurringSchedulesScreen(),
               ),
             ],
           ),

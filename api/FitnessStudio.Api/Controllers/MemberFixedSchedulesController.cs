@@ -55,6 +55,14 @@ public class MemberFixedSchedulesController : ControllerBase
         return result.Status == ServiceResultStatus.Success ? NoContent() : this.ToActionResult(result);
     }
 
+    [Authorize(Roles = AuthRoles.Staff)]
+    [HttpPatch("{id:long}/move")]
+    public async Task<IActionResult> MoveSchedule(long id, MoveMemberFixedScheduleRequest request)
+    {
+        var result = await _service.MoveScheduleAsync(id, request);
+        return result.Status == ServiceResultStatus.Success ? NoContent() : this.ToActionResult(result);
+    }
+
     [Authorize(Roles = AuthRoles.Admin)]
     [HttpDelete("{id:long}")]
     public async Task<IActionResult> DeleteSchedule(long id)

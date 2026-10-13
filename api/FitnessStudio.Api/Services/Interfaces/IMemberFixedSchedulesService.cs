@@ -10,5 +10,6 @@ public interface IMemberFixedSchedulesService
     Task<ServiceResult<MemberFixedScheduleResponse>> CreateScheduleAsync(CreateMemberFixedScheduleRequest request);
     Task<ServiceResult> UpdateScheduleAsync(long id, UpdateMemberFixedScheduleRequest request);
     Task<ServiceResult> CancelScheduleAsync(long id, CancelMemberFixedScheduleRequest request);
+    Task<ServiceResult> MoveScheduleAsync(long id, MoveMemberFixedScheduleRequest request);
     Task<ServiceResult> DeleteScheduleAsync(long id);
 }

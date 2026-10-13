@@ -3,6 +3,7 @@ import '../../domain/entities/recurring_schedule_draft.dart';
 import '../models/class_type_option_model.dart';
 import '../models/trainer_option_model.dart';
 import '../models/recurring_schedule_model.dart';
+import '../models/fixed_schedule_member_model.dart';
 
 class RecurringSchedulesRemoteDataSource {
   const RecurringSchedulesRemoteDataSource(this._apiClient);
@@ -30,6 +31,31 @@ class RecurringSchedulesRemoteDataSource {
     await _apiClient.patch<void>(
       '/api/recurring-class-schedules/$id/$action',
       data: {'effectiveFrom': _formatDate(effectiveFrom)},
+    );
+  }
+
+  Future<List<FixedScheduleMemberModel>> getScheduleMembers(
+    int scheduleId,
+  ) async {
+    final response = await _apiClient.get<List<dynamic>>(
+      '/api/recurring-class-schedules/$scheduleId/members',
+    );
+
+    return (response.data ?? [])
+        .map(
+          (item) =>
+              FixedScheduleMemberModel.fromJson(item as Map<String, dynamic>),
+        )
+        .toList();
+  }
+
+  Future<void> moveFixedScheduleMember({
+    required int assignmentId,
+    required int targetScheduleId,
+  }) async {
+    await _apiClient.patch<void>(
+      '/api/member-fixed-schedules/$assignmentId/move',
+      data: {'targetRecurringScheduleId': targetScheduleId},
     );
   }
 

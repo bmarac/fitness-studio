@@ -1,4 +1,5 @@
 using FitnessStudio.Api.Dtos.RecurringClassSchedules;
+using FitnessStudio.Api.Dtos.MemberFixedSchedules;
 
 namespace FitnessStudio.Api.Services.Interfaces;
 
@@ -6,6 +7,7 @@ public interface IRecurringClassSchedulesService
 {
     Task<List<RecurringClassScheduleResponse>> GetSchedulesAsync();
     Task<ServiceResult<RecurringClassScheduleResponse>> GetScheduleAsync(long id);
+    Task<ServiceResult<List<MemberFixedScheduleResponse>>> GetScheduleMembersAsync(long id);
     Task<ServiceResult<RecurringClassScheduleResponse>> CreateScheduleAsync(CreateRecurringClassScheduleRequest request);
     Task<ServiceResult> UpdateScheduleAsync(long id, UpdateRecurringClassScheduleRequest request);
     Task<ServiceResult> PauseScheduleAsync(long id, ChangeRecurringClassScheduleStatusRequest request);

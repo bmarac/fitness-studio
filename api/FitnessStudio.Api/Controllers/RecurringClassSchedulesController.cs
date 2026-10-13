@@ -1,5 +1,6 @@
 using FitnessStudio.Api.Domain.Auth;
 using FitnessStudio.Api.Dtos.RecurringClassSchedules;
+using FitnessStudio.Api.Dtos.MemberFixedSchedules;
 using FitnessStudio.Api.Extensions;
 using FitnessStudio.Api.Services;
 using FitnessStudio.Api.Services.Interfaces;
@@ -25,6 +26,14 @@ public class RecurringClassSchedulesController : ControllerBase
     public async Task<ActionResult<RecurringClassScheduleResponse>> GetSchedule(long id)
     {
         var result = await _service.GetScheduleAsync(id);
+        return result.Status == ServiceResultStatus.Success ? Ok(result.Value) : this.ToActionResult(result);
+    }
+
+    [Authorize(Roles = AuthRoles.Staff)]
+    [HttpGet("{id:long}/members")]
+    public async Task<ActionResult<List<MemberFixedScheduleResponse>>> GetScheduleMembers(long id)
+    {
+        var result = await _service.GetScheduleMembersAsync(id);
         return result.Status == ServiceResultStatus.Success ? Ok(result.Value) : this.ToActionResult(result);
     }
 

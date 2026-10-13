@@ -8,6 +8,9 @@ class RecurringScheduleModel extends RecurringSchedule {
     required super.trainerName,
     required super.dayOfWeek,
     required super.startsAtTime,
+    required super.durationMinutes,
+    required super.capacity,
+    required super.activeMemberCount,
     required super.validFrom,
     required super.validUntil,
     required super.status,
@@ -22,6 +25,9 @@ class RecurringScheduleModel extends RecurringSchedule {
       trainerName: json['trainerName'] as String,
       dayOfWeek: json['dayOfWeek'] as int,
       startsAtTime: json['startsAtTime'] as String,
+      durationMinutes: json['durationMinutes'] as int,
+      capacity: json['capacity'] as int,
+      activeMemberCount: json['activeMemberCount'] as int,
       validFrom: DateTime.parse(json['validFrom'] as String),
       validUntil: json['validUntil'] == null
           ? null

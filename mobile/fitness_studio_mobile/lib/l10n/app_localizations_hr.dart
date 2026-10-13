@@ -15,6 +15,9 @@ class AppLocalizationsHr extends AppLocalizations {
   String get navClassSessions => 'Termini';
 
   @override
+  String get navRecurringSchedules => 'Rasporedi';
+
+  @override
   String get navMyWorkouts => 'Moji treninzi';
 
   @override
@@ -146,6 +149,9 @@ class AppLocalizationsHr extends AppLocalizations {
 
   @override
   String get profileUsedInMembership => 'Iskorišteno u članarini';
+
+  @override
+  String get profileUsedInBillingCycle => 'Iskorišteno u obračunskom periodu';
 
   @override
   String get profileMembersProgress => 'Antropometrija članova';
@@ -490,9 +496,6 @@ class AppLocalizationsHr extends AppLocalizations {
   String get allWorkouts => 'Svi treninzi';
 
   @override
-  String get thisWeek => 'Ovaj tjedan';
-
-  @override
   String attendeesCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -512,15 +515,6 @@ class AppLocalizationsHr extends AppLocalizations {
 
   @override
   String get sessionStatusScheduled => 'Zakazan';
-
-  @override
-  String get workoutsMetric => 'treninga';
-
-  @override
-  String get bookingsMetric => 'prijava';
-
-  @override
-  String get nextMetric => 'sljedeći';
 
   @override
   String get progressTitle => 'Antropometrija';
@@ -630,6 +624,14 @@ class AppLocalizationsHr extends AppLocalizations {
 
   @override
   String get schedulesTitle => 'Rasporedi';
+
+  @override
+  String get filterSchedules => 'Filtriraj rasporede';
+
+  @override
+  String scheduleFixedOccupancy(int active, int capacity) {
+    return '$active/$capacity članova';
+  }
 
   @override
   String get noSchedules => 'Nema kreiranih rasporeda.';
@@ -885,10 +887,10 @@ class AppLocalizationsHr extends AppLocalizations {
   String get trainerManagementSubtitle => 'Pregledaj i unaprijed dodaj trenere';
 
   @override
-  String get membershipPlansTitle => 'Paketi';
+  String get membershipPlansTitle => 'Cjenik';
 
   @override
-  String get membershipPlansSubtitle => 'Upravljaj paketima članstva';
+  String get membershipPlansSubtitle => 'Upravljaj cjenikom';
 
   @override
   String get addMembershipPlan => 'Dodaj paket';
@@ -1061,4 +1063,48 @@ class AppLocalizationsHr extends AppLocalizations {
   @override
   String get allowJoinByCodeDescription =>
       'Korisnici se mogu pridružiti unosom koda studija.';
+
+  @override
+  String get fixedScheduleMembers => 'Članovi';
+
+  @override
+  String get noFixedScheduleMembers =>
+      'Ovaj raspored trenutačno nema članova u fiksnoj grupi.';
+
+  @override
+  String get moveFixedScheduleMember => 'Premjesti';
+
+  @override
+  String selectMoveDestination(String memberName) {
+    return 'Odaberi novi raspored za $memberName';
+  }
+
+  @override
+  String get cancelMove => 'Odustani od premještanja';
+
+  @override
+  String get moveDestinationFull => 'Raspored je popunjen';
+
+  @override
+  String get moveMemberTitle => 'Premjesti člana?';
+
+  @override
+  String moveMemberConfirmation(
+    String memberName,
+    String classType,
+    String weekday,
+    String time,
+  ) {
+    return 'Jeste li sigurni da želite premjestiti $memberName u $classType, $weekday u $time?';
+  }
+
+  @override
+  String get confirmMove => 'Premjesti';
+
+  @override
+  String get fixedScheduleMemberMoved => 'Član je premješten u novi raspored.';
+
+  @override
+  String get scheduleMembersLoadError =>
+      'Članove fiksne grupe nije moguće učitati.';
 }

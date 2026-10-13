@@ -16,6 +16,8 @@ void main() {
     expect(find.text('Osobni podaci'), findsNothing);
     expect(find.text('Moj paket'), findsOneWidget);
     expect(find.text('Grupni trening 2x tjedno'), findsOneWidget);
+    expect(find.text('Iskorišteno u obračunskom periodu'), findsOneWidget);
+    expect(find.text('5/11'), findsOneWidget);
     expect(find.byType(Chip), findsNothing);
     expect(find.text('Fiksni termini'), findsOneWidget);
     expect(find.byIcon(Icons.event_repeat), findsNWidgets(2));
@@ -25,10 +27,11 @@ void main() {
     expect(find.text('Pilates'), findsNothing);
     expect(find.text('Kristina Lisec'), findsNothing);
     expect(find.text('Moja članarina'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Antropometrija'), 300);
     expect(find.text('Antropometrija'), findsOneWidget);
     expect(find.text('Tjelesna mjerenja'), findsOneWidget);
     expect(find.byIcon(Icons.monitor_heart_outlined), findsOneWidget);
-    expect(find.text('Paketi'), findsNothing);
+    expect(find.text('Cjenik'), findsNothing);
   });
 
   testWidgets('fixed schedules are hidden without an active membership', (
@@ -60,7 +63,7 @@ void main() {
       expect(find.text('Osobni podaci'), findsNothing);
       expect(find.text('Antropometrija članova'), findsOneWidget);
       expect(find.text('O meni'), findsOneWidget);
-      expect(find.text('Paketi'), findsNothing);
+      expect(find.text('Cjenik'), findsNothing);
     },
   );
 
@@ -75,8 +78,8 @@ void main() {
     expect(find.text('Pristup, naplata i podsjetnici'), findsOneWidget);
     expect(find.text('Postavke plaćanja'), findsNothing);
     expect(find.text('Treneri'), findsOneWidget);
-    expect(find.text('Paketi'), findsOneWidget);
-    expect(find.text('Upravljaj paketima članstva'), findsOneWidget);
+    expect(find.text('Cjenik'), findsOneWidget);
+    expect(find.text('Upravljaj cjenikom'), findsOneWidget);
     expect(find.text('Pregledaj i unaprijed dodaj trenere'), findsOneWidget);
   });
 }
@@ -127,7 +130,13 @@ final _memberProfile = Profile(
   member: _member,
   trainer: null,
   membership: _membership,
-  usage: null,
+  usage: ProfileUsage(
+    periodStartsOn: DateTime(2026, 10, 3),
+    periodEndsOn: DateTime(2026, 11, 2),
+    used: 5,
+    allowed: 11,
+    period: 'billing_cycle',
+  ),
   fixedSchedules: [
     ProfileFixedSchedule(
       id: 1,

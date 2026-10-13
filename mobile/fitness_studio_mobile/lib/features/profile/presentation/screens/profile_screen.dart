@@ -447,6 +447,7 @@ class _MembershipCard extends StatelessWidget {
     return switch (period) {
       'week' => context.l10n.profileUsedThisWeek,
       'month' => context.l10n.profileUsedThisMonth,
+      'billing_cycle' => context.l10n.profileUsedInBillingCycle,
       _ => context.l10n.profileUsedInMembership,
     };
   }

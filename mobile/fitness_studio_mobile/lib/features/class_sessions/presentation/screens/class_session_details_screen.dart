@@ -14,6 +14,7 @@ import '../../../bookings/domain/usecases/cancel_booking.dart';
 import '../../../bookings/domain/usecases/cancel_fixed_schedule.dart';
 import '../../../bookings/domain/usecases/create_booking.dart';
 import '../../../bookings/domain/usecases/update_booking_status.dart';
+import '../../../profile/presentation/state/profile_provider.dart';
 import '../../domain/entities/class_session.dart';
 import '../../domain/usecases/cancel_class_session.dart';
 import '../state/class_sessions_controller.dart';
@@ -287,6 +288,7 @@ class _ClassSessionDetailsContentState
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(context.l10n.bookingSaved)));
+        ref.invalidate(profileProvider);
         ref.invalidate(classSessionDetailsProvider(classSession.id));
         ref.read(classSessionsControllerProvider.notifier).loadClassSessions();
       case FailureResult(failure: final failure):

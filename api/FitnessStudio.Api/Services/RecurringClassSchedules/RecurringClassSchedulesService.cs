@@ -3,6 +3,7 @@ using FitnessStudio.Api.Domain.Auth;
 using FitnessStudio.Api.Domain.Bookings;
 using FitnessStudio.Api.Domain.ClassSessions;
 using FitnessStudio.Api.Dtos.ClassSessions;
+using FitnessStudio.Api.Dtos.MemberFixedSchedules;
 using FitnessStudio.Api.Dtos.RecurringClassSchedules;
 using FitnessStudio.Api.Entities;
 using FitnessStudio.Api.Services.Interfaces;
@@ -32,23 +33,79 @@ public class RecurringClassSchedulesService : IRecurringClassSchedulesService
         _membershipBookingPolicy = membershipBookingPolicy;
     }
 
-    public Task<List<RecurringClassScheduleResponse>> GetSchedulesAsync()
+    public async Task<List<RecurringClassScheduleResponse>> GetSchedulesAsync()
     {
-        return Project(QuerySchedules()
+        var (_, today) = await GetStudioDateContextAsync();
+
+        return await Project(QuerySchedules()
             .OrderBy(schedule => schedule.DayOfWeek)
-            .ThenBy(schedule => schedule.StartsAtTime))
+            .ThenBy(schedule => schedule.StartsAtTime), today)
             .ToListAsync();
     }
 
     public async Task<ServiceResult<RecurringClassScheduleResponse>> GetScheduleAsync(long id)
     {
-        var schedule = await Project(QuerySchedules().Where(item => item.Id == id)).FirstOrDefaultAsync();
+        var (_, today) = await GetStudioDateContextAsync();
+        var schedule = await Project(
+                QuerySchedules().Where(item => item.Id == id),
+                today)
+            .FirstOrDefaultAsync();
 
         return schedule is null
             ? ServiceResult<RecurringClassScheduleResponse>.NotFound(
                 "Recurring class schedule not found.",
                 "A recurring schedule with this id does not exist.")
             : ServiceResult<RecurringClassScheduleResponse>.Success(schedule);
+    }
+
+    public async Task<ServiceResult<List<MemberFixedScheduleResponse>>> GetScheduleMembersAsync(long id)
+    {
+        var schedule = await _dbContext.RecurringClassSchedules
+            .AsNoTracking()
+            .FirstOrDefaultAsync(item => item.Id == id && item.StudioId == _currentUser.StudioId);
+
+        if (schedule is null)
+        {
+            return ServiceResult<List<MemberFixedScheduleResponse>>.NotFound(
+                "Recurring class schedule not found.",
+                "A recurring schedule with this id does not exist.");
+        }
+
+        var authorization = AuthorizeScheduleManagement(schedule);
+        if (authorization is not null)
+        {
+            return new ServiceResult<List<MemberFixedScheduleResponse>>(
+                authorization.Status,
+                default,
+                authorization.Error);
+        }
+
+        var (_, today) = await GetStudioDateContextAsync();
+        var members = await _dbContext.MemberFixedSchedules
+            .AsNoTracking()
+            .Where(item =>
+                item.StudioId == _currentUser.StudioId
+                && item.RecurringScheduleId == id
+                && item.Status == "active"
+                && item.StartsOn <= today
+                && (!item.EndsOn.HasValue || item.EndsOn.Value >= today))
+            .OrderBy(item => item.Member.LastName)
+            .ThenBy(item => item.Member.FirstName)
+            .Select(item => new MemberFixedScheduleResponse(
+                item.Id,
+                item.MemberId,
+                item.Member.FirstName + " " + item.Member.LastName,
+                item.RecurringScheduleId,
+                item.RecurringSchedule.ClassType.Name,
+                item.RecurringSchedule.Trainer.FirstName + " " + item.RecurringSchedule.Trainer.LastName,
+                item.RecurringSchedule.DayOfWeek,
+                item.RecurringSchedule.StartsAtTime,
+                item.StartsOn,
+                item.EndsOn,
+                item.Status))
+            .ToListAsync();
+
+        return ServiceResult<List<MemberFixedScheduleResponse>>.Success(members);
     }
 
     public async Task<ServiceResult<RecurringClassScheduleResponse>> CreateScheduleAsync(
@@ -659,7 +716,9 @@ public class RecurringClassSchedulesService : IRecurringClassSchedulesService
         return query;
     }
 
-    private static IQueryable<RecurringClassScheduleResponse> Project(IQueryable<RecurringClassSchedule> query)
+    private static IQueryable<RecurringClassScheduleResponse> Project(
+        IQueryable<RecurringClassSchedule> query,
+        DateOnly today)
     {
         return query.Select(schedule => new RecurringClassScheduleResponse(
             schedule.Id,
@@ -674,7 +733,11 @@ public class RecurringClassSchedulesService : IRecurringClassSchedulesService
             schedule.ValidFrom,
             schedule.ValidUntil,
             schedule.Status,
-            schedule.StatusEffectiveFrom));
+            schedule.StatusEffectiveFrom,
+            schedule.MemberFixedSchedules.Count(assignment =>
+                assignment.Status == "active"
+                && assignment.StartsOn <= today
+                && (!assignment.EndsOn.HasValue || assignment.EndsOn.Value >= today))));
     }
 
     private async Task<ServiceResult?> ValidateRequestAsync(

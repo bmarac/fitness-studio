@@ -110,6 +110,12 @@ abstract class AppLocalizations {
   /// **'Termini'**
   String get navClassSessions;
 
+  /// No description provided for @navRecurringSchedules.
+  ///
+  /// In hr, this message translates to:
+  /// **'Rasporedi'**
+  String get navRecurringSchedules;
+
   /// No description provided for @navMyWorkouts.
   ///
   /// In hr, this message translates to:
@@ -367,6 +373,12 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Iskorišteno u članarini'**
   String get profileUsedInMembership;
+
+  /// No description provided for @profileUsedInBillingCycle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Iskorišteno u obračunskom periodu'**
+  String get profileUsedInBillingCycle;
 
   /// No description provided for @profileMembersProgress.
   ///
@@ -938,12 +950,6 @@ abstract class AppLocalizations {
   /// **'Svi treninzi'**
   String get allWorkouts;
 
-  /// No description provided for @thisWeek.
-  ///
-  /// In hr, this message translates to:
-  /// **'Ovaj tjedan'**
-  String get thisWeek;
-
   /// No description provided for @attendeesCount.
   ///
   /// In hr, this message translates to:
@@ -967,24 +973,6 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Zakazan'**
   String get sessionStatusScheduled;
-
-  /// No description provided for @workoutsMetric.
-  ///
-  /// In hr, this message translates to:
-  /// **'treninga'**
-  String get workoutsMetric;
-
-  /// No description provided for @bookingsMetric.
-  ///
-  /// In hr, this message translates to:
-  /// **'prijava'**
-  String get bookingsMetric;
-
-  /// No description provided for @nextMetric.
-  ///
-  /// In hr, this message translates to:
-  /// **'sljedeći'**
-  String get nextMetric;
 
   /// No description provided for @progressTitle.
   ///
@@ -1183,6 +1171,18 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Rasporedi'**
   String get schedulesTitle;
+
+  /// No description provided for @filterSchedules.
+  ///
+  /// In hr, this message translates to:
+  /// **'Filtriraj rasporede'**
+  String get filterSchedules;
+
+  /// No description provided for @scheduleFixedOccupancy.
+  ///
+  /// In hr, this message translates to:
+  /// **'{active}/{capacity} članova'**
+  String scheduleFixedOccupancy(int active, int capacity);
 
   /// No description provided for @noSchedules.
   ///
@@ -1625,13 +1625,13 @@ abstract class AppLocalizations {
   /// No description provided for @membershipPlansTitle.
   ///
   /// In hr, this message translates to:
-  /// **'Paketi'**
+  /// **'Cjenik'**
   String get membershipPlansTitle;
 
   /// No description provided for @membershipPlansSubtitle.
   ///
   /// In hr, this message translates to:
-  /// **'Upravljaj paketima članstva'**
+  /// **'Upravljaj cjenikom'**
   String get membershipPlansSubtitle;
 
   /// No description provided for @addMembershipPlan.
@@ -1951,6 +1951,77 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Korisnici se mogu pridružiti unosom koda studija.'**
   String get allowJoinByCodeDescription;
+
+  /// No description provided for @fixedScheduleMembers.
+  ///
+  /// In hr, this message translates to:
+  /// **'Članovi'**
+  String get fixedScheduleMembers;
+
+  /// No description provided for @noFixedScheduleMembers.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ovaj raspored trenutačno nema članova u fiksnoj grupi.'**
+  String get noFixedScheduleMembers;
+
+  /// No description provided for @moveFixedScheduleMember.
+  ///
+  /// In hr, this message translates to:
+  /// **'Premjesti'**
+  String get moveFixedScheduleMember;
+
+  /// No description provided for @selectMoveDestination.
+  ///
+  /// In hr, this message translates to:
+  /// **'Odaberi novi raspored za {memberName}'**
+  String selectMoveDestination(String memberName);
+
+  /// No description provided for @cancelMove.
+  ///
+  /// In hr, this message translates to:
+  /// **'Odustani od premještanja'**
+  String get cancelMove;
+
+  /// No description provided for @moveDestinationFull.
+  ///
+  /// In hr, this message translates to:
+  /// **'Raspored je popunjen'**
+  String get moveDestinationFull;
+
+  /// No description provided for @moveMemberTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Premjesti člana?'**
+  String get moveMemberTitle;
+
+  /// No description provided for @moveMemberConfirmation.
+  ///
+  /// In hr, this message translates to:
+  /// **'Jeste li sigurni da želite premjestiti {memberName} u {classType}, {weekday} u {time}?'**
+  String moveMemberConfirmation(
+    String memberName,
+    String classType,
+    String weekday,
+    String time,
+  );
+
+  /// No description provided for @confirmMove.
+  ///
+  /// In hr, this message translates to:
+  /// **'Premjesti'**
+  String get confirmMove;
+
+  /// No description provided for @fixedScheduleMemberMoved.
+  ///
+  /// In hr, this message translates to:
+  /// **'Član je premješten u novi raspored.'**
+  String get fixedScheduleMemberMoved;
+
+  /// No description provided for @scheduleMembersLoadError.
+  ///
+  /// In hr, this message translates to:
+  /// **'Članove fiksne grupe nije moguće učitati.'**
+  String get scheduleMembersLoadError;
 }
 
 class _AppLocalizationsDelegate

@@ -3,6 +3,7 @@ using FitnessStudio.Api.Domain.Bookings;
 using FitnessStudio.Api.Domain.Memberships;
 using FitnessStudio.Api.Entities;
 using FitnessStudio.Api.Services.Interfaces;
+using FitnessStudio.Api.Services.MembershipPayments;
 using Microsoft.EntityFrameworkCore;
 
 namespace FitnessStudio.Api.Services.Memberships;
@@ -62,16 +63,35 @@ public sealed class MembershipBookingPolicy : IMembershipBookingPolicy
         }
 
         var plan = membership.MembershipPlan;
-        if (!plan.SessionLimit.HasValue || plan.SessionLimitPeriod is null)
+        var billingCycle = membership.BillingStartsOn.HasValue
+            ? MembershipCycle.FindContainingPeriod(membership.BillingStartsOn.Value, sessionDate)
+            : null;
+        var fixedScheduleAllowance = billingCycle.HasValue
+            && plan.SessionLimit.HasValue
+            && plan.SessionLimitPeriod == "week"
+            ? await GetFixedScheduleAllowanceAsync(
+                memberId,
+                membership,
+                billingCycle.Value.StartsOn,
+                billingCycle.Value.EndsOnExclusive)
+            : 0;
+
+        if (fixedScheduleAllowance == 0
+            && (!plan.SessionLimit.HasValue || plan.SessionLimitPeriod is null))
         {
             return new MembershipBookingDecision(MembershipBookingDecisionStatus.Allowed);
         }
 
-        var period = GetUsagePeriod(
-            membership.StartsOn,
-            membership.EndsOn,
-            plan.SessionLimitPeriod,
-            sessionDate);
+        (DateOnly StartsOn, DateOnly? EndsOnExclusive) period = fixedScheduleAllowance > 0
+            ? (billingCycle!.Value.StartsOn, (DateOnly?)billingCycle.Value.EndsOnExclusive)
+            : GetUsagePeriod(
+                membership.StartsOn,
+                membership.EndsOn,
+                plan.SessionLimitPeriod!,
+                sessionDate);
+        var allowed = fixedScheduleAllowance > 0
+            ? fixedScheduleAllowance
+            : plan.SessionLimit!.Value;
         var startsAtUtc = ToUtcBoundary(period.StartsOn, timezone);
         var endsAtUtcExclusive = period.EndsOnExclusive.HasValue
             ? ToUtcBoundary(period.EndsOnExclusive.Value, timezone)
@@ -103,11 +123,77 @@ public sealed class MembershipBookingPolicy : IMembershipBookingPolicy
                 pendingUsage.LatestStartsAt);
 
         return new MembershipBookingDecision(
-            Decide(used, plan.SessionLimit),
+            Decide(used, allowed),
             period.StartsOn,
             displayEndsOn,
             used,
-            plan.SessionLimit.Value);
+            allowed,
+            fixedScheduleAllowance > 0 ? "billing_cycle" : plan.SessionLimitPeriod);
+    }
+
+    private async Task<int> GetFixedScheduleAllowanceAsync(
+        long memberId,
+        MemberMembership membership,
+        DateOnly periodStartsOn,
+        DateOnly periodEndsOnExclusive)
+    {
+        var schedules = await _dbContext.MemberFixedSchedules
+            .AsNoTracking()
+            .Where(schedule =>
+                schedule.StudioId == _currentUser.StudioId
+                && schedule.MemberId == memberId
+                && schedule.StartsOn < periodEndsOnExclusive
+                && (!schedule.EndsOn.HasValue || schedule.EndsOn.Value >= periodStartsOn)
+                && schedule.RecurringSchedule.ValidFrom < periodEndsOnExclusive
+                && (!schedule.RecurringSchedule.ValidUntil.HasValue
+                    || schedule.RecurringSchedule.ValidUntil.Value >= periodStartsOn))
+            .Select(schedule => new
+            {
+                schedule.StartsOn,
+                schedule.EndsOn,
+                schedule.RecurringSchedule.DayOfWeek,
+                schedule.RecurringSchedule.ValidFrom,
+                schedule.RecurringSchedule.ValidUntil
+            })
+            .ToListAsync();
+
+        return schedules.Sum(schedule =>
+        {
+            var startsOn = Max(
+                periodStartsOn,
+                membership.StartsOn,
+                schedule.StartsOn,
+                schedule.ValidFrom);
+            var endsOnExclusive = Min(
+                periodEndsOnExclusive,
+                membership.EndsOn,
+                schedule.EndsOn?.AddDays(1),
+                schedule.ValidUntil?.AddDays(1));
+            return CountWeekdayOccurrences(startsOn, endsOnExclusive, schedule.DayOfWeek);
+        });
+    }
+
+    internal static int CountWeekdayOccurrences(
+        DateOnly startsOn,
+        DateOnly endsOnExclusive,
+        short isoDayOfWeek)
+    {
+        if (endsOnExclusive <= startsOn)
+        {
+            return 0;
+        }
+
+        var startIsoDay = startsOn.DayOfWeek == DayOfWeek.Sunday
+            ? 7
+            : (int)startsOn.DayOfWeek;
+        var daysUntilFirst = (isoDayOfWeek - startIsoDay + 7) % 7;
+        var firstOccurrence = startsOn.AddDays(daysUntilFirst);
+        if (firstOccurrence >= endsOnExclusive)
+        {
+            return 0;
+        }
+
+        return 1 + (endsOnExclusive.DayNumber - 1 - firstOccurrence.DayNumber) / 7;
     }
 
     internal static (DateOnly StartsOn, DateOnly? EndsOnExclusive) GetUsagePeriod(
@@ -226,6 +312,22 @@ public sealed class MembershipBookingPolicy : IMembershipBookingPolicy
         }
 
         return first.Value <= second.Value ? first : second;
+    }
+
+    private static DateOnly Max(params DateOnly[] values) => values.Max();
+
+    private static DateOnly Min(DateOnly required, params DateOnly?[] values)
+    {
+        var result = required;
+        foreach (var value in values)
+        {
+            if (value.HasValue && value.Value < result)
+            {
+                result = value.Value;
+            }
+        }
+
+        return result;
     }
 
     private static DateTime ToUtcBoundary(DateOnly date, TimeZoneInfo timezone)

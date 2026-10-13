@@ -13,4 +13,5 @@ public record RecurringClassScheduleResponse(
     DateOnly ValidFrom,
     DateOnly? ValidUntil,
     string Status,
-    DateOnly? StatusEffectiveFrom);
+    DateOnly? StatusEffectiveFrom,
+    int ActiveMemberCount);

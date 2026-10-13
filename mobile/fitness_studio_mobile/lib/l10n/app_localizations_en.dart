@@ -15,6 +15,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navClassSessions => 'Classes';
 
   @override
+  String get navRecurringSchedules => 'Schedules';
+
+  @override
   String get navMyWorkouts => 'My workouts';
 
   @override
@@ -146,6 +149,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileUsedInMembership => 'Used in membership';
+
+  @override
+  String get profileUsedInBillingCycle => 'Used in billing period';
 
   @override
   String get profileMembersProgress => 'Member anthropometry';
@@ -487,9 +493,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get allWorkouts => 'All workouts';
 
   @override
-  String get thisWeek => 'This week';
-
-  @override
   String attendeesCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -508,15 +511,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sessionStatusScheduled => 'Scheduled';
-
-  @override
-  String get workoutsMetric => 'workouts';
-
-  @override
-  String get bookingsMetric => 'bookings';
-
-  @override
-  String get nextMetric => 'next';
 
   @override
   String get progressTitle => 'Anthropometry';
@@ -626,6 +620,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get schedulesTitle => 'Schedules';
+
+  @override
+  String get filterSchedules => 'Filter schedules';
+
+  @override
+  String scheduleFixedOccupancy(int active, int capacity) {
+    return '$active/$capacity members';
+  }
 
   @override
   String get noSchedules => 'No schedules have been created.';
@@ -879,10 +881,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trainerManagementSubtitle => 'View and pre-register trainers';
 
   @override
-  String get membershipPlansTitle => 'Plans';
+  String get membershipPlansTitle => 'Pricing';
 
   @override
-  String get membershipPlansSubtitle => 'Manage membership plans';
+  String get membershipPlansSubtitle => 'Manage pricing';
 
   @override
   String get addMembershipPlan => 'Add plan';
@@ -1056,4 +1058,49 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get allowJoinByCodeDescription =>
       'Users can join by entering the studio code.';
+
+  @override
+  String get fixedScheduleMembers => 'Members';
+
+  @override
+  String get noFixedScheduleMembers =>
+      'This schedule currently has no fixed group members.';
+
+  @override
+  String get moveFixedScheduleMember => 'Move';
+
+  @override
+  String selectMoveDestination(String memberName) {
+    return 'Choose a new schedule for $memberName';
+  }
+
+  @override
+  String get cancelMove => 'Cancel move';
+
+  @override
+  String get moveDestinationFull => 'Schedule is full';
+
+  @override
+  String get moveMemberTitle => 'Move member?';
+
+  @override
+  String moveMemberConfirmation(
+    String memberName,
+    String classType,
+    String weekday,
+    String time,
+  ) {
+    return 'Are you sure you want to move $memberName to $classType, $weekday at $time?';
+  }
+
+  @override
+  String get confirmMove => 'Move';
+
+  @override
+  String get fixedScheduleMemberMoved =>
+      'The member was moved to the new schedule.';
+
+  @override
+  String get scheduleMembersLoadError =>
+      'The fixed group members could not be loaded.';
 }

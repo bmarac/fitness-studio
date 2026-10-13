@@ -174,6 +174,23 @@ public class MemberFixedSchedulesControllerTests
     }
 
     [Fact]
+    public async Task MoveScheduleReturnsNoContentAndForwardsTarget()
+    {
+        var request = new MoveMemberFixedScheduleRequest { TargetRecurringScheduleId = 42 };
+        var service = new FakeMemberFixedSchedulesService
+        {
+            MoveScheduleResult = ServiceResult.Success()
+        };
+        var controller = new MemberFixedSchedulesController(service);
+
+        var action = await controller.MoveSchedule(51, request);
+
+        Assert.IsType<NoContentResult>(action);
+        Assert.Equal(51, service.LastMoveScheduleId);
+        Assert.Same(request, service.LastMoveRequest);
+    }
+
+    [Fact]
     public async Task DeleteScheduleReturnsNoContentAndForwardsId()
     {
         var service = new FakeMemberFixedSchedulesService
@@ -231,6 +248,10 @@ public class MemberFixedSchedulesControllerTests
             AuthRoles.Staff);
         SchedulingControllerTestAssertions.MethodRequiresRole(
             type,
+            nameof(MemberFixedSchedulesController.MoveSchedule),
+            AuthRoles.Staff);
+        SchedulingControllerTestAssertions.MethodRequiresRole(
+            type,
             nameof(MemberFixedSchedulesController.DeleteSchedule),
             AuthRoles.Admin);
     }
@@ -274,6 +295,7 @@ public class MemberFixedSchedulesControllerTests
         public ServiceResult<MemberFixedScheduleResponse> CreateScheduleResult { get; init; } = null!;
         public ServiceResult UpdateScheduleResult { get; init; } = null!;
         public ServiceResult CancelScheduleResult { get; init; } = null!;
+        public ServiceResult MoveScheduleResult { get; init; } = null!;
         public ServiceResult DeleteScheduleResult { get; init; } = null!;
         public long? LastGetScheduleId { get; private set; }
         public CreateMemberFixedScheduleRequest? LastCreateRequest { get; private set; }
@@ -281,6 +303,8 @@ public class MemberFixedSchedulesControllerTests
         public UpdateMemberFixedScheduleRequest? LastUpdateRequest { get; private set; }
         public long? LastCancelScheduleId { get; private set; }
         public CancelMemberFixedScheduleRequest? LastCancelRequest { get; private set; }
+        public long? LastMoveScheduleId { get; private set; }
+        public MoveMemberFixedScheduleRequest? LastMoveRequest { get; private set; }
         public long? LastDeleteScheduleId { get; private set; }
 
         public Task<List<MemberFixedScheduleResponse>> GetSchedulesAsync()
@@ -318,6 +342,15 @@ public class MemberFixedSchedulesControllerTests
             LastCancelScheduleId = id;
             LastCancelRequest = request;
             return Task.FromResult(CancelScheduleResult);
+        }
+
+        public Task<ServiceResult> MoveScheduleAsync(
+            long id,
+            MoveMemberFixedScheduleRequest request)
+        {
+            LastMoveScheduleId = id;
+            LastMoveRequest = request;
+            return Task.FromResult(MoveScheduleResult);
         }
 
         public Task<ServiceResult> DeleteScheduleAsync(long id)

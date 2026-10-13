@@ -15,6 +15,14 @@ Limit vrijedi jednako za samostalne i administratorske rezervacije. Provjera i
 upis serijalizirani su po clanu kako paralelni zahtjevi ne bi mogli potrositi isto
 posljednje mjesto u paketu.
 
+Za clana s tjednim paketom i fiksnim rasporedom limit se racuna po mjesecnom
+obracunskom ciklusu clanarine. Ukupan broj dopustenih termina dobiva se brojanjem
+dana iz njegovih fiksnih dodjela unutar ciklusa, bez ovisnosti o tome jesu li
+konkretni termini vec generirani. Aktivne, odradjene i `no_show` rezervacije trose
+kvotu. Otkazivanje rezervacije oslobadja jedno mjesto koje clan moze iskoristiti
+za obicnu rezervaciju nadoknade unutar istog ciklusa; mjesto se ne prenosi u
+sljedeci ciklus. Status uplate ne utjece na ovu kvotu.
+
 `booking_source` razlikuje izvor rezervacije:
 
 - `self_service`
