@@ -17,6 +17,7 @@ void main() {
     tester,
   ) async {
     final today = DateTime(2030, 10, 16);
+    final yesterday = today.subtract(const Duration(days: 1));
 
     await _pumpScreen(tester, today);
 
@@ -25,32 +26,27 @@ void main() {
       tester.getTopLeft(find.byKey(_sectionKey(today))).dy,
       closeTo(tester.getTopLeft(find.byType(SingleChildScrollView)).dy, 1),
     );
+    expect(find.byKey(_sectionKey(yesterday)), findsOneWidget);
+    expect(_isEnabled(tester, yesterday), isFalse);
+
+    await tester.tap(find.byKey(_summaryKey(yesterday)));
+    await tester.pumpAndSettle();
+
+    expect(_isSelected(tester, today), isTrue);
+    expect(_isSelected(tester, yesterday), isFalse);
+    expect(_weekButton(tester, 'Prethodni tjedan').onPressed, isNull);
   });
 
-  testWidgets('can align Sunday to the top and scroll back to earlier days', (
-    tester,
-  ) async {
+  testWidgets('can align Sunday to the top', (tester) async {
     final sunday = DateTime(2030, 10, 13);
 
     await _pumpScreen(tester, sunday);
-
-    final scrollView = tester.widget<SingleChildScrollView>(
-      find.byType(SingleChildScrollView),
-    );
-    final initialOffset = scrollView.controller!.offset;
 
     expect(_isSelected(tester, sunday), isTrue);
     expect(
       tester.getTopLeft(find.byKey(_sectionKey(sunday))).dy,
       closeTo(tester.getTopLeft(find.byType(SingleChildScrollView)).dy, 1),
     );
-    expect(initialOffset, greaterThan(0));
-
-    await tester.drag(find.byType(SingleChildScrollView), const Offset(0, 300));
-    await tester.pumpAndSettle();
-
-    expect(scrollView.controller!.offset, lessThan(initialOffset));
-    expect(_isSelected(tester, sunday), isFalse);
   });
 
   testWidgets('updates the selected day while scrolling', (tester) async {
@@ -80,6 +76,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(_isSelected(tester, nextMonday), isTrue);
+    expect(_weekButton(tester, 'Prethodni tjedan').onPressed, isNotNull);
 
     await tester.tap(find.byTooltip('Prethodni tjedan'));
     await tester.pumpAndSettle();
@@ -90,18 +87,37 @@ void main() {
       closeTo(tester.getTopLeft(find.byType(SingleChildScrollView)).dy, 1),
     );
   });
+
+  testWidgets('loads from now for this week and Monday for future weeks', (
+    tester,
+  ) async {
+    final now = DateTime(2030, 10, 16, 12, 30);
+
+    final controller = await _pumpScreen(tester, now);
+
+    expect(controller.lastFrom, now.toUtc());
+    expect(controller.lastTo, DateTime(2030, 10, 21).toUtc());
+
+    await tester.tap(find.byTooltip('Sljedeći tjedan'));
+    await tester.pumpAndSettle();
+
+    expect(controller.lastFrom, DateTime(2030, 10, 21).toUtc());
+    expect(controller.lastTo, DateTime(2030, 10, 28).toUtc());
+  });
 }
 
-Future<void> _pumpScreen(WidgetTester tester, DateTime referenceDate) async {
+Future<_FakeClassSessionsController> _pumpScreen(
+  WidgetTester tester,
+  DateTime referenceDate,
+) async {
+  final controller = _FakeClassSessionsController([
+    _session(referenceDate.add(const Duration(hours: 10))),
+  ]);
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
         loginControllerProvider.overrideWith(_FakeLoginController.new),
-        classSessionsControllerProvider.overrideWith(
-          () => _FakeClassSessionsController([
-            _session(referenceDate.add(const Duration(hours: 10))),
-          ]),
-        ),
+        classSessionsControllerProvider.overrideWith(() => controller),
       ],
       child: localizedTestApp(
         home: ClassSessionsScreen(referenceDate: referenceDate),
@@ -109,6 +125,7 @@ Future<void> _pumpScreen(WidgetTester tester, DateTime referenceDate) async {
     ),
   );
   await tester.pumpAndSettle();
+  return controller;
 }
 
 bool _isSelected(WidgetTester tester, DateTime date) {
@@ -119,6 +136,14 @@ bool _isSelected(WidgetTester tester, DateTime date) {
       false;
 }
 
+bool _isEnabled(WidgetTester tester, DateTime date) {
+  return tester
+          .widget<Semantics>(find.byKey(_summaryKey(date)))
+          .properties
+          .enabled ??
+      true;
+}
+
 Key _sectionKey(DateTime date) => ValueKey(
   'class-sessions-day-section-${DateUtils.dateOnly(date).toIso8601String()}',
 );
@@ -126,6 +151,14 @@ Key _sectionKey(DateTime date) => ValueKey(
 Key _summaryKey(DateTime date) => ValueKey(
   'class-sessions-day-summary-${DateUtils.dateOnly(date).toIso8601String()}',
 );
+
+IconButton _weekButton(WidgetTester tester, String tooltip) =>
+    tester.widget<IconButton>(
+      find.ancestor(
+        of: find.byTooltip(tooltip),
+        matching: find.byType(IconButton),
+      ),
+    );
 
 class _FakeLoginController extends LoginController {
   @override
@@ -149,9 +182,17 @@ class _FakeClassSessionsController extends ClassSessionsController {
   _FakeClassSessionsController(this.classSessions);
 
   final List<ClassSession> classSessions;
+  DateTime? lastFrom;
+  DateTime? lastTo;
 
   @override
   ClassSessionsState build() => ClassSessionsLoaded(classSessions);
+
+  @override
+  Future<void> loadClassSessions({DateTime? from, DateTime? to}) async {
+    lastFrom = from;
+    lastTo = to;
+  }
 }
 
 ClassSession _session(DateTime startsAt) => ClassSession(

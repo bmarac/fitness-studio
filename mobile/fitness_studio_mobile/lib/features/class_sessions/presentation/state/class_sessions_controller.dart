@@ -12,19 +12,21 @@ final classSessionsControllerProvider =
 
 class ClassSessionsController extends Notifier<ClassSessionsState> {
   late final GetClassSessions _getClassSessions;
+  DateTime? _from;
+  DateTime? _to;
 
   @override
   ClassSessionsState build() {
     _getClassSessions = serviceLocator<GetClassSessions>();
-    Future.microtask(loadClassSessions);
-
     return const ClassSessionsInitial();
   }
 
-  Future<void> loadClassSessions() async {
+  Future<void> loadClassSessions({DateTime? from, DateTime? to}) async {
+    _from = from ?? _from;
+    _to = to ?? _to;
     state = const ClassSessionsLoading();
 
-    final result = await _getClassSessions();
+    final result = await _getClassSessions(from: _from, to: _to);
 
     state = switch (result) {
       Success(value: final classSessions) => ClassSessionsLoaded(classSessions),

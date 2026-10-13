@@ -4,9 +4,15 @@ import 'package:fitness_studio_mobile/features/auth/presentation/state/login_con
 import 'package:fitness_studio_mobile/features/auth/presentation/state/login_state.dart';
 import 'package:fitness_studio_mobile/features/bookings/presentation/state/member_bookings_provider.dart';
 import 'package:fitness_studio_mobile/features/membership_plans/presentation/state/membership_plans_providers.dart';
+import 'package:fitness_studio_mobile/features/profile/domain/entities/profile.dart';
+import 'package:fitness_studio_mobile/features/profile/presentation/state/profile_provider.dart';
+import 'package:fitness_studio_mobile/features/progress/domain/entities/member_progress.dart';
+import 'package:fitness_studio_mobile/features/progress/presentation/state/member_progress_provider.dart';
+import 'package:fitness_studio_mobile/features/progress/presentation/state/progress_management_providers.dart';
 import 'package:fitness_studio_mobile/features/trainers/presentation/state/trainers_management_providers.dart';
 import 'package:fitness_studio_mobile/navigation/app_router.dart';
 import 'package:fitness_studio_mobile/navigation/app_routes.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -112,7 +118,131 @@ void main() {
     expect(find.text('Paketi'), findsOneWidget);
     expect(find.text('Još nema paketa.'), findsOneWidget);
   });
+
+  testWidgets('member can open anthropometry route', (tester) async {
+    final container = _memberAnthropometryContainer();
+    addTearDown(container.dispose);
+    final router = container.read(appRouterProvider);
+    router.go(AppRoutes.anthropometryPath);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: localizedRouterTestApp(router: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      AppRoutes.anthropometryPath,
+    );
+    expect(find.text('Antropometrija'), findsOneWidget);
+    expect(
+      find.text('Još nema zabilježenih antropometrijskih mjerenja.'),
+      findsOneWidget,
+    );
+    expect(find.text('Mjerenje'), findsOneWidget);
+
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Novo mjerenje'), findsOneWidget);
+    expect(find.text('Ana Horvat'), findsOneWidget);
+  });
+
+  testWidgets('legacy personal progress route redirects to anthropometry', (
+    tester,
+  ) async {
+    final container = _memberAnthropometryContainer();
+    addTearDown(container.dispose);
+    final router = container.read(appRouterProvider);
+    router.go(AppRoutes.legacyProgressPath);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: localizedRouterTestApp(router: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      AppRoutes.anthropometryPath,
+    );
+  });
+
+  testWidgets('legacy member progress route redirects to anthropometry', (
+    tester,
+  ) async {
+    final container = ProviderContainer(
+      overrides: [
+        loginControllerProvider.overrideWith(_LoggedInAdminController.new),
+        profileProvider.overrideWith((ref) async => _adminProfile),
+        memberProgressProvider.overrideWith(
+          (ref, memberId) async => _emptyProgress,
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    final router = container.read(appRouterProvider);
+    router.go(AppRoutes.legacyMemberProgressPath(10));
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: localizedRouterTestApp(router: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      AppRoutes.memberAnthropometryPath(10),
+    );
+  });
 }
+
+ProviderContainer _memberAnthropometryContainer() => ProviderContainer(
+  overrides: [
+    loginControllerProvider.overrideWith(_LoggedInMemberController.new),
+    profileProvider.overrideWith((ref) async => _memberProfile),
+    memberProgressProvider.overrideWith(
+      (ref, memberId) async => _emptyProgress,
+    ),
+    measurementParametersProvider.overrideWith((ref) async => []),
+  ],
+);
+
+const _emptyProgress = MemberProgress(latestValues: [], history: []);
+
+const _memberProfile = Profile(
+  user: ProfileUser(id: 4, email: 'ana@example.com', roles: ['member']),
+  studio: ProfileStudio(id: 1, name: 'Stay Fit'),
+  member: ProfilePerson(
+    id: 10,
+    firstName: 'Ana',
+    lastName: 'Horvat',
+    email: 'ana@example.com',
+    phone: null,
+    status: 'active',
+  ),
+  trainer: null,
+  membership: null,
+  usage: null,
+  fixedSchedules: [],
+);
+
+const _adminProfile = Profile(
+  user: ProfileUser(id: 3, email: 'admin@example.com', roles: ['admin']),
+  studio: ProfileStudio(id: 1, name: 'Stay Fit'),
+  member: null,
+  trainer: null,
+  membership: null,
+  usage: null,
+  fixedSchedules: [],
+);
 
 class _EmptyMemberBookingsController extends MemberBookingsController {
   @override

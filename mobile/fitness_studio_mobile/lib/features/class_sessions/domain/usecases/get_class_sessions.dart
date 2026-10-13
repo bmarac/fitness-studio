@@ -7,7 +7,7 @@ class GetClassSessions {
 
   final ClassSessionsRepository _repository;
 
-  Future<Result<List<ClassSession>>> call() {
-    return _repository.getClassSessions();
+  Future<Result<List<ClassSession>>> call({DateTime? from, DateTime? to}) {
+    return _repository.getClassSessions(from: from, to: to);
   }
 }

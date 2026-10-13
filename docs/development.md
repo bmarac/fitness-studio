@@ -113,7 +113,7 @@ Test ukljucuje naplatu za jedno clanstvo, zatim stvarnim Flutter klijentom
 provjerava obvezu clana, HUB3 barkod, prijavu uplate, administratorsku potvrdu
 i konacni status `paid`. Izvodi se rucno i ne ulazi u coverage baseline.
 
-Vertikalna provjera mjerenja i napretka pokrece se naredbom:
+Vertikalna provjera antropometrijskih mjerenja pokrece se naredbom:
 
 ```bash
 ./scripts/verify-fresh-stack.sh progress-client

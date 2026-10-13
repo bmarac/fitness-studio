@@ -68,7 +68,7 @@ GET  /api/members/{memberId}/measurements/latest
 POST /api/members/{memberId}/measurements
 ```
 
-Admin i trener mogu citati i unositi mjerenja clanova svojeg studija. Clan moze citati samo vlastita mjerenja i ne moze ih unositi.
+Admin i trener mogu citati i unositi mjerenja clanova svojeg studija. Clan moze citati i unositi samo vlastita mjerenja.
 
 Povijest vraca pojedinacne dogadjaje mjerenja. `latest` vraca posljednju poznatu vrijednost svakog parametra, neovisno o tome jesu li unesene u istom dogadjaju. BMI se izracunava iz posljednje dostupne visine i tezine i nikad se ne prima kao rucna vrijednost.
 

@@ -36,16 +36,26 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
       appBar: AppBar(
         title: Text(widget.memberName ?? context.l10n.progressTitle),
       ),
-      floatingActionButton: widget.memberId == null
-          ? null
-          : FloatingActionButton.extended(
-              onPressed: () => context.push(
-                AppRoutes.createMeasurementPath(widget.memberId!),
-                extra: widget.memberName ?? context.l10n.roleMember,
-              ),
-              icon: const Icon(Icons.add),
-              label: Text(context.l10n.measurementAction),
+      floatingActionButton: profile.when(
+        loading: () => null,
+        error: (error, stackTrace) => null,
+        data: (profile) {
+          final memberId = widget.memberId ?? profile.member?.id;
+          if (memberId == null) return null;
+
+          return FloatingActionButton.extended(
+            onPressed: () => context.push(
+              AppRoutes.createMeasurementPath(memberId),
+              extra:
+                  widget.memberName ??
+                  profile.member?.fullName ??
+                  context.l10n.roleMember,
             ),
+            icon: const Icon(Icons.add),
+            label: Text(context.l10n.measurementAction),
+          );
+        },
+      ),
       body: profile.when(
         loading: () => const LoadingView(),
         error: (error, stackTrace) => ErrorView(

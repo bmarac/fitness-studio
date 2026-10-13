@@ -4,7 +4,9 @@ namespace FitnessStudio.Api.Services.Interfaces;
 
 public interface IClassSessionsService
 {
-    Task<List<ClassSessionResponse>> GetClassSessionsAsync();
+    Task<List<ClassSessionResponse>> GetClassSessionsAsync(
+        DateTime? from = null,
+        DateTime? to = null);
 
     Task<List<ClassSessionResponse>> GetMyClassSessionsAsync();
 

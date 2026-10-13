@@ -124,15 +124,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 builder: (context, state) => const ProfileScreen(),
                 routes: [
                   GoRoute(
-                    path: AppRoutes.progress,
+                    path: AppRoutes.anthropometry,
                     builder: (context, state) => const ProgressScreen(),
+                  ),
+                  GoRoute(
+                    path: AppRoutes.legacyProgress,
+                    redirect: (context, state) => AppRoutes.anthropometryPath,
                   ),
                   GoRoute(
                     path: AppRoutes.membersProgress,
                     builder: (context, state) => const MembersProgressScreen(),
                   ),
                   GoRoute(
-                    path: AppRoutes.memberProgress,
+                    path: AppRoutes.memberAnthropometry,
                     builder: (context, state) {
                       final memberId = int.tryParse(
                         state.pathParameters['memberId'] ?? '',
@@ -142,6 +146,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                         memberId: memberId,
                         memberName: state.extra as String?,
                       );
+                    },
+                  ),
+                  GoRoute(
+                    path: AppRoutes.legacyMemberProgress,
+                    redirect: (context, state) {
+                      final memberId = int.tryParse(
+                        state.pathParameters['memberId'] ?? '',
+                      );
+                      return memberId == null
+                          ? AppRoutes.membersProgressPath
+                          : AppRoutes.memberAnthropometryPath(memberId);
                     },
                   ),
                   GoRoute(

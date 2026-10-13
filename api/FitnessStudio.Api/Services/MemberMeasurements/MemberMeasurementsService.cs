@@ -196,11 +196,11 @@ public class MemberMeasurementsService : IMemberMeasurementsService
         var isOwner = _currentUser.IsInRole(AuthRoles.Member)
             && _currentUser.MemberId == memberId;
 
-        if (writeAccess && !isStaff)
+        if (writeAccess && !isStaff && !isOwner)
         {
             return ServiceResult.Forbidden(
                 "Measurement cannot be created.",
-                "Only an admin or trainer can record member measurements.");
+                "Members can record only their own measurements.");
         }
 
         if (!writeAccess && !isStaff && !isOwner)

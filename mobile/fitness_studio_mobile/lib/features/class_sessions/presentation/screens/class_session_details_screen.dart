@@ -65,6 +65,10 @@ class _ClassSessionDetailsContentState
     final theme = Theme.of(context);
     final classSession = widget.classSession;
     final spotsLeft = classSession.capacity - classSession.bookedCount;
+    final bookingAvailable =
+        classSession.status == 'scheduled' &&
+        spotsLeft > 0 &&
+        classSession.startsAt.isAfter(DateTime.now());
     final canViewParticipants = _canManage(classSession);
     final bookings = canViewParticipants
         ? ref.watch(classSessionBookingsProvider(classSession.id))
@@ -122,49 +126,12 @@ class _ClassSessionDetailsContentState
                       final status => status,
                     },
                   ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    context.l10n.occupancyTitle,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  LinearProgressIndicator(
-                    value: classSession.capacity == 0
-                        ? 0
-                        : classSession.bookedCount / classSession.capacity,
-                    minHeight: 10,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    context.l10n.reservedCapacity(
-                      classSession.bookedCount,
-                      classSession.capacity,
-                    ),
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    spotsLeft > 0
-                        ? context.l10n.freeSpots(spotsLeft)
-                        : context.l10n.classIsFull,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: spotsLeft > 0
-                          ? theme.colorScheme.secondary
-                          : theme.colorScheme.error,
-                    ),
+                  _DetailRow(
+                    icon: Icons.event_available_outlined,
+                    label: context.l10n.labelBookingAvailability,
+                    value: bookingAvailable
+                        ? context.l10n.bookingAvailable
+                        : context.l10n.bookingUnavailable,
                   ),
                 ],
               ),
@@ -187,10 +154,7 @@ class _ClassSessionDetailsContentState
           const SizedBox(height: 24),
           if (canBook)
             FilledButton(
-              onPressed:
-                  spotsLeft > 0 &&
-                      classSession.status == 'scheduled' &&
-                      !_isBooking
+              onPressed: bookingAvailable && !_isBooking
                   ? () => _createBooking(classSession)
                   : null,
               child: Text(

@@ -20,9 +20,16 @@ public class ClassSessionsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<ClassSessionResponse>>> GetClassSessions()
+    public async Task<ActionResult<List<ClassSessionResponse>>> GetClassSessions(
+        [FromQuery] DateTime? from,
+        [FromQuery] DateTime? to)
     {
-        return Ok(await _classSessionsService.GetClassSessionsAsync());
+        if (from.HasValue && to.HasValue && from.Value >= to.Value)
+        {
+            return BadRequest("The 'from' value must be earlier than 'to'.");
+        }
+
+        return Ok(await _classSessionsService.GetClassSessionsAsync(from, to));
     }
 
     [Authorize(Roles = AuthRoles.Trainer)]

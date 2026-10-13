@@ -29,11 +29,25 @@ public class ClassSessionsService : IClassSessionsService
         _configurationProvider = mapper.ConfigurationProvider;
     }
 
-    public Task<List<ClassSessionResponse>> GetClassSessionsAsync()
+    public Task<List<ClassSessionResponse>> GetClassSessionsAsync(
+        DateTime? from = null,
+        DateTime? to = null)
     {
-        return _dbContext.ClassSessions
+        var query = _dbContext.ClassSessions
             .AsNoTracking()
-            .Where(classSession => classSession.StudioId == _currentUser.StudioId)
+            .Where(classSession => classSession.StudioId == _currentUser.StudioId);
+
+        if (from.HasValue)
+        {
+            query = query.Where(classSession => classSession.StartsAt >= from.Value);
+        }
+
+        if (to.HasValue)
+        {
+            query = query.Where(classSession => classSession.StartsAt < to.Value);
+        }
+
+        return query
             .OrderBy(classSession => classSession.StartsAt)
             .ProjectTo<ClassSessionResponse>(_configurationProvider)
             .ToListAsync();

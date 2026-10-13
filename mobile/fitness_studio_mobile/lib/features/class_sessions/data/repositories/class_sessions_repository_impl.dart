@@ -11,9 +11,15 @@ class ClassSessionsRepositoryImpl implements ClassSessionsRepository {
   final ClassSessionsRemoteDataSource _remoteDataSource;
 
   @override
-  Future<Result<List<ClassSession>>> getClassSessions() async {
+  Future<Result<List<ClassSession>>> getClassSessions({
+    DateTime? from,
+    DateTime? to,
+  }) async {
     try {
-      final classSessions = await _remoteDataSource.getClassSessions();
+      final classSessions = await _remoteDataSource.getClassSessions(
+        from: from,
+        to: to,
+      );
 
       return Success(classSessions);
     } on ApiException catch (error) {

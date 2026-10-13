@@ -25,9 +25,9 @@ Dodatne rute:
 - `/registracija`
 - `/odabir-studija`
 - `/termini/termin/{id}`
-- `/profil/napredak`
+- `/profil/antropometrija`
 - `/profil/clanovi`
-- `/profil/clanovi/{memberId}/napredak`
+- `/profil/clanovi/{memberId}/antropometrija`
 - `/profil/clanovi/{memberId}/novo-mjerenje`
 - `/profil/clanarine`
 - `/profil/treneri`
@@ -69,7 +69,7 @@ Dodatne rute:
 - sazetak posljednjih mjerenja i promjene na profilu clana
 - detaljni ekran napretka s odabirom parametra, linijskim grafom i povijesti
 - trenerski popis clanova s pretragom i pregledom napretka odabranog clana
-- trenerski unos novog mjerenja s aktivnim rucnim parametrima studija
+- unos vlastitog mjerenja za clana te unos mjerenja clanova za trenera i admina, s aktivnim rucnim parametrima studija
 - debug login forma s unaprijed popunjenim Filipovim racunom
 - clanski pregled obracuna, HUB3 koda, prijava uplate i zavrsetak clanstva
 - administratorski pregled i potvrda uplata te postavke primatelja i podsjetnika
@@ -87,9 +87,9 @@ in-app obavijesti i dalje rade.
 
 Ekran **Profil** koristi `GET /api/profile` i prilagodjava sadrzaj povezanim ulogama. Korisnik koji je istodobno clan i trener dobiva obje vrste podataka, dok se neprimjenjive sekcije ne prikazuju.
 
-Sekcija **Napredak** na profilu prikazuje tezinu, BMI i opseg struka kada su dostupni. Promjena se racuna prema prethodnoj zabiljezenoj vrijednosti istog parametra. Detaljni ekran koristi `fl_chart`, omogucuje izbor svih dostupnih parametara te prikazuje graf i zapise od najnovijeg prema najstarijem.
+Kartica **Antropometrija** na profilu vodi na detaljni ekran tjelesnih mjerenja. Profil ne ucitava ni prikazuje sazetak mjerenja. Detaljni ekran koristi `fl_chart`, omogucuje izbor svih dostupnih parametara, prikazuje graf i zapise od najnovijeg prema najstarijem te clanu nudi unos vlastitog mjerenja. Stara ruta `/profil/napredak` preusmjerava na `/profil/antropometrija`.
 
-Admin i trener na profilu vide akciju **Napredak clanova**. Nakon odabira clana mogu pregledati istu povijest koju clan vidi za sebe te dodati novo mjerenje. Obrazac prikazuje samo aktivne parametre sa `source = manual`, prihvaca decimalni zarez i zahtijeva barem jednu vrijednost. Izracunati parametri poput BMI-ja ne unose se rucno.
+Admin i trener na profilu vide akciju **Antropometrija clanova**. Nakon odabira clana mogu pregledati istu povijest koju clan vidi za sebe te dodati novo mjerenje. Stara ruta `/profil/clanovi/{memberId}/napredak` preusmjerava na `/profil/clanovi/{memberId}/antropometrija`. Obrazac prikazuje samo aktivne parametre sa `source = manual`, prihvaca decimalni zarez i zahtijeva barem jednu vrijednost. Izracunati parametri poput BMI-ja ne unose se rucno.
 
 Admin na profilu vidi akciju **Treneri**. Ekran prikazuje trenere studija i omogucuje
 unaprijed stvaranje trenerskog profila. Stara ruta `/profil/onboarding` preusmjerava

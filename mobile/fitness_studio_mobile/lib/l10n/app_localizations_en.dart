@@ -148,7 +148,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileUsedInMembership => 'Used in membership';
 
   @override
-  String get profileMembersProgress => 'Member progress';
+  String get profileMembersProgress => 'Member anthropometry';
 
   @override
   String get profileMembersProgressSubtitle => 'View and enter measurements';
@@ -173,23 +173,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Recipient, IBAN and payment details';
 
   @override
-  String get profileProgress => 'Progress';
+  String get profileAnthropometry => 'Anthropometry';
 
   @override
-  String get profileRefreshProgress => 'Refresh progress';
+  String get profileAnthropometrySubtitle => 'Body measurements';
 
   @override
-  String get profileProgressLoadError =>
-      'Progress data is currently unavailable.';
-
-  @override
-  String get profileNoMeasurements => 'No measurements have been recorded yet.';
-
-  @override
-  String get profileShowHistory => 'View history';
-
-  @override
-  String get profileFixedSchedules => 'My fixed classes';
+  String get profileFixedSchedules => 'Fixed classes';
 
   @override
   String get profileAboutMe => 'About me';
@@ -284,6 +274,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String minutesShort(int count) {
     return '$count min';
   }
+
+  @override
+  String get labelBookingAvailability => 'Booking';
+
+  @override
+  String get bookingAvailable => 'Available';
+
+  @override
+  String get bookingUnavailable => 'Unavailable';
 
   @override
   String get occupancyTitle => 'Occupancy';
@@ -520,7 +519,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nextMetric => 'next';
 
   @override
-  String get progressTitle => 'Progress';
+  String get progressTitle => 'Anthropometry';
 
   @override
   String get measurementAction => 'Measurement';
@@ -530,13 +529,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noMemberProfileMessage =>
-      'Progress tracking is available to members.';
+      'Anthropometric measurements are available to members.';
 
   @override
   String get noMeasurementsTitle => 'No measurements';
 
   @override
-  String get noMeasurementsMessage => 'No progress data has been recorded yet.';
+  String get noMeasurementsMessage =>
+      'No anthropometric measurements have been recorded yet.';
 
   @override
   String get parameterLabel => 'Parameter';
@@ -555,7 +555,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get progressHistory => 'History';
 
   @override
-  String get membersProgressTitle => 'Member progress';
+  String get membersProgressTitle => 'Member anthropometry';
 
   @override
   String get searchMembers => 'Search members';
@@ -835,7 +835,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'The new class response could not be read.';
 
   @override
-  String get failureReadProgress => 'Progress data could not be read.';
+  String get failureReadProgress =>
+      'Anthropometric measurements could not be read.';
 
   @override
   String get failureReadMembers => 'Members could not be loaded.';

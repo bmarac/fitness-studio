@@ -371,7 +371,7 @@ abstract class AppLocalizations {
   /// No description provided for @profileMembersProgress.
   ///
   /// In hr, this message translates to:
-  /// **'Napredak članova'**
+  /// **'Antropometrija članova'**
   String get profileMembersProgress;
 
   /// No description provided for @profileMembersProgressSubtitle.
@@ -416,40 +416,22 @@ abstract class AppLocalizations {
   /// **'Primatelj, IBAN i podaci za uplatu'**
   String get profilePaymentSettingsSubtitle;
 
-  /// No description provided for @profileProgress.
+  /// No description provided for @profileAnthropometry.
   ///
   /// In hr, this message translates to:
-  /// **'Napredak'**
-  String get profileProgress;
+  /// **'Antropometrija'**
+  String get profileAnthropometry;
 
-  /// No description provided for @profileRefreshProgress.
+  /// No description provided for @profileAnthropometrySubtitle.
   ///
   /// In hr, this message translates to:
-  /// **'Osvježi napredak'**
-  String get profileRefreshProgress;
-
-  /// No description provided for @profileProgressLoadError.
-  ///
-  /// In hr, this message translates to:
-  /// **'Podatke o napretku trenutno nije moguće učitati.'**
-  String get profileProgressLoadError;
-
-  /// No description provided for @profileNoMeasurements.
-  ///
-  /// In hr, this message translates to:
-  /// **'Još nema zabilježenih mjerenja.'**
-  String get profileNoMeasurements;
-
-  /// No description provided for @profileShowHistory.
-  ///
-  /// In hr, this message translates to:
-  /// **'Prikaži povijest'**
-  String get profileShowHistory;
+  /// **'Tjelesna mjerenja'**
+  String get profileAnthropometrySubtitle;
 
   /// No description provided for @profileFixedSchedules.
   ///
   /// In hr, this message translates to:
-  /// **'Moji fiksni termini'**
+  /// **'Fiksni termini'**
   String get profileFixedSchedules;
 
   /// No description provided for @profileAboutMe.
@@ -577,6 +559,24 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'{count} min'**
   String minutesShort(int count);
+
+  /// No description provided for @labelBookingAvailability.
+  ///
+  /// In hr, this message translates to:
+  /// **'Rezervacija'**
+  String get labelBookingAvailability;
+
+  /// No description provided for @bookingAvailable.
+  ///
+  /// In hr, this message translates to:
+  /// **'Dostupna'**
+  String get bookingAvailable;
+
+  /// No description provided for @bookingUnavailable.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nije dostupna'**
+  String get bookingUnavailable;
 
   /// No description provided for @occupancyTitle.
   ///
@@ -989,7 +989,7 @@ abstract class AppLocalizations {
   /// No description provided for @progressTitle.
   ///
   /// In hr, this message translates to:
-  /// **'Napredak'**
+  /// **'Antropometrija'**
   String get progressTitle;
 
   /// No description provided for @measurementAction.
@@ -1007,7 +1007,7 @@ abstract class AppLocalizations {
   /// No description provided for @noMemberProfileMessage.
   ///
   /// In hr, this message translates to:
-  /// **'Praćenje napretka dostupno je članovima.'**
+  /// **'Antropometrijska mjerenja dostupna su članovima.'**
   String get noMemberProfileMessage;
 
   /// No description provided for @noMeasurementsTitle.
@@ -1019,7 +1019,7 @@ abstract class AppLocalizations {
   /// No description provided for @noMeasurementsMessage.
   ///
   /// In hr, this message translates to:
-  /// **'Još nema zabilježenih podataka o napretku.'**
+  /// **'Još nema zabilježenih antropometrijskih mjerenja.'**
   String get noMeasurementsMessage;
 
   /// No description provided for @parameterLabel.
@@ -1055,7 +1055,7 @@ abstract class AppLocalizations {
   /// No description provided for @membersProgressTitle.
   ///
   /// In hr, this message translates to:
-  /// **'Napredak članova'**
+  /// **'Antropometrija članova'**
   String get membersProgressTitle;
 
   /// No description provided for @searchMembers.
@@ -1547,7 +1547,7 @@ abstract class AppLocalizations {
   /// No description provided for @failureReadProgress.
   ///
   /// In hr, this message translates to:
-  /// **'Nije moguće pročitati podatke o napretku.'**
+  /// **'Nije moguće pročitati antropometrijska mjerenja.'**
   String get failureReadProgress;
 
   /// No description provided for @failureReadMembers.

@@ -72,17 +72,21 @@ public class MemberMeasurementsServiceTests
     }
 
     [Fact]
-    public async Task MembersCannotCreateMeasurements()
+    public async Task MemberCreatesOwnMeasurementButCannotCreateForAnotherMember()
     {
         await using var db = Database();
         SeedMemberAndParameters(db);
+        db.Members.Add(Member(2, 1));
         await db.SaveChangesAsync();
+        var service = Service(db, AuthRoles.Member, 1);
 
-        var result = await Service(db, AuthRoles.Member, 1)
-            .CreateMeasurementAsync(1, Request((1, 170m)));
+        var own = await service.CreateMeasurementAsync(1, Request((1, 170m)));
+        var other = await service.CreateMeasurementAsync(2, Request((1, 171m)));
 
-        Assert.Equal(ServiceResultStatus.Forbidden, result.Status);
-        Assert.Empty(db.MemberMeasurements);
+        Assert.Equal(ServiceResultStatus.Success, own.Status);
+        Assert.Equal(10, own.Value!.RecordedByUserId);
+        Assert.Equal(ServiceResultStatus.Forbidden, other.Status);
+        Assert.Single(db.MemberMeasurements);
     }
 
     [Fact]

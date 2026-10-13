@@ -17,13 +17,19 @@ class AppRoutes {
 
   static const profile = '/profil';
 
-  static const progress = 'napredak';
+  static const anthropometry = 'antropometrija';
 
-  static const progressPath = '$profile/napredak';
+  static const anthropometryPath = '$profile/antropometrija';
+
+  static const legacyProgress = 'napredak';
+
+  static const legacyProgressPath = '$profile/napredak';
 
   static const membersProgress = 'clanovi';
 
-  static const memberProgress = 'clanovi/:memberId/napredak';
+  static const memberAnthropometry = 'clanovi/:memberId/antropometrija';
+
+  static const legacyMemberProgress = 'clanovi/:memberId/napredak';
 
   static const createMeasurement = 'clanovi/:memberId/novo-mjerenje';
 
@@ -45,7 +51,11 @@ class AppRoutes {
 
   static const membersProgressPath = '$profile/clanovi';
 
-  static String memberProgressPath(int memberId) {
+  static String memberAnthropometryPath(int memberId) {
+    return '$profile/clanovi/$memberId/antropometrija';
+  }
+
+  static String legacyMemberProgressPath(int memberId) {
     return '$profile/clanovi/$memberId/napredak';
   }
 

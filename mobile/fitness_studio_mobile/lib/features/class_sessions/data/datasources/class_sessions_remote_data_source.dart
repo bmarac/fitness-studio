@@ -6,8 +6,17 @@ class ClassSessionsRemoteDataSource {
 
   final ApiClient _apiClient;
 
-  Future<List<ClassSessionModel>> getClassSessions() async {
-    final response = await _apiClient.get<List<dynamic>>('/api/class-sessions');
+  Future<List<ClassSessionModel>> getClassSessions({
+    DateTime? from,
+    DateTime? to,
+  }) async {
+    final response = await _apiClient.get<List<dynamic>>(
+      '/api/class-sessions',
+      queryParameters: {
+        if (from != null) 'from': from.toUtc().toIso8601String(),
+        if (to != null) 'to': to.toUtc().toIso8601String(),
+      },
+    );
     final data = response.data ?? [];
 
     return data

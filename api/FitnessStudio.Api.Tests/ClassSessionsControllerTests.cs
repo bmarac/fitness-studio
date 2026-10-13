@@ -14,14 +14,29 @@ public class ClassSessionsControllerTests
     [Fact]
     public async Task GetClassSessionsReturnsServiceItems()
     {
+        var from = new DateTime(2026, 10, 13, 12, 0, 0, DateTimeKind.Utc);
+        var to = new DateTime(2026, 10, 19, 0, 0, 0, DateTimeKind.Utc);
         var sessions = new List<ClassSessionResponse> { Session() };
         var service = new FakeClassSessionsService { GetSessionsResult = sessions };
         var controller = new ClassSessionsController(service);
 
-        var action = await controller.GetClassSessions();
+        var action = await controller.GetClassSessions(from, to);
 
         var ok = Assert.IsType<OkObjectResult>(action.Result);
         Assert.Same(sessions, ok.Value);
+        Assert.Equal(from, service.LastFrom);
+        Assert.Equal(to, service.LastTo);
+    }
+
+    [Fact]
+    public async Task GetClassSessionsRejectsInvalidRange()
+    {
+        var from = new DateTime(2026, 10, 19, 0, 0, 0, DateTimeKind.Utc);
+        var controller = new ClassSessionsController(new FakeClassSessionsService());
+
+        var action = await controller.GetClassSessions(from, from);
+
+        Assert.IsType<BadRequestObjectResult>(action.Result);
     }
 
     [Fact]
@@ -263,14 +278,22 @@ public class ClassSessionsControllerTests
         public ServiceResult DeleteSessionResult { get; init; } = null!;
         public ServiceResult CancelSessionResult { get; init; } = null!;
         public long? LastGetSessionId { get; private set; }
+        public DateTime? LastFrom { get; private set; }
+        public DateTime? LastTo { get; private set; }
         public CreateClassSessionRequest? LastCreateRequest { get; private set; }
         public long? LastUpdateSessionId { get; private set; }
         public UpdateClassSessionRequest? LastUpdateRequest { get; private set; }
         public long? LastDeleteSessionId { get; private set; }
         public long? LastCancelSessionId { get; private set; }
 
-        public Task<List<ClassSessionResponse>> GetClassSessionsAsync()
-            => Task.FromResult(GetSessionsResult);
+        public Task<List<ClassSessionResponse>> GetClassSessionsAsync(
+            DateTime? from = null,
+            DateTime? to = null)
+        {
+            LastFrom = from;
+            LastTo = to;
+            return Task.FromResult(GetSessionsResult);
+        }
 
         public Task<List<ClassSessionResponse>> GetMyClassSessionsAsync()
             => Task.FromResult(GetMySessionsResult);

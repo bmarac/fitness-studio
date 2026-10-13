@@ -429,11 +429,11 @@ public class BookingsService : IBookingsService
                 "Only scheduled class sessions can be booked.");
         }
 
-        if (classSession.EndsAt <= DateTime.UtcNow)
+        if (classSession.StartsAt <= DateTime.UtcNow)
         {
             return ServiceResult.Conflict(
-                "Class session has already ended.",
-                "Past class sessions cannot be booked.");
+                "Class session has already started.",
+                "A class session cannot be booked after its start time.");
         }
 
         if (await ActiveBookingExistsAsync(memberId, classSessionId))

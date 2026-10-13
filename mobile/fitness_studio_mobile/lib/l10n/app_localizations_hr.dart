@@ -148,7 +148,7 @@ class AppLocalizationsHr extends AppLocalizations {
   String get profileUsedInMembership => 'Iskorišteno u članarini';
 
   @override
-  String get profileMembersProgress => 'Napredak članova';
+  String get profileMembersProgress => 'Antropometrija članova';
 
   @override
   String get profileMembersProgressSubtitle => 'Pregled i unos mjerenja';
@@ -173,23 +173,13 @@ class AppLocalizationsHr extends AppLocalizations {
       'Primatelj, IBAN i podaci za uplatu';
 
   @override
-  String get profileProgress => 'Napredak';
+  String get profileAnthropometry => 'Antropometrija';
 
   @override
-  String get profileRefreshProgress => 'Osvježi napredak';
+  String get profileAnthropometrySubtitle => 'Tjelesna mjerenja';
 
   @override
-  String get profileProgressLoadError =>
-      'Podatke o napretku trenutno nije moguće učitati.';
-
-  @override
-  String get profileNoMeasurements => 'Još nema zabilježenih mjerenja.';
-
-  @override
-  String get profileShowHistory => 'Prikaži povijest';
-
-  @override
-  String get profileFixedSchedules => 'Moji fiksni termini';
+  String get profileFixedSchedules => 'Fiksni termini';
 
   @override
   String get profileAboutMe => 'O meni';
@@ -287,6 +277,15 @@ class AppLocalizationsHr extends AppLocalizations {
   String minutesShort(int count) {
     return '$count min';
   }
+
+  @override
+  String get labelBookingAvailability => 'Rezervacija';
+
+  @override
+  String get bookingAvailable => 'Dostupna';
+
+  @override
+  String get bookingUnavailable => 'Nije dostupna';
 
   @override
   String get occupancyTitle => 'Popunjenost';
@@ -524,7 +523,7 @@ class AppLocalizationsHr extends AppLocalizations {
   String get nextMetric => 'sljedeći';
 
   @override
-  String get progressTitle => 'Napredak';
+  String get progressTitle => 'Antropometrija';
 
   @override
   String get measurementAction => 'Mjerenje';
@@ -534,14 +533,14 @@ class AppLocalizationsHr extends AppLocalizations {
 
   @override
   String get noMemberProfileMessage =>
-      'Praćenje napretka dostupno je članovima.';
+      'Antropometrijska mjerenja dostupna su članovima.';
 
   @override
   String get noMeasurementsTitle => 'Nema mjerenja';
 
   @override
   String get noMeasurementsMessage =>
-      'Još nema zabilježenih podataka o napretku.';
+      'Još nema zabilježenih antropometrijskih mjerenja.';
 
   @override
   String get parameterLabel => 'Parametar';
@@ -560,7 +559,7 @@ class AppLocalizationsHr extends AppLocalizations {
   String get progressHistory => 'Povijest';
 
   @override
-  String get membersProgressTitle => 'Napredak članova';
+  String get membersProgressTitle => 'Antropometrija članova';
 
   @override
   String get searchMembers => 'Pretraži članove';
@@ -842,7 +841,8 @@ class AppLocalizationsHr extends AppLocalizations {
       'Nije moguće pročitati odgovor za novi termin.';
 
   @override
-  String get failureReadProgress => 'Nije moguće pročitati podatke o napretku.';
+  String get failureReadProgress =>
+      'Nije moguće pročitati antropometrijska mjerenja.';
 
   @override
   String get failureReadMembers => 'Nije moguće učitati članove.';

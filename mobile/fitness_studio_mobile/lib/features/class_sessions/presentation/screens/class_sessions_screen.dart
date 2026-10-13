@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/error/failure_localization.dart';
 import '../../../../core/l10n/localization.dart';
-import '../../../../core/widgets/empty_view.dart';
 import '../../../../core/widgets/error_view.dart';
 import '../../../../core/widgets/loading_view.dart';
 import '../../../../navigation/app_routes.dart';
@@ -27,14 +26,19 @@ class ClassSessionsScreen extends ConsumerStatefulWidget {
 }
 
 class _ClassSessionsScreenState extends ConsumerState<ClassSessionsScreen> {
+  late final DateTime _referenceNow;
   late final DateTime _today;
+  late final DateTime _currentWeekStart;
   late DateTime _weekStart;
 
   @override
   void initState() {
     super.initState();
-    _today = DateUtils.dateOnly(widget.referenceDate ?? DateTime.now());
-    _weekStart = _startOfWeek(_today);
+    _referenceNow = widget.referenceDate ?? DateTime.now();
+    _today = DateUtils.dateOnly(_referenceNow);
+    _currentWeekStart = _startOfWeek(_today);
+    _weekStart = _currentWeekStart;
+    Future.microtask(_loadDisplayedWeek);
   }
 
   @override
@@ -61,30 +65,17 @@ class _ClassSessionsScreenState extends ConsumerState<ClassSessionsScreen> {
       body: switch (state) {
         ClassSessionsInitial() || ClassSessionsLoading() => const LoadingView(),
         ClassSessionsLoaded(classSessions: final classSessions) =>
-          classSessions.isEmpty
-              ? EmptyView(
-                  title: context.l10n.noClassSessionsTitle,
-                  message: context.l10n.noClassSessionsMessage,
-                )
-              : _ClassSessionsByWeekdayView(
-                  key: ValueKey(_weekStart),
-                  classSessions: classSessions,
-                  weekStart: _weekStart,
-                  today: _today,
-                  onPreviousWeek: () {
-                    setState(() {
-                      _weekStart = _weekStart.subtract(const Duration(days: 7));
-                    });
-                  },
-                  onNextWeek: () {
-                    setState(() {
-                      _weekStart = _weekStart.add(const Duration(days: 7));
-                    });
-                  },
-                  onRefresh: () => ref
-                      .read(classSessionsControllerProvider.notifier)
-                      .loadClassSessions(),
-                ),
+          _ClassSessionsByWeekdayView(
+            key: ValueKey(_weekStart),
+            classSessions: classSessions,
+            weekStart: _weekStart,
+            today: _today,
+            onPreviousWeek: _weekStart == _currentWeekStart
+                ? null
+                : () => _changeWeek(-1),
+            onNextWeek: () => _changeWeek(1),
+            onRefresh: _loadDisplayedWeek,
+          ),
         ClassSessionsError(failure: final failure) => ErrorView(
           message: failure.localized(context),
           onRetry: () => ref
@@ -108,10 +99,31 @@ class _ClassSessionsScreenState extends ConsumerState<ClassSessionsScreen> {
     );
   }
 
-  static DateTime _startOfWeek(DateTime date) {
-    final localDate = DateTime(date.year, date.month, date.day);
-    return localDate.subtract(Duration(days: localDate.weekday - 1));
+  void _changeWeek(int offset) {
+    setState(() {
+      _weekStart = _addCalendarDays(_weekStart, offset * 7);
+    });
+    _loadDisplayedWeek();
   }
+
+  Future<void> _loadDisplayedWeek() {
+    final isCurrentWeek = _weekStart == _currentWeekStart;
+    final from = isCurrentWeek
+        ? (widget.referenceDate ?? DateTime.now())
+        : _weekStart;
+    final to = _addCalendarDays(_weekStart, 7);
+
+    return ref
+        .read(classSessionsControllerProvider.notifier)
+        .loadClassSessions(from: from.toUtc(), to: to.toUtc());
+  }
+
+  static DateTime _startOfWeek(DateTime date) {
+    return DateTime(date.year, date.month, date.day - (date.weekday - 1));
+  }
+
+  static DateTime _addCalendarDays(DateTime date, int days) =>
+      DateTime(date.year, date.month, date.day + days);
 }
 
 class _ClassSessionsByWeekdayView extends StatefulWidget {
@@ -128,7 +140,7 @@ class _ClassSessionsByWeekdayView extends StatefulWidget {
   final List<ClassSession> classSessions;
   final DateTime weekStart;
   final DateTime today;
-  final VoidCallback onPreviousWeek;
+  final VoidCallback? onPreviousWeek;
   final VoidCallback onNextWeek;
   final Future<void> Function() onRefresh;
 
@@ -165,11 +177,19 @@ class _ClassSessionsByWeekdayViewState
 
   @override
   Widget build(BuildContext context) {
+    final weekEnd = DateTime(
+      widget.weekStart.year,
+      widget.weekStart.month,
+      widget.weekStart.day + 7,
+    );
     final days = List.generate(
       7,
-      (index) => widget.weekStart.add(Duration(days: index)),
+      (index) => DateTime(
+        widget.weekStart.year,
+        widget.weekStart.month,
+        widget.weekStart.day + index,
+      ),
     );
-    final weekEnd = widget.weekStart.add(const Duration(days: 7));
     final sessionsByDay = <DateTime, List<ClassSession>>{
       for (final day in days) day: [],
     };
@@ -246,7 +266,11 @@ class _ClassSessionsByWeekdayViewState
   }
 
   int _dayIndexInDisplayedWeek() {
-    final weekEnd = widget.weekStart.add(const Duration(days: 7));
+    final weekEnd = DateTime(
+      widget.weekStart.year,
+      widget.weekStart.month,
+      widget.weekStart.day + 7,
+    );
     if (widget.today.isBefore(widget.weekStart) ||
         !widget.today.isBefore(weekEnd)) {
       return 0;
@@ -315,6 +339,10 @@ class _ClassSessionsByWeekdayViewState
       }
     }
 
+    if (visibleDayIndex < _initialDayIndex) {
+      visibleDayIndex = _initialDayIndex;
+    }
+
     if (visibleDayIndex != _selectedDayIndex) {
       setState(() {
         _selectedDayIndex = visibleDayIndex;
@@ -367,7 +395,7 @@ class _WeekHeader extends StatelessWidget {
   final DateTime today;
   final int selectedDayIndex;
   final ValueChanged<int> onDaySelected;
-  final VoidCallback onPreviousWeek;
+  final VoidCallback? onPreviousWeek;
   final VoidCallback onNextWeek;
 
   @override
@@ -414,8 +442,13 @@ class _WeekHeader extends StatelessWidget {
                       date: days[index],
                       today: today,
                       count: sessionsByDay[days[index]]!.length,
-                      isSelected: index == selectedDayIndex,
-                      onTap: () => onDaySelected(index),
+                      isDisabled: days[index].isBefore(today),
+                      isSelected:
+                          !days[index].isBefore(today) &&
+                          index == selectedDayIndex,
+                      onTap: days[index].isBefore(today)
+                          ? null
+                          : () => onDaySelected(index),
                     ),
                   ),
               ],
@@ -433,6 +466,7 @@ class _DaySummary extends StatelessWidget {
     required this.date,
     required this.today,
     required this.count,
+    required this.isDisabled,
     required this.isSelected,
     required this.onTap,
   });
@@ -441,8 +475,9 @@ class _DaySummary extends StatelessWidget {
   final DateTime date;
   final DateTime today;
   final int count;
+  final bool isDisabled;
   final bool isSelected;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -457,7 +492,8 @@ class _DaySummary extends StatelessWidget {
       child: Semantics(
         key: ValueKey('class-sessions-day-summary-${date.toIso8601String()}'),
         selected: isSelected,
-        button: true,
+        enabled: !isDisabled,
+        button: !isDisabled,
         label: context.l10n.daySessionsSemantics(
           label,
           context.formatShortDate(date),
@@ -479,7 +515,12 @@ class _DaySummary extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 7),
               child: Column(
                 children: [
-                  Text(label, style: theme.textTheme.labelSmall),
+                  Text(
+                    label,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: isDisabled ? theme.disabledColor : null,
+                    ),
+                  ),
                   const SizedBox(height: 2),
                   Text(
                     '${date.day}',
@@ -487,13 +528,17 @@ class _DaySummary extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                       color: isSelected
                           ? theme.colorScheme.onPrimaryContainer
+                          : isDisabled
+                          ? theme.disabledColor
                           : null,
                     ),
                   ),
                   Text(
                     '$count',
                     style: theme.textTheme.labelSmall?.copyWith(
-                      color: count == 0
+                      color: isDisabled
+                          ? theme.disabledColor
+                          : count == 0
                           ? theme.colorScheme.outline
                           : theme.colorScheme.primary,
                       fontWeight: FontWeight.w700,

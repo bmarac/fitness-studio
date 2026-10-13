@@ -1,4 +1,4 @@
-# Pracenje napretka
+# Antropometrija
 
 Svaki studio samostalno definira parametre koje prati kod svojih clanova. Dodavanje novog parametra ne zahtijeva novu kolonu ni migraciju baze.
 
@@ -45,8 +45,7 @@ Implementirane ovlasti:
 
 - admin upravlja parametrima i svim mjerenjima
 - trener pregledava i unosi mjerenja clanova
-- clan pregledava samo vlastiti napredak
-- clan ne mijenja niti unosi mjerenja
+- clan pregledava i unosi samo vlastita antropometrijska mjerenja
 
 ## API parametara
 
@@ -68,9 +67,9 @@ Kod unosa backend provjerava studio, ovlasti, aktivnost parametra, dopusteni ras
 
 ## Mobilna aplikacija
 
-Clan na profilu vidi sazetak posljednje tezine, BMI-ja i opsega struka te promjenu prema prethodnom mjerenju. Akcija **Prikazi povijest** otvara `/profil/napredak`, gdje se moze odabrati bilo koji dostupan parametar i pregledati linijski graf, datume, vrijednosti i biljeske.
+Clan na profilu vidi kompaktnu karticu **Antropometrija** s opisom **Tjelesna mjerenja**. Kartica otvara `/profil/antropometrija`, gdje moze pregledati povijest i preko akcije **Mjerenje** unijeti vlastite vrijednosti. Clan ne moze unositi mjerenja drugom clanu. Stara ruta `/profil/napredak` automatski se preusmjerava na novu.
 
-Admin i trener preko **Profil -> Napredak clanova** otvaraju pretrazivi popis clanova. Odabrani clan ima vlastiti ekran povijesti i akciju **Mjerenje**. Obrazac ucitava konfiguraciju studija, prikazuje samo aktivne rucne parametre, lokalno provjerava granice i nakon uspjesnog spremanja osvjezava povijest clana.
+Admin i trener preko **Profil -> Antropometrija clanova** otvaraju pretrazivi popis clanova. Odabrani clan ima vlastiti ekran povijesti na `/profil/clanovi/{memberId}/antropometrija` i akciju **Mjerenje**. Stara ruta s nastavkom `/napredak` preusmjerava na novu. Obrazac ucitava konfiguraciju studija, prikazuje samo aktivne rucne parametre, lokalno provjerava granice i nakon uspjesnog spremanja osvjezava povijest clana.
 
 Demo seed `db/seeds/004_ana_progress.sql` sadrzi cetiri mjerenja za Anu kroz razdoblje od otprilike tri mjeseca. BMI nije spremljen u seedu nego ga API racuna iz svake visine i tezine.
 Naplata clanarina opisana je zasebno u [payments.md](payments.md).

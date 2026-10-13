@@ -95,7 +95,7 @@ class _MemberTile extends StatelessWidget {
         subtitle: Text(member.email),
         trailing: const Icon(Icons.chevron_right),
         onTap: () => context.push(
-          AppRoutes.memberProgressPath(member.id),
+          AppRoutes.memberAnthropometryPath(member.id),
           extra: member.fullName,
         ),
       ),

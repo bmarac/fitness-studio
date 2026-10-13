@@ -1,8 +1,7 @@
 import 'package:fitness_studio_mobile/features/profile/domain/entities/profile.dart';
 import 'package:fitness_studio_mobile/features/profile/presentation/screens/profile_screen.dart';
 import 'package:fitness_studio_mobile/features/profile/presentation/state/profile_provider.dart';
-import 'package:fitness_studio_mobile/features/progress/domain/entities/member_progress.dart';
-import 'package:fitness_studio_mobile/features/progress/presentation/state/member_progress_provider.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -16,9 +15,41 @@ void main() {
 
     expect(find.text('Osobni podaci'), findsNothing);
     expect(find.text('Moj paket'), findsOneWidget);
+    expect(find.text('Grupni trening 2x tjedno'), findsOneWidget);
+    expect(find.byType(Chip), findsNothing);
+    expect(find.text('Fiksni termini'), findsOneWidget);
+    expect(find.byIcon(Icons.event_repeat), findsNWidgets(2));
+    expect(find.text('Ponedjeljak · 19:00'), findsOneWidget);
+    expect(find.text('Srijeda · 19:00'), findsOneWidget);
+    expect(find.text('Dva grupna treninga tjedno.'), findsNothing);
+    expect(find.text('Pilates'), findsNothing);
+    expect(find.text('Kristina Lisec'), findsNothing);
     expect(find.text('Moja članarina'), findsOneWidget);
-    expect(find.text('Napredak'), findsOneWidget);
+    expect(find.text('Antropometrija'), findsOneWidget);
+    expect(find.text('Tjelesna mjerenja'), findsOneWidget);
+    expect(find.byIcon(Icons.monitor_heart_outlined), findsOneWidget);
     expect(find.text('Paketi'), findsNothing);
+  });
+
+  testWidgets('fixed schedules are hidden without an active membership', (
+    tester,
+  ) async {
+    await _pumpProfile(tester, _memberWithoutMembershipProfile);
+
+    expect(find.text('Moj paket'), findsNothing);
+    expect(find.byType(Chip), findsNothing);
+    expect(find.text('Petak · 07:00'), findsNothing);
+    expect(find.text('Fiksni termini'), findsNothing);
+  });
+
+  testWidgets('fixed schedules section is hidden when there are no schedules', (
+    tester,
+  ) async {
+    await _pumpProfile(tester, _memberWithoutFixedSchedulesProfile);
+
+    expect(find.text('Moj paket'), findsOneWidget);
+    expect(find.text('Fiksni termini'), findsNothing);
+    expect(find.byIcon(Icons.event_repeat), findsNothing);
   });
 
   testWidgets(
@@ -27,7 +58,7 @@ void main() {
       await _pumpProfile(tester, _trainerProfile);
 
       expect(find.text('Osobni podaci'), findsNothing);
-      expect(find.text('Napredak članova'), findsOneWidget);
+      expect(find.text('Antropometrija članova'), findsOneWidget);
       expect(find.text('O meni'), findsOneWidget);
       expect(find.text('Paketi'), findsNothing);
     },
@@ -53,13 +84,7 @@ void main() {
 Future<void> _pumpProfile(WidgetTester tester, Profile profile) async {
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [
-        profileProvider.overrideWith((ref) async => profile),
-        memberProgressProvider.overrideWith(
-          (ref, memberId) async =>
-              const MemberProgress(latestValues: [], history: []),
-        ),
-      ],
+      overrides: [profileProvider.overrideWith((ref) async => profile)],
       child: localizedTestApp(home: const ProfileScreen()),
     ),
   );
@@ -85,23 +110,68 @@ const _trainer = ProfilePerson(
   bio: 'Trener snage i izdržljivosti.',
 );
 
+final _membership = ProfileMembership(
+  id: 3,
+  planName: 'Grupni trening 2x tjedno',
+  planDescription: 'Dva grupna treninga tjedno.',
+  startsOn: DateTime(2026),
+  endsOn: null,
+  isActive: true,
+  sessionLimit: 2,
+  sessionLimitPeriod: 'week',
+);
+
 final _memberProfile = Profile(
   user: const ProfileUser(id: 1, email: 'ana@example.com', roles: ['member']),
   studio: const ProfileStudio(id: 1, name: 'Stay Fit'),
   member: _member,
   trainer: null,
-  membership: ProfileMembership(
-    id: 3,
-    planName: 'Grupni trening 2x tjedno',
-    planDescription: null,
-    startsOn: DateTime(2026),
-    endsOn: null,
-    isActive: true,
-    sessionLimit: 2,
-    sessionLimitPeriod: 'week',
-  ),
+  membership: _membership,
   usage: null,
-  fixedSchedules: [],
+  fixedSchedules: [
+    ProfileFixedSchedule(
+      id: 1,
+      classTypeName: 'Pilates',
+      trainerName: 'Kristina Lisec',
+      dayOfWeek: 1,
+      startsAtTime: '19:00:00',
+    ),
+    ProfileFixedSchedule(
+      id: 2,
+      classTypeName: 'Trening snage i izdržljivosti',
+      trainerName: 'Filip Šarić',
+      dayOfWeek: 3,
+      startsAtTime: '19:00:00',
+    ),
+  ],
+);
+
+final _memberWithoutFixedSchedulesProfile = Profile(
+  user: const ProfileUser(id: 1, email: 'ana@example.com', roles: ['member']),
+  studio: const ProfileStudio(id: 1, name: 'Stay Fit'),
+  member: _member,
+  trainer: null,
+  membership: _membership,
+  usage: null,
+  fixedSchedules: const [],
+);
+
+const _memberWithoutMembershipProfile = Profile(
+  user: ProfileUser(id: 1, email: 'ana@example.com', roles: ['member']),
+  studio: ProfileStudio(id: 1, name: 'Stay Fit'),
+  member: _member,
+  trainer: null,
+  membership: null,
+  usage: null,
+  fixedSchedules: [
+    ProfileFixedSchedule(
+      id: 3,
+      classTypeName: 'Pilates',
+      trainerName: 'Kristina Lisec',
+      dayOfWeek: 5,
+      startsAtTime: '07:00:00',
+    ),
+  ],
 );
 
 const _trainerProfile = Profile(

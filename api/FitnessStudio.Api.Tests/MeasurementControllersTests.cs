@@ -114,8 +114,8 @@ public class MeasurementControllersTests
         SchedulingControllerTestAssertions.MethodRequiresRole(
             typeof(MeasurementParametersController), nameof(MeasurementParametersController.DeleteParameter), AuthRoles.Admin);
         SchedulingControllerTestAssertions.ControllerRequiresAuthorization(typeof(MemberMeasurementsController));
-        SchedulingControllerTestAssertions.MethodRequiresRole(
-            typeof(MemberMeasurementsController), nameof(MemberMeasurementsController.CreateMeasurement), AuthRoles.Staff);
+        SchedulingControllerTestAssertions.MethodHasNoRoleOverride(
+            typeof(MemberMeasurementsController), nameof(MemberMeasurementsController.CreateMeasurement));
         SchedulingControllerTestAssertions.MethodHasNoRoleOverride(
             typeof(MemberMeasurementsController), nameof(MemberMeasurementsController.GetMeasurements));
     }

@@ -1,4 +1,3 @@
-using FitnessStudio.Api.Domain.Auth;
 using FitnessStudio.Api.Dtos.MemberMeasurements;
 using FitnessStudio.Api.Extensions;
 using FitnessStudio.Api.Services;
@@ -38,7 +37,6 @@ public class MemberMeasurementsController : ControllerBase
             : this.ToActionResult(result);
     }
 
-    [Authorize(Roles = AuthRoles.Staff)]
     [HttpPost]
     public async Task<ActionResult<MemberMeasurementResponse>> CreateMeasurement(
         long memberId,
