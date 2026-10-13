@@ -42,6 +42,12 @@ Vertikalni test naplate kroz Flutter klijent, API i privremenu bazu pokrece se:
 ./scripts/verify-fresh-stack.sh payment-client
 ```
 
+Vertikalni test mjerenja i napretka kroz Flutter klijent, API i privremenu bazu:
+
+```bash
+./scripts/verify-fresh-stack.sh progress-client
+```
+
 Backend i Flutter testovi, LCOV izvjestaji te coverage pragovi pokrecu se jednom
 naredbom:
 
