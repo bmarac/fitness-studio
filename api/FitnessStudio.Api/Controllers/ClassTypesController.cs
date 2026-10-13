@@ -1,12 +1,15 @@
+using FitnessStudio.Api.Domain.Auth;
 using FitnessStudio.Api.Dtos.ClassTypes;
 using FitnessStudio.Api.Extensions;
 using FitnessStudio.Api.Services;
 using FitnessStudio.Api.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FitnessStudio.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/class-types")]
 public class ClassTypesController : ControllerBase
 {
@@ -33,6 +36,7 @@ public class ClassTypesController : ControllerBase
             : this.ToActionResult(result);
     }
 
+    [Authorize(Roles = AuthRoles.Admin)]
     [HttpPost]
     public async Task<ActionResult<ClassTypeResponse>> CreateClassType(CreateClassTypeRequest request)
     {
@@ -43,6 +47,7 @@ public class ClassTypesController : ControllerBase
             : this.ToActionResult(result);
     }
 
+    [Authorize(Roles = AuthRoles.Admin)]
     [HttpPut("{id:long}")]
     public async Task<IActionResult> UpdateClassType(long id, UpdateClassTypeRequest request)
     {
@@ -53,6 +58,7 @@ public class ClassTypesController : ControllerBase
             : this.ToActionResult(result);
     }
 
+    [Authorize(Roles = AuthRoles.Admin)]
     [HttpDelete("{id:long}")]
     public async Task<IActionResult> DeleteClassType(long id)
     {
