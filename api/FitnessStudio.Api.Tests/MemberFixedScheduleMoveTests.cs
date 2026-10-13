@@ -124,6 +124,70 @@ public class MemberFixedScheduleMoveTests
         Assert.Single(await db.MemberFixedSchedules.Where(item => item.MemberId == sourceMember.Id).ToListAsync());
     }
 
+    [Theory]
+    [InlineData("missing-source")]
+    [InlineData("missing-target")]
+    [InlineData("same-target")]
+    [InlineData("inactive-source")]
+    [InlineData("inactive-target")]
+    [InlineData("already-assigned")]
+    public async Task MoveRejectsInvalidSourceOrTarget(string scenario)
+    {
+        await using var db = CreateDatabase();
+        var now = DateTime.UtcNow;
+        var timezone = TimeZoneInfo.FindSystemTimeZoneById("Europe/Zagreb");
+        var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(now, timezone));
+        var member = Member(11, "Iva", "Ivic");
+        var source = Schedule(41, 8, today, 12);
+        var target = Schedule(42, 8, today, 12);
+        var sourceAssignment = Assignment(51, member, source, today);
+
+        db.AddRange(Studio(timezone.Id), ClassType(), Trainer(8));
+        if (scenario != "missing-source")
+        {
+            db.AddRange(member, source, sourceAssignment);
+            if (scenario != "same-target")
+            {
+                db.Add(target);
+            }
+        }
+
+        if (scenario == "inactive-source")
+        {
+            sourceAssignment.Status = "paused";
+        }
+        else if (scenario == "inactive-target")
+        {
+            target.Status = "paused";
+        }
+        else if (scenario == "already-assigned")
+        {
+            db.Add(Assignment(52, member, target, today));
+        }
+        await db.SaveChangesAsync();
+
+        var service = new MemberFixedSchedulesService(
+            db,
+            new CurrentUserContext(AuthRoles.Admin),
+            new AllowMembershipPolicy());
+        var targetId = scenario switch
+        {
+            "missing-target" => 999,
+            "same-target" => source.Id,
+            _ => target.Id
+        };
+
+        var result = await service.MoveScheduleAsync(
+            scenario == "missing-source" ? 999 : sourceAssignment.Id,
+            new MoveMemberFixedScheduleRequest { TargetRecurringScheduleId = targetId });
+
+        Assert.Equal(
+            scenario is "missing-source" or "missing-target"
+                ? ServiceResultStatus.NotFound
+                : ServiceResultStatus.Conflict,
+            result.Status);
+    }
+
     private static FitnessStudioDbContext CreateDatabase()
         => new(new DbContextOptionsBuilder<FitnessStudioDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())

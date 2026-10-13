@@ -226,6 +226,7 @@ String _normalizeAtMarker(String path, String marker) {
 bool _isBackendInScope(String path) {
   if (!path.startsWith(_backendRoot)) return false;
   final relative = path.substring(_backendRoot.length);
+  if (relative.startsWith('Services/Interfaces/')) return false;
   return relative == 'Program.cs' ||
       relative == 'Data/DevelopmentAuthSeeder.cs' ||
       relative.startsWith('Controllers/') ||
@@ -240,6 +241,7 @@ bool _isFlutterInScope(String path) {
     return false;
   }
   final relative = path.substring(_flutterRoot.length);
+  if (relative.contains('/domain/repositories/')) return false;
   return !RegExp(
     r'^lib/l10n/app_localizations(?:_[a-z]+)?\.dart$',
   ).hasMatch(relative);

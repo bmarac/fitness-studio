@@ -208,7 +208,7 @@ void main() {
       router.routeInformationProvider.value.uri.path,
       AppRoutes.membershipPlansPath,
     );
-    expect(find.text('Paketi'), findsOneWidget);
+    expect(find.text('Cjenik'), findsOneWidget);
     expect(find.text('Još nema paketa.'), findsOneWidget);
   });
 
