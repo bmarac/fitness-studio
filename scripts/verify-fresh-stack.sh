@@ -5,13 +5,13 @@ set -eu
 repository_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 verification_mode="${1:-full}"
 if [ "$#" -gt 1 ]; then
-  echo "Usage: $0 [booking-client|payment-client|progress-client]" >&2
+  echo "Usage: $0 [account-client|booking-client|payment-client|progress-client]" >&2
   exit 2
 fi
 case "$verification_mode" in
-  full|booking-client|payment-client|progress-client) ;;
+  full|account-client|booking-client|payment-client|progress-client) ;;
   *)
-    echo "Usage: $0 [booking-client|payment-client|progress-client]" >&2
+    echo "Usage: $0 [account-client|booking-client|payment-client|progress-client]" >&2
     exit 2
     ;;
 esac
@@ -94,7 +94,8 @@ require_command curl
 require_command docker
 require_command dotnet
 require_command jq
-if [ "$verification_mode" = "booking-client" ] \
+if [ "$verification_mode" = "account-client" ] \
+  || [ "$verification_mode" = "booking-client" ] \
   || [ "$verification_mode" = "payment-client" ] \
   || [ "$verification_mode" = "progress-client" ]; then
   require_command dart
@@ -233,6 +234,18 @@ until curl \
   fi
   sleep 1
 done
+
+if [ "$verification_mode" = "account-client" ]; then
+  echo "Verifying the Flutter account client against the fresh stack..."
+  (
+    cd "$repository_root/mobile/fitness_studio_mobile"
+    FITNESS_STUDIO_TEST_API_BASE_URL="$api_base_url" \
+      dart test integration_test/account_stack_test.dart
+  ) || fail "Flutter account client verification failed"
+
+  echo "Fresh-stack account client verification passed."
+  exit 0
+fi
 
 if [ "$verification_mode" = "booking-client" ]; then
   echo "Verifying the Flutter booking client against the fresh stack..."

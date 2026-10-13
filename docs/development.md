@@ -88,6 +88,16 @@ netaknuta. Ako je port zauzet, moze se zadati drugi:
 FITNESS_STUDIO_VERIFY_API_PORT=55147 ./scripts/verify-fresh-stack.sh
 ```
 
+Za provjeru stvarnog Flutter account toka (registracija, lookup, join i odabir
+studija) protiv izolirane baze i API-ja koristi se:
+
+```bash
+./scripts/verify-fresh-stack.sh account-client
+```
+
+Test ponovnom prijavom potvrduje da je clanstvo studija zapisano u PostgreSQL.
+Izvodi se rucno i ne ulazi u coverage baseline.
+
 Za manju vertikalnu provjeru rezervacija kroz Flutter data/domain sloj, stvarni
 API i privremenu PostgreSQL bazu koristi se:
 
