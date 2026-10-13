@@ -5,13 +5,13 @@ set -eu
 repository_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 verification_mode="${1:-full}"
 if [ "$#" -gt 1 ]; then
-  echo "Usage: $0 [booking-client]" >&2
+  echo "Usage: $0 [booking-client|payment-client]" >&2
   exit 2
 fi
 case "$verification_mode" in
-  full|booking-client) ;;
+  full|booking-client|payment-client) ;;
   *)
-    echo "Usage: $0 [booking-client]" >&2
+    echo "Usage: $0 [booking-client|payment-client]" >&2
     exit 2
     ;;
 esac
@@ -94,7 +94,7 @@ require_command curl
 require_command docker
 require_command dotnet
 require_command jq
-if [ "$verification_mode" = "booking-client" ]; then
+if [ "$verification_mode" = "booking-client" ] || [ "$verification_mode" = "payment-client" ]; then
   require_command dart
 fi
 
@@ -244,6 +244,18 @@ if [ "$verification_mode" = "booking-client" ]; then
   exit 0
 fi
 
+if [ "$verification_mode" = "payment-client" ]; then
+  echo "Verifying the Flutter payment client against the fresh stack..."
+  (
+    cd "$repository_root/mobile/fitness_studio_mobile"
+    FITNESS_STUDIO_TEST_API_BASE_URL="$api_base_url" \
+      dart test integration_test/payment_stack_test.dart
+  ) || fail "Flutter payment client verification failed"
+
+  echo "Fresh-stack payment client verification passed."
+  exit 0
+fi
+
 echo "Verifying demo accounts and studio isolation..."
 filip_token=$(login 'filip.saric@stayfitjoyful.demo')
 kristina_token=$(login 'kristina.lisec@stayfitjoyful.demo')
@@ -358,13 +370,17 @@ echo "Verifying billing, HUB3 and payment transitions..."
 settings_body='{"recipientName":"Stay Fit & Joyful","iban":"HR1723600001101234565","paymentModel":"HR00","paymentReference":"12345","paymentDescription":"Clanarina","memberReminderDays":[0,1],"adminReminderDays":[2],"notificationTime":"09:00:00"}'
 request PUT /api/payment-settings "$filip_token" "$settings_body"
 expect_status 200
-request PUT "/api/member-memberships/$membership_id/billing" "$filip_token" "{\"firstBillingOn\":\"$today\"}"
+request GET /api/member-memberships "$filip_token"
+expect_status 200
+billing_membership_id=$(printf '%s' "$response_body" | jq -er \
+  '[.[] | select(.billingStartsOn == null)][0].id')
+request PUT "/api/member-memberships/$billing_membership_id/billing" "$filip_token" "{\"firstBillingOn\":\"$today\"}"
 expect_status 200
 [ "$(printf '%s' "$response_body" | jq -r '.createdObligations')" -ge 1 ] || fail "billing did not create an obligation"
 
 request GET /api/membership-payments/mine "$ana_token"
 expect_status 200
-payment_id=$(printf '%s' "$response_body" | jq -er '.[0].id')
+payment_id=$(printf '%s' "$response_body" | jq -er '[.[] | select(.status == "pending")][0].id')
 request GET "/api/membership-payments/$payment_id/barcode" "$ana_token"
 expect_status 200
 printf '%s' "$response_body" | grep -q '<svg' || fail "HUB3 endpoint did not return SVG"

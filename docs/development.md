@@ -103,6 +103,16 @@ namjerno izvan standardnog `test/` direktorija: ne pokrece se uz `flutter test`,
 ne ulazi u coverage baseline i zasad se izvodi samo rucno. Za njega su dodatno
 potrebni Flutter/Dart alati dostupni u `PATH` varijabli.
 
+Vertikalna provjera naplate koristi isti izolirani stack:
+
+```bash
+./scripts/verify-fresh-stack.sh payment-client
+```
+
+Test ukljucuje naplatu za jedno clanstvo, zatim stvarnim Flutter klijentom
+provjerava obvezu clana, HUB3 barkod, prijavu uplate, administratorsku potvrdu
+i konacni status `paid`. Izvodi se rucno i ne ulazi u coverage baseline.
+
 ## API
 
 ```bash

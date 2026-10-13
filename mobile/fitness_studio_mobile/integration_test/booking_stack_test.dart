@@ -38,6 +38,7 @@ void main() {
 
       final authSession = await _login(
         AuthRemoteDataSource(apiClient),
+        tokenProvider: tokenProvider,
         apiBaseUrl: apiBaseUrl,
         email: email,
         password: password,
@@ -153,14 +154,18 @@ bool _isSameLocalDate(DateTime first, DateTime second) {
 
 Future<AuthSession> _login(
   AuthRemoteDataSource dataSource, {
+  required _MutableAccessTokenProvider tokenProvider,
   required String apiBaseUrl,
   required String email,
   required String password,
 }) async {
   try {
     final account = await dataSource.login(email: email, password: password);
+    tokenProvider.accessToken = account.accessToken;
     final studio = account.studios.singleWhere((item) => item.studioId == 1);
-    return await dataSource.selectStudio(studio.studioId);
+    final session = await dataSource.selectStudio(studio.studioId);
+    tokenProvider.accessToken = session.accessToken;
+    return session;
   } on ApiException catch (error) {
     throw TestFailure(
       'Could not log in as $email through $apiBaseUrl: ${error.message}',

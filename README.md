@@ -36,6 +36,12 @@ do privremene PostgreSQL baze, pokrece se rucno:
 ./scripts/verify-fresh-stack.sh booking-client
 ```
 
+Vertikalni test naplate kroz Flutter klijent, API i privremenu bazu pokrece se:
+
+```bash
+./scripts/verify-fresh-stack.sh payment-client
+```
+
 Backend i Flutter testovi, LCOV izvjestaji te coverage pragovi pokrecu se jednom
 naredbom:
 
