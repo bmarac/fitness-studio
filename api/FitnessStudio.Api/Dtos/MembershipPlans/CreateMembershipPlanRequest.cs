@@ -19,7 +19,11 @@ public class CreateMembershipPlanRequest
     [StringLength(30)]
     public string? SessionLimitPeriod { get; set; }
 
-    [Range(typeof(decimal), "0", "99999999.99")]
+    [Range(
+        typeof(decimal),
+        "0",
+        "99999999.99",
+        ParseLimitsInInvariantCulture = true)]
     public decimal PriceAmount { get; set; }
 
     [Required]

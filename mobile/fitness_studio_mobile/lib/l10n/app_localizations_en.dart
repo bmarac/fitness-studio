@@ -42,6 +42,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionSaving => 'Saving...';
 
   @override
+  String get actionEdit => 'Edit';
+
+  @override
+  String get actionDelete => 'Delete';
+
+  @override
   String get actionRemove => 'Remove';
 
   @override
@@ -872,6 +878,104 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trainerManagementSubtitle => 'View and pre-register trainers';
 
   @override
+  String get membershipPlansTitle => 'Plans';
+
+  @override
+  String get membershipPlansSubtitle => 'Manage membership plans';
+
+  @override
+  String get addMembershipPlan => 'Add plan';
+
+  @override
+  String get editMembershipPlan => 'Edit plan';
+
+  @override
+  String get noMembershipPlans => 'There are no plans yet.';
+
+  @override
+  String get membershipPlanName => 'Plan name';
+
+  @override
+  String get membershipPlanDescription => 'Description';
+
+  @override
+  String get membershipPlanPrice => 'Monthly price';
+
+  @override
+  String get membershipPlanLimitEnabled => 'Limit the number of classes';
+
+  @override
+  String get membershipPlanSessionLimit => 'Number of classes';
+
+  @override
+  String get membershipPlanLimitPeriod => 'Limit period';
+
+  @override
+  String get membershipPlanPeriodWeek => 'Week';
+
+  @override
+  String get membershipPlanPeriodMonth => 'Month';
+
+  @override
+  String get membershipPlanPeriodMembership => 'Membership';
+
+  @override
+  String get membershipPlanUnlimited => 'Unlimited classes';
+
+  @override
+  String membershipPlanMonthlyPrice(String price) {
+    return '$price monthly';
+  }
+
+  @override
+  String membershipPlanLimitSummary(int count, String period) {
+    return '$count classes / $period';
+  }
+
+  @override
+  String get membershipPlanActive => 'Active plan';
+
+  @override
+  String get deleteMembershipPlanTitle => 'Delete plan?';
+
+  @override
+  String deleteMembershipPlanQuestion(String name) {
+    return 'The $name plan will be permanently deleted.';
+  }
+
+  @override
+  String get membershipPlanCreated => 'The plan was added.';
+
+  @override
+  String get membershipPlanUpdated => 'The plan was saved.';
+
+  @override
+  String get membershipPlanDeleted => 'The plan was deleted.';
+
+  @override
+  String get membershipPlanCannotDeleteTitle => 'The plan cannot be deleted';
+
+  @override
+  String get membershipPlanCannotDeleteMessage =>
+      'The plan is linked to existing memberships. You can mark it as inactive instead.';
+
+  @override
+  String get deactivateMembershipPlan => 'Mark as inactive';
+
+  @override
+  String get membershipPlanDeactivated => 'The plan was marked as inactive.';
+
+  @override
+  String get membershipPlanDuplicate => 'A plan with this name already exists.';
+
+  @override
+  String get invalidMembershipPlanPrice => 'Enter a valid non-negative price.';
+
+  @override
+  String get invalidMembershipPlanLimit =>
+      'The class limit must be a positive whole number.';
+
+  @override
   String get addTrainer => 'New trainer';
 
   @override
@@ -935,6 +1039,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get studioSettingsTitle => 'Studio settings';
+
+  @override
+  String get studioSettingsSubtitle => 'Access, billing and reminders';
 
   @override
   String get studioAccessSettingsTitle => 'Studio access';

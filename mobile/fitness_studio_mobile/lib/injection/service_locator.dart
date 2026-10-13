@@ -30,6 +30,9 @@ import '../features/class_sessions/domain/usecases/cancel_class_session.dart';
 import '../features/class_sessions/domain/usecases/get_class_session.dart';
 import '../features/class_sessions/domain/usecases/get_class_sessions.dart';
 import '../features/class_sessions/domain/usecases/get_my_class_sessions.dart';
+import '../features/membership_plans/data/membership_plans_remote_data_source.dart';
+import '../features/membership_plans/data/membership_plans_repository_impl.dart';
+import '../features/membership_plans/domain/repositories/membership_plans_repository.dart';
 import '../features/profile/data/datasources/profile_remote_data_source.dart';
 import '../features/payments/data/payments_remote_data_source.dart';
 import '../features/profile/data/repositories/profile_repository_impl.dart';
@@ -163,6 +166,14 @@ Future<void> configureDependencies() async {
     )
     ..registerLazySingleton<PaymentsRemoteDataSource>(
       () => PaymentsRemoteDataSource(serviceLocator<ApiClient>()),
+    )
+    ..registerLazySingleton<MembershipPlansRemoteDataSource>(
+      () => MembershipPlansRemoteDataSource(serviceLocator<ApiClient>()),
+    )
+    ..registerLazySingleton<MembershipPlansRepository>(
+      () => MembershipPlansRepositoryImpl(
+        serviceLocator<MembershipPlansRemoteDataSource>(),
+      ),
     )
     ..registerLazySingleton<ProfileRepository>(
       () => ProfileRepositoryImpl(serviceLocator<ProfileRemoteDataSource>()),

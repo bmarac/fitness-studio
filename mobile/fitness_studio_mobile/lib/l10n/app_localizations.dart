@@ -164,6 +164,18 @@ abstract class AppLocalizations {
   /// **'Spremam...'**
   String get actionSaving;
 
+  /// No description provided for @actionEdit.
+  ///
+  /// In hr, this message translates to:
+  /// **'Uredi'**
+  String get actionEdit;
+
+  /// No description provided for @actionDelete.
+  ///
+  /// In hr, this message translates to:
+  /// **'Obriši'**
+  String get actionDelete;
+
   /// No description provided for @actionRemove.
   ///
   /// In hr, this message translates to:
@@ -1610,6 +1622,186 @@ abstract class AppLocalizations {
   /// **'Pregledaj i unaprijed dodaj trenere'**
   String get trainerManagementSubtitle;
 
+  /// No description provided for @membershipPlansTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Paketi'**
+  String get membershipPlansTitle;
+
+  /// No description provided for @membershipPlansSubtitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Upravljaj paketima članstva'**
+  String get membershipPlansSubtitle;
+
+  /// No description provided for @addMembershipPlan.
+  ///
+  /// In hr, this message translates to:
+  /// **'Dodaj paket'**
+  String get addMembershipPlan;
+
+  /// No description provided for @editMembershipPlan.
+  ///
+  /// In hr, this message translates to:
+  /// **'Uredi paket'**
+  String get editMembershipPlan;
+
+  /// No description provided for @noMembershipPlans.
+  ///
+  /// In hr, this message translates to:
+  /// **'Još nema paketa.'**
+  String get noMembershipPlans;
+
+  /// No description provided for @membershipPlanName.
+  ///
+  /// In hr, this message translates to:
+  /// **'Naziv paketa'**
+  String get membershipPlanName;
+
+  /// No description provided for @membershipPlanDescription.
+  ///
+  /// In hr, this message translates to:
+  /// **'Opis'**
+  String get membershipPlanDescription;
+
+  /// No description provided for @membershipPlanPrice.
+  ///
+  /// In hr, this message translates to:
+  /// **'Mjesečna cijena'**
+  String get membershipPlanPrice;
+
+  /// No description provided for @membershipPlanLimitEnabled.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ograniči broj termina'**
+  String get membershipPlanLimitEnabled;
+
+  /// No description provided for @membershipPlanSessionLimit.
+  ///
+  /// In hr, this message translates to:
+  /// **'Broj termina'**
+  String get membershipPlanSessionLimit;
+
+  /// No description provided for @membershipPlanLimitPeriod.
+  ///
+  /// In hr, this message translates to:
+  /// **'Razdoblje ograničenja'**
+  String get membershipPlanLimitPeriod;
+
+  /// No description provided for @membershipPlanPeriodWeek.
+  ///
+  /// In hr, this message translates to:
+  /// **'Tjedan'**
+  String get membershipPlanPeriodWeek;
+
+  /// No description provided for @membershipPlanPeriodMonth.
+  ///
+  /// In hr, this message translates to:
+  /// **'Mjesec'**
+  String get membershipPlanPeriodMonth;
+
+  /// No description provided for @membershipPlanPeriodMembership.
+  ///
+  /// In hr, this message translates to:
+  /// **'Članstvo'**
+  String get membershipPlanPeriodMembership;
+
+  /// No description provided for @membershipPlanUnlimited.
+  ///
+  /// In hr, this message translates to:
+  /// **'Neograničen broj termina'**
+  String get membershipPlanUnlimited;
+
+  /// No description provided for @membershipPlanMonthlyPrice.
+  ///
+  /// In hr, this message translates to:
+  /// **'{price} mjesečno'**
+  String membershipPlanMonthlyPrice(String price);
+
+  /// No description provided for @membershipPlanLimitSummary.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count} termina / {period}'**
+  String membershipPlanLimitSummary(int count, String period);
+
+  /// No description provided for @membershipPlanActive.
+  ///
+  /// In hr, this message translates to:
+  /// **'Aktivan paket'**
+  String get membershipPlanActive;
+
+  /// No description provided for @deleteMembershipPlanTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Obriši paket?'**
+  String get deleteMembershipPlanTitle;
+
+  /// No description provided for @deleteMembershipPlanQuestion.
+  ///
+  /// In hr, this message translates to:
+  /// **'Paket {name} bit će trajno obrisan.'**
+  String deleteMembershipPlanQuestion(String name);
+
+  /// No description provided for @membershipPlanCreated.
+  ///
+  /// In hr, this message translates to:
+  /// **'Paket je dodan.'**
+  String get membershipPlanCreated;
+
+  /// No description provided for @membershipPlanUpdated.
+  ///
+  /// In hr, this message translates to:
+  /// **'Paket je spremljen.'**
+  String get membershipPlanUpdated;
+
+  /// No description provided for @membershipPlanDeleted.
+  ///
+  /// In hr, this message translates to:
+  /// **'Paket je obrisan.'**
+  String get membershipPlanDeleted;
+
+  /// No description provided for @membershipPlanCannotDeleteTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Paket se ne može obrisati'**
+  String get membershipPlanCannotDeleteTitle;
+
+  /// No description provided for @membershipPlanCannotDeleteMessage.
+  ///
+  /// In hr, this message translates to:
+  /// **'Paket je povezan s postojećim članstvima. Možeš ga označiti neaktivnim.'**
+  String get membershipPlanCannotDeleteMessage;
+
+  /// No description provided for @deactivateMembershipPlan.
+  ///
+  /// In hr, this message translates to:
+  /// **'Označi neaktivnim'**
+  String get deactivateMembershipPlan;
+
+  /// No description provided for @membershipPlanDeactivated.
+  ///
+  /// In hr, this message translates to:
+  /// **'Paket je označen neaktivnim.'**
+  String get membershipPlanDeactivated;
+
+  /// No description provided for @membershipPlanDuplicate.
+  ///
+  /// In hr, this message translates to:
+  /// **'Paket s tim nazivom već postoji.'**
+  String get membershipPlanDuplicate;
+
+  /// No description provided for @invalidMembershipPlanPrice.
+  ///
+  /// In hr, this message translates to:
+  /// **'Unesi ispravnu nenegativnu cijenu.'**
+  String get invalidMembershipPlanPrice;
+
+  /// No description provided for @invalidMembershipPlanLimit.
+  ///
+  /// In hr, this message translates to:
+  /// **'Broj termina mora biti pozitivan cijeli broj.'**
+  String get invalidMembershipPlanLimit;
+
   /// No description provided for @addTrainer.
   ///
   /// In hr, this message translates to:
@@ -1729,6 +1921,12 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Postavke studija'**
   String get studioSettingsTitle;
+
+  /// No description provided for @studioSettingsSubtitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pristup, naplata i podsjetnici'**
+  String get studioSettingsSubtitle;
 
   /// No description provided for @studioAccessSettingsTitle.
   ///

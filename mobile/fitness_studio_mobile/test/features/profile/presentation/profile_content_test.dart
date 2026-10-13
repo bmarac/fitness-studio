@@ -18,6 +18,7 @@ void main() {
     expect(find.text('Moj paket'), findsOneWidget);
     expect(find.text('Moja članarina'), findsOneWidget);
     expect(find.text('Napredak'), findsOneWidget);
+    expect(find.text('Paketi'), findsNothing);
   });
 
   testWidgets(
@@ -28,6 +29,7 @@ void main() {
       expect(find.text('Osobni podaci'), findsNothing);
       expect(find.text('Napredak članova'), findsOneWidget);
       expect(find.text('O meni'), findsOneWidget);
+      expect(find.text('Paketi'), findsNothing);
     },
   );
 
@@ -39,8 +41,11 @@ void main() {
     expect(find.text('Osobni podaci'), findsNothing);
     expect(find.text('Naplata članarina'), findsOneWidget);
     expect(find.text('Postavke studija'), findsOneWidget);
+    expect(find.text('Pristup, naplata i podsjetnici'), findsOneWidget);
     expect(find.text('Postavke plaćanja'), findsNothing);
     expect(find.text('Treneri'), findsOneWidget);
+    expect(find.text('Paketi'), findsOneWidget);
+    expect(find.text('Upravljaj paketima članstva'), findsOneWidget);
     expect(find.text('Pregledaj i unaprijed dodaj trenere'), findsOneWidget);
   });
 }

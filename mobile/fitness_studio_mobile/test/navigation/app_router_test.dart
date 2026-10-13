@@ -3,6 +3,7 @@ import 'package:fitness_studio_mobile/features/auth/domain/entities/authenticate
 import 'package:fitness_studio_mobile/features/auth/presentation/state/login_controller.dart';
 import 'package:fitness_studio_mobile/features/auth/presentation/state/login_state.dart';
 import 'package:fitness_studio_mobile/features/bookings/presentation/state/member_bookings_provider.dart';
+import 'package:fitness_studio_mobile/features/membership_plans/presentation/state/membership_plans_providers.dart';
 import 'package:fitness_studio_mobile/features/trainers/presentation/state/trainers_management_providers.dart';
 import 'package:fitness_studio_mobile/navigation/app_router.dart';
 import 'package:fitness_studio_mobile/navigation/app_routes.dart';
@@ -83,6 +84,33 @@ void main() {
       AppRoutes.trainersPath,
     );
     expect(find.text('Treneri'), findsOneWidget);
+  });
+
+  testWidgets('admin can open membership plans route', (tester) async {
+    final container = ProviderContainer(
+      overrides: [
+        loginControllerProvider.overrideWith(_LoggedInAdminController.new),
+        membershipPlansProvider.overrideWith((ref) async => []),
+      ],
+    );
+    addTearDown(container.dispose);
+    final router = container.read(appRouterProvider);
+    router.go(AppRoutes.membershipPlansPath);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: localizedRouterTestApp(router: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      AppRoutes.membershipPlansPath,
+    );
+    expect(find.text('Paketi'), findsOneWidget);
+    expect(find.text('Još nema paketa.'), findsOneWidget);
   });
 }
 

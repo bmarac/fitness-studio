@@ -42,6 +42,12 @@ class AppLocalizationsHr extends AppLocalizations {
   String get actionSaving => 'Spremam...';
 
   @override
+  String get actionEdit => 'Uredi';
+
+  @override
+  String get actionDelete => 'Obriši';
+
+  @override
   String get actionRemove => 'Ukloni';
 
   @override
@@ -879,6 +885,104 @@ class AppLocalizationsHr extends AppLocalizations {
   String get trainerManagementSubtitle => 'Pregledaj i unaprijed dodaj trenere';
 
   @override
+  String get membershipPlansTitle => 'Paketi';
+
+  @override
+  String get membershipPlansSubtitle => 'Upravljaj paketima članstva';
+
+  @override
+  String get addMembershipPlan => 'Dodaj paket';
+
+  @override
+  String get editMembershipPlan => 'Uredi paket';
+
+  @override
+  String get noMembershipPlans => 'Još nema paketa.';
+
+  @override
+  String get membershipPlanName => 'Naziv paketa';
+
+  @override
+  String get membershipPlanDescription => 'Opis';
+
+  @override
+  String get membershipPlanPrice => 'Mjesečna cijena';
+
+  @override
+  String get membershipPlanLimitEnabled => 'Ograniči broj termina';
+
+  @override
+  String get membershipPlanSessionLimit => 'Broj termina';
+
+  @override
+  String get membershipPlanLimitPeriod => 'Razdoblje ograničenja';
+
+  @override
+  String get membershipPlanPeriodWeek => 'Tjedan';
+
+  @override
+  String get membershipPlanPeriodMonth => 'Mjesec';
+
+  @override
+  String get membershipPlanPeriodMembership => 'Članstvo';
+
+  @override
+  String get membershipPlanUnlimited => 'Neograničen broj termina';
+
+  @override
+  String membershipPlanMonthlyPrice(String price) {
+    return '$price mjesečno';
+  }
+
+  @override
+  String membershipPlanLimitSummary(int count, String period) {
+    return '$count termina / $period';
+  }
+
+  @override
+  String get membershipPlanActive => 'Aktivan paket';
+
+  @override
+  String get deleteMembershipPlanTitle => 'Obriši paket?';
+
+  @override
+  String deleteMembershipPlanQuestion(String name) {
+    return 'Paket $name bit će trajno obrisan.';
+  }
+
+  @override
+  String get membershipPlanCreated => 'Paket je dodan.';
+
+  @override
+  String get membershipPlanUpdated => 'Paket je spremljen.';
+
+  @override
+  String get membershipPlanDeleted => 'Paket je obrisan.';
+
+  @override
+  String get membershipPlanCannotDeleteTitle => 'Paket se ne može obrisati';
+
+  @override
+  String get membershipPlanCannotDeleteMessage =>
+      'Paket je povezan s postojećim članstvima. Možeš ga označiti neaktivnim.';
+
+  @override
+  String get deactivateMembershipPlan => 'Označi neaktivnim';
+
+  @override
+  String get membershipPlanDeactivated => 'Paket je označen neaktivnim.';
+
+  @override
+  String get membershipPlanDuplicate => 'Paket s tim nazivom već postoji.';
+
+  @override
+  String get invalidMembershipPlanPrice => 'Unesi ispravnu nenegativnu cijenu.';
+
+  @override
+  String get invalidMembershipPlanLimit =>
+      'Broj termina mora biti pozitivan cijeli broj.';
+
+  @override
   String get addTrainer => 'Novi trener';
 
   @override
@@ -941,6 +1045,9 @@ class AppLocalizationsHr extends AppLocalizations {
 
   @override
   String get studioSettingsTitle => 'Postavke studija';
+
+  @override
+  String get studioSettingsSubtitle => 'Pristup, naplata i podsjetnici';
 
   @override
   String get studioAccessSettingsTitle => 'Pristup studiju';

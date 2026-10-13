@@ -20,6 +20,14 @@ extension LocalizedFailure on Failure {
           'This member has reached the session limit for the selected membership period.') {
         return context.l10n.failureMembershipLimitReached;
       }
+      if (message ==
+          'A membership plan with this name already exists in the current studio.') {
+        return context.l10n.membershipPlanDuplicate;
+      }
+      if (message ==
+          'Membership plan cannot be deleted because related memberships exist.') {
+        return context.l10n.membershipPlanCannotDeleteMessage;
+      }
       return message;
     }
 

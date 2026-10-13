@@ -33,8 +33,14 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      expect(find.byTooltip('Promijeni ili dodaj studio'), findsOneWidget);
+      expect(find.byTooltip('Obavijesti'), findsOneWidget);
       expect(find.byTooltip('Odjavi se'), findsOneWidget);
       expect(find.widgetWithText(OutlinedButton, 'Odjavi se'), findsNothing);
+
+      await tester.tap(find.byTooltip('Promijeni ili dodaj studio'));
+      await tester.pump();
+      expect(controller.studioPickerCalls, 1);
 
       await tester.tap(find.byTooltip('Odjavi se'));
       await tester.pumpAndSettle();
@@ -139,6 +145,7 @@ class _EmptyClassSessionsController extends ClassSessionsController {
 class _LogoutTestController extends LoginController {
   final _logoutCompleter = Completer<Failure?>();
   int logoutCalls = 0;
+  int studioPickerCalls = 0;
 
   @override
   LoginState build() => _sessionState;
@@ -147,6 +154,11 @@ class _LogoutTestController extends LoginController {
   Future<Failure?> logout() {
     logoutCalls += 1;
     return _logoutCompleter.future;
+  }
+
+  @override
+  Future<void> showStudioPicker() async {
+    studioPickerCalls += 1;
   }
 
   void complete(Failure? failure) => _logoutCompleter.complete(failure);

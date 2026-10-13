@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using System.Reflection;
 using FitnessStudio.Api.Controllers;
 using FitnessStudio.Api.Domain.Auth;
@@ -13,6 +15,31 @@ namespace FitnessStudio.Api.Tests;
 
 public class MembershipPlansControllerTests
 {
+    [Fact]
+    public void PriceRangeUsesInvariantLimitsUnderCroatianCulture()
+    {
+        var originalCulture = CultureInfo.CurrentCulture;
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("hr-HR");
+            var request = CreateRequest();
+            request.PriceAmount = 9999999.99m;
+            var results = new List<ValidationResult>();
+
+            var isValid = Validator.TryValidateObject(
+                request,
+                new ValidationContext(request),
+                results,
+                validateAllProperties: true);
+
+            Assert.True(isValid, string.Join(Environment.NewLine, results));
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = originalCulture;
+        }
+    }
+
     [Fact]
     public async Task GetPlansReturnsServiceItems()
     {

@@ -12,6 +12,7 @@ import '../features/auth/presentation/state/login_state.dart';
 import '../features/bookings/presentation/screens/my_workouts_screen.dart';
 import '../features/class_sessions/presentation/screens/class_session_details_screen.dart';
 import '../features/class_sessions/presentation/screens/class_sessions_screen.dart';
+import '../features/membership_plans/presentation/screens/membership_plans_screen.dart';
 import '../features/profile/presentation/screens/profile_screen.dart';
 import '../features/payments/presentation/screens/payments_screen.dart';
 import '../features/payments/presentation/screens/notifications_screen.dart';
@@ -162,6 +163,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     builder: (context, state) => PaymentsScreen(
                       admin: state.uri.queryParameters['admin'] == 'true',
                     ),
+                  ),
+                  GoRoute(
+                    path: AppRoutes.membershipPlans,
+                    builder: (context, state) {
+                      final authState = ref.read(loginControllerProvider);
+                      final isAdmin =
+                          authState is LoginSuccess &&
+                          authState.session.user.roles.contains('admin');
+                      return isAdmin
+                          ? const MembershipPlansScreen()
+                          : const ProfileScreen();
+                    },
                   ),
                   GoRoute(
                     path: AppRoutes.notifications,

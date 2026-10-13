@@ -28,6 +28,7 @@ class AppRoutes {
   static const createMeasurement = 'clanovi/:memberId/novo-mjerenje';
 
   static const payments = 'clanarine';
+  static const membershipPlans = 'paketi';
   static const notifications = 'obavijesti';
   static const trainers = 'treneri';
   static const legacyOnboarding = 'onboarding';
@@ -36,6 +37,7 @@ class AppRoutes {
   static const legacyCreateMemberOnboarding = 'onboarding/novi-clan';
   static const legacyCreateTrainerOnboarding = 'onboarding/novi-trener';
   static const paymentsPath = '$profile/clanarine';
+  static const membershipPlansPath = '$profile/paketi';
   static const notificationsPath = '$profile/obavijesti';
   static const trainersPath = '$profile/treneri';
   static const studioSettingsPath = '$profile/postavke-studija';

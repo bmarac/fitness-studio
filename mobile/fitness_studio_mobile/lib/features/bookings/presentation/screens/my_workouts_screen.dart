@@ -699,7 +699,7 @@ class _TrainerWorkoutCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${context.l10n.attendeesCount(classSession.bookedCount)} / ${classSession.capacity}',
+                      '${classSession.bookedCount}/${classSession.capacity}',
                       style: theme.textTheme.bodySmall,
                     ),
                   ],

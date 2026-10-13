@@ -120,6 +120,8 @@ void main() {
 
     expect(find.text('Pilates'), findsOneWidget);
     expect(find.text('Aktivni treninzi'), findsOneWidget);
+    expect(find.text('4/10'), findsOneWidget);
+    expect(find.text('4 polaznika / 10'), findsNothing);
   });
 
   testWidgets('admin defaults to all trainers and can filter one', (

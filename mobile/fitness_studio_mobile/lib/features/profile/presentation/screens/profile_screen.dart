@@ -32,6 +32,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         title: Text(context.l10n.navProfile),
         actions: [
           IconButton(
+            tooltip: context.l10n.changeOrAddStudio,
+            onPressed: () =>
+                ref.read(loginControllerProvider.notifier).showStudioPicker(),
+            icon: const Icon(Icons.swap_horiz),
+          ),
+          IconButton(
             tooltip: context.l10n.notificationsTitle,
             onPressed: () => context.push(AppRoutes.notificationsPath),
             icon: const Icon(Icons.notifications_outlined),
@@ -125,8 +131,6 @@ class _ProfileContent extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
           _ProfileHeader(profile: profile, person: person),
-          const SizedBox(height: 16),
-          const _StudioSwitcherCard(),
           if (profile.membership case final membership?) ...[
             const SizedBox(height: 24),
             _MembershipCard(membership: membership, usage: profile.usage),
@@ -146,6 +150,8 @@ class _ProfileContent extends StatelessWidget {
           if (profile.user.roles.contains('admin')) ...[
             const SizedBox(height: 16),
             const _TrainersCard(),
+            const SizedBox(height: 16),
+            const _MembershipPlansCard(),
             const SizedBox(height: 16),
             const _StudioSettingsCard(),
             const SizedBox(height: 16),
@@ -181,21 +187,6 @@ class _TrainersCard extends StatelessWidget {
   );
 }
 
-class _StudioSwitcherCard extends ConsumerWidget {
-  const _StudioSwitcherCard();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) => Card(
-    child: ListTile(
-      leading: const Icon(Icons.swap_horiz),
-      title: Text(context.l10n.changeOrAddStudio),
-      trailing: const Icon(Icons.chevron_right),
-      onTap: () =>
-          ref.read(loginControllerProvider.notifier).showStudioPicker(),
-    ),
-  );
-}
-
 class _StudioSettingsCard extends StatelessWidget {
   const _StudioSettingsCard();
 
@@ -204,8 +195,24 @@ class _StudioSettingsCard extends StatelessWidget {
     child: ListTile(
       leading: const Icon(Icons.store_outlined),
       title: Text(context.l10n.studioSettingsTitle),
+      subtitle: Text(context.l10n.studioSettingsSubtitle),
       trailing: const Icon(Icons.chevron_right),
       onTap: () => context.push(AppRoutes.studioSettingsPath),
+    ),
+  );
+}
+
+class _MembershipPlansCard extends StatelessWidget {
+  const _MembershipPlansCard();
+
+  @override
+  Widget build(BuildContext context) => Card(
+    child: ListTile(
+      leading: const Icon(Icons.inventory_2_outlined),
+      title: Text(context.l10n.membershipPlansTitle),
+      subtitle: Text(context.l10n.membershipPlansSubtitle),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => context.push(AppRoutes.membershipPlansPath),
     ),
   );
 }
