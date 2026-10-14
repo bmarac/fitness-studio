@@ -87,7 +87,7 @@ GET /api/profile
 
 Objedinjuje korisnicki racun, uloge, studio te povezane podatke clana i/ili trenera. Za clana dodatno vraca aktivnu clanarinu s paketom, iskoristenost limita u aktualnom razdoblju i aktivne fiksne termine.
 
-Razdoblje iskoristenosti prati `sessionLimitPeriod` paketa: `week`, `month` ili `membership`. U iskoristenost ulaze rezervacije statusa `booked`, `attended` i `no_show`; `cancelled` i `waitlisted` se ne racunaju. Sve datumske granice racunaju se u vremenskoj zoni studija.
+Razdoblje iskoristenosti prati `sessionLimitPeriod` paketa: `week`, `month` ili `membership`. U iskoristenost ulaze rezervacije statusa `booked`, `attended`, `no_show` i `late_cancelled`; `cancelled` i `waitlisted` se ne racunaju. Sve datumske granice racunaju se u vremenskoj zoni studija.
 
 ### Ogranicenje rezervacija paketom
 
@@ -116,6 +116,12 @@ fiksne rezervacije otkazane pauzom. Zavrseni raspored nije moguce ponovno aktivi
 `POST /api/recurring-class-schedules` dostupan je adminu i treneru. Admin moze odabrati
 bilo kojeg trenera svojeg studija, dok trener moze kreirati raspored samo za
 `trainer_id` iz vlastitog JWT-a.
+
+`PUT /api/recurring-class-schedules/{id}` dostupan je samo adminu i prima
+`trainerId`, `dayOfWeek`, `startsAtTime`, `capacity` i `effectiveFrom`. Promjena
+stvara novu vremensku verziju rasporeda, prenosi buduce termine, rezervacije i
+fiksne dodjele te cuva povijesne termine. Kapacitet se ne moze smanjiti ispod
+najveceg broja postojecih rezervacija ili aktivnih clanova fiksne grupe.
 
 `GET /api/recurring-class-schedules/{id}/members` vraca trenutno aktivne clanove
 fiksne grupe, sortirane po prezimenu i imenu. Admin moze otvoriti svaki raspored
@@ -148,7 +154,12 @@ Vraca aktivne rezervacije sortirane po prezimenu i imenu. Admin moze pregledati 
 DELETE /api/bookings/{id}
 ```
 
-Operacija logicki otkazuje jednu rezervaciju. Clan moze otkazati vlastitu rezervaciju, admin svaku rezervaciju u studiju, a trener samo rezervaciju na svojem terminu.
+Operacija logicki otkazuje jednu buducu aktivnu rezervaciju. Clan moze otkazati
+vlastitu rezervaciju, admin svaku rezervaciju u studiju, a trener samo rezervaciju
+na svojem terminu. Otkaz na granici postavke `cancellationCutoffHours` ili ranije
+dobiva status `cancelled` i vraca kvotu. Kasniji otkaz dobiva status
+`late_cancelled`, oslobadja kapacitet i zadrzava potrosnju kvote. Waitlist
+rezervacija uvijek dobiva `cancelled`.
 
 ### Prekid fiksne dodjele
 

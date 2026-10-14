@@ -47,6 +47,45 @@ public class MemberBookingCancellationTests
         Assert.False(BookingsService.CanMemberCancel(booking, Now));
     }
 
+    [Fact]
+    public void CancellationAtCutoffReturnsQuota()
+    {
+        var booking = Booking(
+            BookingStatuses.Booked,
+            ClassSessionStatuses.Scheduled,
+            Now.AddHours(12));
+
+        var status = BookingsService.GetCancellationStatus(booking, Now, 12);
+
+        Assert.Equal(BookingStatuses.Cancelled, status);
+    }
+
+    [Fact]
+    public void CancellationAfterCutoffIsLate()
+    {
+        var booking = Booking(
+            BookingStatuses.Booked,
+            ClassSessionStatuses.Scheduled,
+            Now.AddHours(11).AddMinutes(59));
+
+        var status = BookingsService.GetCancellationStatus(booking, Now, 12);
+
+        Assert.Equal(BookingStatuses.LateCancelled, status);
+    }
+
+    [Fact]
+    public void WaitlistedCancellationAlwaysReturnsRegularCancelledStatus()
+    {
+        var booking = Booking(
+            BookingStatuses.Waitlisted,
+            ClassSessionStatuses.Scheduled,
+            Now.AddMinutes(1));
+
+        var status = BookingsService.GetCancellationStatus(booking, Now, 12);
+
+        Assert.Equal(BookingStatuses.Cancelled, status);
+    }
+
     private static Booking Booking(string status, string classSessionStatus, DateTime startsAt)
     {
         return new Booking

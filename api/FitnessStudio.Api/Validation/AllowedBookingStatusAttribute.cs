@@ -13,11 +13,11 @@ public sealed class AllowedBookingStatusAttribute : ValidationAttribute
             return ValidationResult.Success;
         }
 
-        if (value is string status && BookingStatuses.IsValid(status))
+        if (value is string status && BookingStatuses.IsManuallyAssignable(status))
         {
             return ValidationResult.Success;
         }
 
-        return new ValidationResult($"Status must be one of: {string.Join(", ", BookingStatuses.All)}.");
+        return new ValidationResult($"Status must be one of: {string.Join(", ", BookingStatuses.ManuallyAssignable)}.");
     }
 }

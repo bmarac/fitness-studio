@@ -24,7 +24,7 @@ public class StudioConfigurationServiceTests
         var loaded = await service.GetAsync();
 
         Assert.Equal(ServiceResultStatus.Success, result.Status);
-        Assert.Equal(9, await db.StudioSettings.CountAsync());
+        Assert.Equal(10, await db.StudioSettings.CountAsync());
         Assert.True(loaded.JoinByCodeEnabled);
         Assert.Equal("STAY_FIT", loaded.JoinCode);
         Assert.Equal("Stay Fit d.o.o.", loaded.RecipientName);
@@ -32,6 +32,7 @@ public class StudioConfigurationServiceTests
         Assert.Equal([1, 3], loaded.MemberReminderDays);
         Assert.Equal([5], loaded.AdminReminderDays);
         Assert.Equal(new TimeOnly(9, 30), loaded.NotificationTime);
+        Assert.Equal(24, loaded.CancellationCutoffHours);
         Assert.True(loaded.IsPaymentComplete);
     }
 
@@ -53,7 +54,7 @@ public class StudioConfigurationServiceTests
         Assert.DoesNotContain(
             db.StudioSettings,
             setting => setting.Setting == "join_code");
-        Assert.Equal(8, await db.StudioSettings.CountAsync());
+        Assert.Equal(9, await db.StudioSettings.CountAsync());
     }
 
     [Fact]
@@ -133,6 +134,24 @@ public class StudioConfigurationServiceTests
         Assert.Single(db.StudioSettings);
     }
 
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(169)]
+    public async Task RejectsCancellationCutoffOutsideAllowedRange(int hours)
+    {
+        await using var db = CreateDatabase();
+        db.Studios.Add(Studio(1));
+        await db.SaveChangesAsync();
+        var service = new StudioConfigurationService(db, new Context(1));
+        var request = ValidRequest();
+        request.CancellationCutoffHours = hours;
+
+        var result = await service.UpdateAsync(request);
+
+        Assert.Equal(ServiceResultStatus.Conflict, result.Status);
+        Assert.Empty(db.StudioSettings);
+    }
+
     private static UpdateStudioConfigurationRequest ValidRequest() => new()
     {
         JoinByCodeEnabled = true,
@@ -144,7 +163,8 @@ public class StudioConfigurationServiceTests
         PaymentDescription = "Članarina",
         MemberReminderDays = [3, 1],
         AdminReminderDays = [5],
-        NotificationTime = new TimeOnly(9, 30)
+        NotificationTime = new TimeOnly(9, 30),
+        CancellationCutoffHours = 24
     };
 
     private static FitnessStudioDbContext CreateDatabase() => new(

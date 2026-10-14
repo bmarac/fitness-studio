@@ -29,13 +29,7 @@ public partial class Booking
 
     public string BookingSource { get; set; } = null!;
 
-    public long? MakeupForBookingId { get; set; }
-
     public virtual ClassSession ClassSession { get; set; } = null!;
-
-    public virtual Booking? InverseMakeupForBooking { get; set; }
-
-    public virtual Booking? MakeupForBooking { get; set; }
 
     public virtual Member Member { get; set; } = null!;
 

@@ -5,6 +5,7 @@ import '../models/trainer_option_model.dart';
 import '../models/recurring_schedule_model.dart';
 import '../models/fixed_schedule_member_model.dart';
 import '../../domain/entities/schedule_member_option.dart';
+import '../../domain/entities/update_recurring_schedule_draft.dart';
 
 class RecurringSchedulesRemoteDataSource {
   const RecurringSchedulesRemoteDataSource(this._apiClient);
@@ -133,6 +134,22 @@ class RecurringSchedulesRemoteDataSource {
         'validFrom': _formatDate(draft.validFrom),
         'validUntil': null,
         'status': 'active',
+      },
+    );
+  }
+
+  Future<void> updateSchedule(
+    int id,
+    UpdateRecurringScheduleDraft draft,
+  ) async {
+    await _apiClient.put<void>(
+      '/api/recurring-class-schedules/$id',
+      data: {
+        'trainerId': draft.trainerId,
+        'dayOfWeek': draft.dayOfWeek,
+        'startsAtTime': _formatTime(draft.startsAtTime),
+        'capacity': draft.capacity,
+        'effectiveFrom': _formatDate(draft.effectiveFrom),
       },
     );
   }

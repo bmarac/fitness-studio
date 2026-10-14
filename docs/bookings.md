@@ -19,30 +19,32 @@ Za clana s tjednim paketom i fiksnim rasporedom limit se racuna po mjesecnom
 obracunskom ciklusu clanarine. Ukupan broj dopustenih termina dobiva se brojanjem
 dana iz njegovih fiksnih dodjela unutar ciklusa, bez ovisnosti o tome jesu li
 konkretni termini vec generirani. Aktivne, odradjene i `no_show` rezervacije trose
-kvotu. Otkazivanje rezervacije oslobadja jedno mjesto koje clan moze iskoristiti
-za obicnu rezervaciju nadoknade unutar istog ciklusa; mjesto se ne prenosi u
-sljedeci ciklus. Status uplate ne utjece na ovu kvotu.
+kvotu. Pravodobno otkazivanje rezervacije oslobadja jedno mjesto u kvoti unutar
+istog ciklusa; mjesto se ne prenosi u sljedeci ciklus. Status uplate ne utjece
+na ovu kvotu.
 
 `booking_source` razlikuje izvor rezervacije:
 
 - `self_service`
 - `fixed_schedule`
-- `makeup`
 - `admin`
 
 ## Statusi
 
 - `booked`: aktivna rezervacija
 - `cancelled`: otkazana rezervacija
+- `late_cancelled`: kasni otkaz koji i dalje trosi kvotu
 - `attended`: clan je prisustvovao
 - `no_show`: clan nije dosao
 - `waitlisted`: lista cekanja
 
-Otkazane rezervacije ne zauzimaju kapacitet. Kod otkazivanja termina sve njegove neotkazane rezervacije prelaze u `cancelled`, a `cancelled_at` se postavlja na vrijeme otkazivanja.
+`cancelled` i `late_cancelled` rezervacije ne zauzimaju kapacitet. Kod
+otkazivanja termina sve njegove neotkazane rezervacije prelaze u `cancelled`, a
+`cancelled_at` se postavlja na vrijeme otkazivanja.
 
-U potrosnju paketa ulaze `booked`, `attended` i `no_show`. `cancelled` i
-`waitlisted` ne trose paket. Prijelaz u status koji trosi paket ponovno provjerava
-clanstvo i raspolozivi limit. Otkazivanje odmah oslobada jedno mjesto u limitu.
+U potrosnju paketa ulaze `booked`, `attended`, `no_show` i `late_cancelled`.
+`cancelled` i `waitlisted` ne trose paket. Prijelaz u status koji trosi paket
+ponovno provjerava clanstvo i raspolozivi limit.
 
 Jedna rezervacija otkazuje se pozivom:
 
@@ -50,10 +52,13 @@ Jedna rezervacija otkazuje se pozivom:
 DELETE /api/bookings/{id}
 ```
 
-Brisanje je logicko: zapis ostaje u bazi sa statusom `cancelled`. Clan moze
-otkazati samo vlastitu aktivnu rezervaciju za buduci zakazani termin. Admin moze
-otkazati bilo koju rezervaciju u studiju, a trener samo rezervaciju termina kojem
-je dodijeljen. Otkazivanje jednog termina ne prekida clanovu fiksnu dodjelu.
+Brisanje je logicko. Ako do pocetka ima najmanje
+`cancellation_cutoff_hours`, rezervacija prelazi u `cancelled` i vraca kvotu.
+Kasniji otkaz prelazi u `late_cancelled`: oslobadja kapacitet, ali i dalje trosi
+kvotu i blokira ponovnu prijavu na isti termin. Rezervacija na listi cekanja
+uvijek prelazi u `cancelled`. Isto vremensko pravilo vrijedi za clana, admina i
+trenera kod pojedinacnog uklanjanja. Otkazivanje jednog termina ne prekida
+clanovu fiksnu dodjelu.
 
 ## Uklanjanje iz fiksnog termina
 
@@ -79,10 +84,6 @@ Endpoint vraca neotkazane rezervacije. Admin vidi polaznike svakog termina u stu
 Odgovor rezervacije sadrzi `bookingSource`. Za rezervaciju izvora `fixed_schedule` sadrzi i `memberFixedScheduleId` kada postoji pripadajuca dodjela aktivna na datum termina. Mobilna aplikacija taj ID koristi za prikaz akcije prekida fiksne dodjele.
 
 Admin moze mijenjati status svake rezervacije u studiju. Trener moze postaviti prisutnost ili drugi status samo za rezervacije termina kojem je osobno dodijeljen. Clan nema ovlast izravno postavljati `attended` ili `no_show`.
-
-## Nadoknade
-
-Baza podrzava vezu `makeup_for_booking_id`, kojom nova rezervacija moze predstavljati nadoknadu otkazane rezervacije. Potpuni poslovni tijek odobravanja i odabira nadoknade jos nije implementiran.
 
 ## Fiksni raspored i paket
 

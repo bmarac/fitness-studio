@@ -14,11 +14,13 @@ void main() {
       'memberReminderDays': [1, 3],
       'adminReminderDays': [5],
       'notificationTime': '09:00:00',
+      'cancellationCutoffHours': 12,
       'isPaymentComplete': true,
     });
 
     expect(configuration.joinCode, 'STAYFIT');
     expect(configuration.memberReminderDays, [1, 3]);
+    expect(configuration.cancellationCutoffHours, 12);
     expect(configuration.toJson(), {
       'joinByCodeEnabled': true,
       'joinCode': 'STAYFIT',
@@ -30,6 +32,7 @@ void main() {
       'memberReminderDays': [1, 3],
       'adminReminderDays': [5],
       'notificationTime': '09:00:00',
+      'cancellationCutoffHours': 12,
     });
   });
 }

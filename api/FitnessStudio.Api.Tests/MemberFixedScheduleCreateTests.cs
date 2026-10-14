@@ -87,6 +87,42 @@ public class MemberFixedScheduleCreateTests
         Assert.Empty(await db.Bookings.ToListAsync());
     }
 
+    [Fact]
+    public async Task CreateDoesNotRestoreLateCancelledSession()
+    {
+        await using var db = CreateDatabase();
+        var timezone = TimeZoneInfo.FindSystemTimeZoneById("Europe/Zagreb");
+        var today = DateOnly.FromDateTime(
+            TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, timezone));
+        var member = Member(11);
+        var schedule = Schedule(41, today.AddDays(-30), 12);
+        var session = Session(61, schedule, UtcAt(today.AddDays(1), timezone));
+        var lateCancelled = Booking(
+            71,
+            member,
+            session,
+            BookingStatuses.LateCancelled);
+        db.AddRange(
+            Studio(timezone.Id),
+            ClassType(),
+            Trainer(),
+            member,
+            schedule,
+            session,
+            lateCancelled);
+        AddMembership(db, member, today.AddDays(-30));
+        await db.SaveChangesAsync();
+
+        var service = Service(db, new AllowMembershipPolicy());
+        var result = await service.CreateScheduleAsync(
+            Request(member.Id, schedule.Id, today));
+
+        Assert.Equal(ServiceResultStatus.Success, result.Status);
+        Assert.Equal(
+            BookingStatuses.LateCancelled,
+            (await db.Bookings.SingleAsync()).Status);
+    }
+
     [Theory]
     [InlineData("inactive-member")]
     [InlineData("inactive-schedule")]

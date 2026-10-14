@@ -64,8 +64,9 @@ public class ClassTypesService : IClassTypesService
         classType.StudioId = _currentUser.StudioId;
         classType.DifficultyLevel = NormalizeValue(classType.DifficultyLevel);
         classType.Status = NormalizeValue(classType.Status);
-        classType.CreatedAt = DateTime.UtcNow;
-        classType.UpdatedAt = DateTime.UtcNow;
+        var now = DateTime.UtcNow;
+        classType.CreatedAt = now;
+        classType.UpdatedAt = now;
 
         _dbContext.ClassTypes.Add(classType);
         await _dbContext.SaveChangesAsync();

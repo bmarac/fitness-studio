@@ -27,6 +27,7 @@ class _StudioSettingsScreenState extends ConsumerState<StudioSettingsScreen> {
   final _memberDays = TextEditingController();
   final _adminDays = TextEditingController();
   final _time = TextEditingController();
+  final _cancellationCutoffHours = TextEditingController();
 
   bool _initialized = false;
   bool _joinByCodeEnabled = false;
@@ -44,6 +45,7 @@ class _StudioSettingsScreenState extends ConsumerState<StudioSettingsScreen> {
       _memberDays,
       _adminDays,
       _time,
+      _cancellationCutoffHours,
     ]) {
       controller.dispose();
     }
@@ -94,6 +96,21 @@ class _StudioSettingsScreenState extends ConsumerState<StudioSettingsScreen> {
                       _joinByCodeEnabled ? _required(code) : null,
                 ),
                 const SizedBox(height: 32),
+                _sectionTitle(context.l10n.bookingSettingsTitle),
+                const SizedBox(height: 12),
+                TextFormField(
+                  key: const ValueKey('cancellation-cutoff-hours'),
+                  controller: _cancellationCutoffHours,
+                  enabled: !_saving,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: context.l10n.cancellationCutoffHoursLabel,
+                    helperText: context.l10n.cancellationCutoffHoursDescription,
+                    border: const OutlineInputBorder(),
+                  ),
+                  validator: _validateCancellationCutoff,
+                ),
+                const SizedBox(height: 32),
                 _sectionTitle(context.l10n.paymentSettingsTitle),
                 const SizedBox(height: 12),
                 _field(_recipient, context.l10n.recipientLabel),
@@ -139,6 +156,7 @@ class _StudioSettingsScreenState extends ConsumerState<StudioSettingsScreen> {
     _memberDays.text = value.memberReminderDays.join(',');
     _adminDays.text = value.adminReminderDays.join(',');
     _time.text = value.notificationTime.substring(0, 5);
+    _cancellationCutoffHours.text = value.cancellationCutoffHours.toString();
   }
 
   Widget _sectionTitle(String title) =>
@@ -159,6 +177,13 @@ class _StudioSettingsScreenState extends ConsumerState<StudioSettingsScreen> {
 
   String? _required(String? value) =>
       value == null || value.trim().isEmpty ? context.l10n.requiredField : null;
+
+  String? _validateCancellationCutoff(String? value) {
+    final hours = int.tryParse(value?.trim() ?? '');
+    return hours != null && hours >= 0 && hours <= 168
+        ? null
+        : context.l10n.cancellationCutoffHoursValidation;
+  }
 
   Future<void> _save(StudioConfiguration old) async {
     if (!_form.currentState!.validate()) return;
@@ -181,6 +206,9 @@ class _StudioSettingsScreenState extends ConsumerState<StudioSettingsScreen> {
               memberReminderDays: days(_memberDays.text),
               adminReminderDays: days(_adminDays.text),
               notificationTime: _time.text.trim(),
+              cancellationCutoffHours: int.parse(
+                _cancellationCutoffHours.text.trim(),
+              ),
               isPaymentComplete: old.isPaymentComplete,
             ),
           );

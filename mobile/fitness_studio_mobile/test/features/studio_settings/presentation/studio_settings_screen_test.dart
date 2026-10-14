@@ -15,6 +15,8 @@ void main() {
 
     expect(find.text('Postavke studija'), findsOneWidget);
     expect(find.text('Pristup studiju'), findsOneWidget);
+    expect(find.text('Rezervacije'), findsOneWidget);
+    expect(find.text('Rok za povrat treninga (sati)'), findsOneWidget);
     expect(find.text('Postavke plaćanja'), findsOneWidget);
     expect(find.text('Primatelj'), findsOneWidget);
     expect(find.text('IBAN'), findsOneWidget);
@@ -40,24 +42,21 @@ void main() {
 
     expect(dataSource.updates, isEmpty);
 
-    await tester.drag(find.byType(ListView), const Offset(0, -1200));
-    await tester.pumpAndSettle();
-    final save = find.byKey(const ValueKey('studio-settings-save'));
+    final save = await _scrollToSave(tester);
     await tester.tap(save);
     await tester.pumpAndSettle();
 
     expect(dataSource.updates, hasLength(1));
     expect(dataSource.updates.single.joinByCodeEnabled, isFalse);
     expect(dataSource.updates.single.joinCode, 'STAYFIT');
+    expect(dataSource.updates.single.cancellationCutoffHours, 12);
     expect(find.text('Postavke su spremljene.'), findsOneWidget);
   });
 
   testWidgets('failed save never shows a success message', (tester) async {
     final dataSource = _FakeStudioSettingsDataSource(failUpdate: true);
     await _pumpScreen(tester, dataSource);
-    await tester.drag(find.byType(ListView), const Offset(0, -1200));
-    await tester.pumpAndSettle();
-    final save = find.byKey(const ValueKey('studio-settings-save'));
+    final save = await _scrollToSave(tester);
 
     await tester.tap(save);
     await tester.pumpAndSettle();
@@ -66,6 +65,39 @@ void main() {
     expect(find.text('Postavke su spremljene.'), findsNothing);
     expect(find.textContaining('save failed'), findsOneWidget);
   });
+
+  testWidgets('rejects cancellation cutoff outside the allowed range', (
+    tester,
+  ) async {
+    final dataSource = _FakeStudioSettingsDataSource();
+    await _pumpScreen(tester, dataSource);
+    final cutoff = find.byKey(const ValueKey('cancellation-cutoff-hours'));
+    await tester.enterText(cutoff, '169');
+    final save = await _scrollToSave(tester);
+
+    await tester.tap(save);
+    await tester.pump();
+
+    expect(dataSource.updates, isEmpty);
+    await tester.scrollUntilVisible(
+      cutoff,
+      -400,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Unesite cijeli broj od 0 do 168.'), findsOneWidget);
+  });
+}
+
+Future<Finder> _scrollToSave(WidgetTester tester) async {
+  final save = find.byKey(const ValueKey('studio-settings-save'));
+  await tester.scrollUntilVisible(
+    save,
+    400,
+    scrollable: find.byType(Scrollable).first,
+  );
+  await tester.pumpAndSettle();
+  return save;
 }
 
 Future<void> _pumpScreen(
@@ -111,5 +143,6 @@ const _configuration = StudioConfiguration(
   memberReminderDays: [1, 3],
   adminReminderDays: [5],
   notificationTime: '09:00:00',
+  cancellationCutoffHours: 12,
   isPaymentComplete: true,
 );

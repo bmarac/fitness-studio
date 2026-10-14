@@ -101,7 +101,7 @@ public sealed class MembershipBookingPolicy : IMembershipBookingPolicy
             booking.StudioId == _currentUser.StudioId
             && booking.MemberId == memberId
             && (!ignoredBookingId.HasValue || booking.Id != ignoredBookingId.Value)
-            && BookingStatuses.CapacityCounting.Contains(booking.Status)
+            && BookingStatuses.CountsAgainstMembership.Contains(booking.Status)
             && booking.ClassSession.StartsAt >= startsAtUtc
             && (!endsAtUtcExclusive.HasValue
                 || booking.ClassSession.StartsAt < endsAtUtcExclusive.Value));
@@ -241,13 +241,13 @@ public sealed class MembershipBookingPolicy : IMembershipBookingPolicy
                 entry.Entity.StudioId == _currentUser.StudioId
                 && entry.Entity.MemberId == memberId
                 && (!ignoredBookingId.HasValue || entry.Entity.Id != ignoredBookingId.Value)
-                && BookingStatuses.CapacityCounting.Contains(entry.Entity.Status)
+                && BookingStatuses.CountsAgainstMembership.Contains(entry.Entity.Status)
                 && entry.Entity.ClassSession.StartsAt >= startsAtUtc
                 && (!endsAtUtcExclusive.HasValue
                     || entry.Entity.ClassSession.StartsAt < endsAtUtcExclusive.Value)
                 && (entry.State == EntityState.Added
                     || entry.State == EntityState.Modified
-                    && !BookingStatuses.CapacityCounting.Contains(
+                    && !BookingStatuses.CountsAgainstMembership.Contains(
                         entry.OriginalValues.GetValue<string>(nameof(Booking.Status)))))
             .Select(entry => entry.Entity.ClassSession.StartsAt)
             .ToList();

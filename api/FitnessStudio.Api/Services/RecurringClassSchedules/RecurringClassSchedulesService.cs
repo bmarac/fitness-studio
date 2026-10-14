@@ -82,14 +82,15 @@ public class RecurringClassSchedulesService : IRecurringClassSchedulesService
         }
 
         var (_, today) = await GetStudioDateContextAsync();
+        var referenceDate = schedule.ValidFrom > today ? schedule.ValidFrom : today;
         var members = await _dbContext.MemberFixedSchedules
             .AsNoTracking()
             .Where(item =>
                 item.StudioId == _currentUser.StudioId
                 && item.RecurringScheduleId == id
                 && item.Status == "active"
-                && item.StartsOn <= today
-                && (!item.EndsOn.HasValue || item.EndsOn.Value >= today))
+                && item.StartsOn <= referenceDate
+                && (!item.EndsOn.HasValue || item.EndsOn.Value >= referenceDate))
             .OrderBy(item => item.Member.LastName)
             .ThenBy(item => item.Member.FirstName)
             .Select(item => new MemberFixedScheduleResponse(
@@ -227,8 +228,11 @@ public class RecurringClassSchedulesService : IRecurringClassSchedulesService
 
     public async Task<ServiceResult> UpdateScheduleAsync(long id, UpdateRecurringClassScheduleRequest request)
     {
-        var schedule = await _dbContext.RecurringClassSchedules.FirstOrDefaultAsync(item =>
-            item.Id == id && item.StudioId == _currentUser.StudioId);
+        var schedule = await _dbContext.RecurringClassSchedules
+            .Include(item => item.ClassSessions)
+                .ThenInclude(item => item.Bookings)
+            .Include(item => item.MemberFixedSchedules)
+            .FirstOrDefaultAsync(item => item.Id == id && item.StudioId == _currentUser.StudioId);
 
         if (schedule is null)
         {
@@ -237,34 +241,199 @@ public class RecurringClassSchedulesService : IRecurringClassSchedulesService
                 "A recurring schedule with this id does not exist.");
         }
 
-        if (NormalizeStatus(request.Status) != schedule.Status)
+        if (schedule.Status != "active")
         {
             return ServiceResult.Conflict(
-                "Recurring schedule status cannot be updated here.",
-                "Use the pause, resume or end operation to change schedule status.");
+                "Recurring schedule cannot be updated.",
+                "Only an active recurring schedule can be updated.");
         }
 
-        var validationResult = await ValidateRequestAsync(request, id);
-        if (validationResult is not null)
+        var (timeZone, today) = await GetStudioDateContextAsync();
+        var dateValidation = ValidateEffectiveDate(schedule, request.EffectiveFrom, today);
+        if (dateValidation is not null)
         {
-            return validationResult;
+            return dateValidation;
         }
 
-        schedule.ClassTypeId = request.ClassTypeId;
-        schedule.TrainerId = request.TrainerId;
-        schedule.DayOfWeek = request.DayOfWeek;
-        schedule.StartsAtTime = request.StartsAtTime;
-        schedule.DurationMinutes = request.DurationMinutes;
-        schedule.Capacity = request.Capacity;
-        schedule.ValidFrom = request.ValidFrom;
-        schedule.ValidUntil = request.ValidUntil;
-        schedule.Status = NormalizeStatus(request.Status);
-        schedule.StatusEffectiveFrom = schedule.Status == "active"
-            ? null
-            : request.ValidFrom;
-        schedule.UpdatedAt = DateTime.UtcNow;
+        if (!await _dbContext.Trainers.AnyAsync(trainer =>
+            trainer.Id == request.TrainerId && trainer.StudioId == _currentUser.StudioId))
+        {
+            return ServiceResult.Conflict(
+                "Trainer does not exist.",
+                "Recurring schedule must reference a trainer from the current studio.");
+        }
+
+        var replacementValidUntil = schedule.ValidUntil;
+        var trainerSchedules = await QuerySchedules()
+            .Where(item =>
+                item.Id != schedule.Id
+                && item.TrainerId == request.TrainerId
+                && item.Status == "active")
+            .ToListAsync();
+        if (trainerSchedules.Any(item =>
+            DateRangesOverlap(
+                request.EffectiveFrom,
+                replacementValidUntil,
+                item.ValidFrom,
+                item.ValidUntil)
+            && WeeklyTimesOverlap(
+                request.DayOfWeek,
+                request.StartsAtTime,
+                schedule.DurationMinutes,
+                item.DayOfWeek,
+                item.StartsAtTime,
+                item.DurationMinutes)))
+        {
+            return ServiceResult.Conflict(
+                "Trainer schedule overlaps.",
+                "The trainer already has an active recurring class during this time.");
+        }
+
+        var affectedSessions = schedule.ClassSessions
+            .Where(item => LocalDate(item.StartsAt, timeZone) >= request.EffectiveFrom)
+            .OrderBy(item => item.StartsAt)
+            .ToList();
+        var reservationFloor = affectedSessions
+            .Select(item => item.Bookings.Count(booking =>
+                booking.Status == BookingStatuses.Booked
+                || booking.Status == BookingStatuses.Waitlisted))
+            .DefaultIfEmpty(0)
+            .Max();
+        var fixedAssignmentFloor = MaximumActiveAssignments(
+            schedule.MemberFixedSchedules,
+            request.EffectiveFrom,
+            replacementValidUntil);
+        var requiredCapacity = Math.Max(reservationFloor, fixedAssignmentFloor);
+        if (request.Capacity < requiredCapacity)
+        {
+            return ServiceResult.Conflict(
+                "Recurring schedule capacity is too small.",
+                $"Capacity must be at least {requiredCapacity} to keep all existing members and reservations.");
+        }
+
+        var targetStarts = new List<DateTime>(affectedSessions.Count);
+        var nextDate = FirstOccurrenceOnOrAfter(request.EffectiveFrom, request.DayOfWeek);
+        foreach (var _ in affectedSessions)
+        {
+            targetStarts.Add(ToUtcStart(nextDate, request.StartsAtTime, timeZone));
+            nextDate = nextDate.AddDays(7);
+        }
+
+        var affectedIds = affectedSessions.Select(item => item.Id).ToHashSet();
+        var otherTrainerSessions = await _dbContext.ClassSessions
+            .AsNoTracking()
+            .Where(item =>
+                item.StudioId == _currentUser.StudioId
+                && item.TrainerId == request.TrainerId
+                && item.Status == ClassSessionStatuses.Scheduled)
+            .Select(item => new { item.Id, item.StartsAt, item.EndsAt })
+            .ToListAsync();
+        var hasConcreteOverlap = affectedSessions
+            .Select((session, index) => new
+            {
+                Session = session,
+                StartsAt = targetStarts[index],
+                EndsAt = targetStarts[index].AddMinutes(schedule.DurationMinutes)
+            })
+            .Where(item => item.Session.Status == ClassSessionStatuses.Scheduled)
+            .Any(candidate => otherTrainerSessions.Any(other =>
+                !affectedIds.Contains(other.Id)
+                && candidate.StartsAt < other.EndsAt
+                && candidate.EndsAt > other.StartsAt));
+        if (hasConcreteOverlap)
+        {
+            return ServiceResult.Conflict(
+                "Trainer session overlaps.",
+                "The trainer already has a scheduled class during one of the changed sessions.");
+        }
+
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync();
+        var now = DateTime.UtcNow;
+        RecurringClassSchedule replacement;
+
+        if (request.EffectiveFrom == schedule.ValidFrom)
+        {
+            replacement = schedule;
+        }
+        else
+        {
+            schedule.ValidUntil = request.EffectiveFrom.AddDays(-1);
+            schedule.UpdatedAt = now;
+            replacement = new RecurringClassSchedule
+            {
+                StudioId = schedule.StudioId,
+                ClassTypeId = schedule.ClassTypeId,
+                TrainerId = request.TrainerId,
+                DayOfWeek = request.DayOfWeek,
+                StartsAtTime = request.StartsAtTime,
+                DurationMinutes = schedule.DurationMinutes,
+                Capacity = request.Capacity,
+                ValidFrom = request.EffectiveFrom,
+                ValidUntil = replacementValidUntil,
+                Status = "active",
+                CreatedAt = now,
+                UpdatedAt = now
+            };
+            _dbContext.RecurringClassSchedules.Add(replacement);
+            await _dbContext.SaveChangesAsync();
+        }
+
+        replacement.TrainerId = request.TrainerId;
+        replacement.DayOfWeek = request.DayOfWeek;
+        replacement.StartsAtTime = request.StartsAtTime;
+        replacement.Capacity = request.Capacity;
+        replacement.UpdatedAt = now;
+
+        for (var index = 0; index < affectedSessions.Count; index++)
+        {
+            var session = affectedSessions[index];
+            session.RecurringScheduleId = replacement.Id;
+            session.TrainerId = request.TrainerId;
+            session.StartsAt = targetStarts[index];
+            session.EndsAt = targetStarts[index].AddMinutes(schedule.DurationMinutes);
+            session.Capacity = request.Capacity;
+            session.UpdatedAt = now;
+
+            foreach (var booking in session.Bookings.Where(item =>
+                item.Status == BookingStatuses.Waitlisted))
+            {
+                booking.Status = BookingStatuses.Booked;
+                booking.UpdatedAt = now;
+            }
+        }
+
+        if (!ReferenceEquals(schedule, replacement))
+        {
+            foreach (var assignment in schedule.MemberFixedSchedules.Where(item =>
+                (item.Status == "active" || item.Status == "paused")
+                && (!item.EndsOn.HasValue || item.EndsOn.Value >= request.EffectiveFrom)))
+            {
+                if (assignment.StartsOn >= request.EffectiveFrom)
+                {
+                    assignment.RecurringScheduleId = replacement.Id;
+                    assignment.UpdatedAt = now;
+                    continue;
+                }
+
+                var originalEndsOn = assignment.EndsOn;
+                assignment.EndsOn = request.EffectiveFrom.AddDays(-1);
+                assignment.UpdatedAt = now;
+                _dbContext.MemberFixedSchedules.Add(new MemberFixedSchedule
+                {
+                    StudioId = assignment.StudioId,
+                    MemberId = assignment.MemberId,
+                    RecurringScheduleId = replacement.Id,
+                    StartsOn = request.EffectiveFrom,
+                    EndsOn = originalEndsOn,
+                    Status = assignment.Status,
+                    CreatedAt = now,
+                    UpdatedAt = now
+                });
+            }
+        }
 
         await _dbContext.SaveChangesAsync();
+        await transaction.CommitAsync();
         return ServiceResult.Success();
     }
 
@@ -626,14 +795,18 @@ public class RecurringClassSchedulesService : IRecurringClassSchedulesService
 
             foreach (var booking in session.Bookings.Where(item =>
                 (item.Status == BookingStatuses.Booked
-                    || item.Status == BookingStatuses.Waitlisted)
+                    || item.Status == BookingStatuses.Waitlisted
+                    || item.Status == BookingStatuses.LateCancelled)
                 || (includePaused
                     && item.Status == BookingStatuses.Cancelled
                     && item.CancellationReason == "schedule_paused")))
             {
+                var wasLateCancelled = booking.Status == BookingStatuses.LateCancelled;
                 booking.Status = BookingStatuses.Cancelled;
                 booking.CancelledAt ??= now;
-                booking.CancellationReason = reason;
+                booking.CancellationReason = wasLateCancelled
+                    ? $"{reason}_late_cancelled"
+                    : reason;
                 booking.UpdatedAt = now;
             }
         }
@@ -663,7 +836,7 @@ public class RecurringClassSchedulesService : IRecurringClassSchedulesService
             var localStart = TimeZoneInfo.ConvertTimeFromUtc(session.StartsAt, timeZone);
             var sessionDate = DateOnly.FromDateTime(localStart);
             var occupied = session.Bookings.Count(item =>
-                BookingStatuses.CapacityCounting.Contains(item.Status));
+                BookingStatuses.OccupiesCapacity.Contains(item.Status));
 
             foreach (var assignment in activeAssignments.Where(item =>
                 item.StartsOn <= sessionDate
@@ -766,12 +939,54 @@ public class RecurringClassSchedulesService : IRecurringClassSchedulesService
             schedule.Capacity,
             schedule.ValidFrom,
             schedule.ValidUntil,
-            schedule.Status,
+            schedule.Status == "active"
+                && schedule.ValidUntil.HasValue
+                && schedule.ValidUntil.Value < today
+                    ? "ended"
+                    : schedule.Status,
             schedule.StatusEffectiveFrom,
             schedule.MemberFixedSchedules.Count(assignment =>
                 assignment.Status == "active"
-                && assignment.StartsOn <= today
-                && (!assignment.EndsOn.HasValue || assignment.EndsOn.Value >= today))));
+                && assignment.StartsOn <= (schedule.ValidFrom > today ? schedule.ValidFrom : today)
+                && (!assignment.EndsOn.HasValue
+                    || assignment.EndsOn.Value >= (schedule.ValidFrom > today ? schedule.ValidFrom : today)))));
+    }
+
+    private static DateOnly LocalDate(DateTime value, TimeZoneInfo timeZone)
+        => DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(value, timeZone));
+
+    private static DateOnly FirstOccurrenceOnOrAfter(DateOnly date, short dayOfWeek)
+    {
+        var daysToAdd = (dayOfWeek - ToIsoDayOfWeek(date) + 7) % 7;
+        return date.AddDays(daysToAdd);
+    }
+
+    private static int MaximumActiveAssignments(
+        IEnumerable<MemberFixedSchedule> assignments,
+        DateOnly effectiveFrom,
+        DateOnly? validUntil)
+    {
+        var active = assignments
+            .Where(item =>
+                item.Status == "active"
+                && (!item.EndsOn.HasValue || item.EndsOn.Value >= effectiveFrom)
+                && (!validUntil.HasValue || item.StartsOn <= validUntil.Value))
+            .ToList();
+        var dates = active
+            .Select(item => item.StartsOn > effectiveFrom ? item.StartsOn : effectiveFrom)
+            .Concat(active
+                .Where(item => item.EndsOn.HasValue && item.EndsOn.Value < DateOnly.MaxValue)
+                .Select(item => item.EndsOn!.Value.AddDays(1)))
+            .Where(item => !validUntil.HasValue || item <= validUntil.Value)
+            .Append(effectiveFrom)
+            .Distinct();
+
+        return dates
+            .Select(date => active.Count(item =>
+                item.StartsOn <= date
+                && (!item.EndsOn.HasValue || item.EndsOn.Value >= date)))
+            .DefaultIfEmpty(0)
+            .Max();
     }
 
     private async Task<ServiceResult?> ValidateRequestAsync(

@@ -21,6 +21,7 @@ import 'package:fitness_studio_mobile/features/recurring_schedules/domain/reposi
 import 'package:fitness_studio_mobile/features/recurring_schedules/domain/entities/recurring_schedule_draft.dart';
 import 'package:fitness_studio_mobile/features/recurring_schedules/domain/entities/schedule_form_data.dart';
 import 'package:fitness_studio_mobile/features/recurring_schedules/domain/entities/trainer_option.dart';
+import 'package:fitness_studio_mobile/features/recurring_schedules/domain/entities/update_recurring_schedule_draft.dart';
 import 'package:fitness_studio_mobile/core/error/result.dart';
 import 'package:fitness_studio_mobile/injection/service_locator.dart';
 import 'package:fitness_studio_mobile/features/trainers/presentation/state/trainers_management_providers.dart';
@@ -451,6 +452,12 @@ class _EmptyRecurringSchedulesRepository
   @override
   Future<Result<void>> createSchedule(RecurringScheduleDraft draft) async =>
       const Success(null);
+
+  @override
+  Future<Result<void>> updateSchedule(
+    int id,
+    UpdateRecurringScheduleDraft draft,
+  ) async => const Success(null);
 
   @override
   Future<Result<ScheduleFormData>> getFormData() async =>

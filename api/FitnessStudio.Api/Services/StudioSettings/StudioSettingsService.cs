@@ -82,6 +82,16 @@ public partial class StudioSettingsService : IStudioSettingsService
                 "The setting value does not match its declared value type.");
         }
 
+        if (normalizedSetting == "cancellation_cutoff_hours"
+            && (valueType != "integer"
+                || !int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var cutoffHours)
+                || cutoffHours is < 0 or > 168))
+        {
+            return ServiceResult<StudioSettingResponse>.Conflict(
+                "Invalid cancellation cutoff.",
+                "Cancellation cutoff must be an integer between 0 and 168 hours.");
+        }
+
         if (normalizedSetting == "join_code")
         {
             if (valueType != "string" || !JoinCodeRegex().IsMatch(value))

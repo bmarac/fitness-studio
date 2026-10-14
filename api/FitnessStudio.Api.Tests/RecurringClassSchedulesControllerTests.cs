@@ -330,14 +330,11 @@ public class RecurringClassSchedulesControllerTests
     private static UpdateRecurringClassScheduleRequest UpdateRequest()
         => new()
         {
-            ClassTypeId = 5,
             TrainerId = 8,
             DayOfWeek = 1,
             StartsAtTime = new TimeOnly(17, 30),
-            DurationMinutes = 60,
             Capacity = 14,
-            ValidFrom = new DateOnly(2026, 10, 12),
-            Status = "active"
+            EffectiveFrom = new DateOnly(2026, 10, 12)
         };
 
     private static ChangeRecurringClassScheduleStatusRequest ChangeRequest(DateOnly date)

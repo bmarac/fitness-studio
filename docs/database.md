@@ -57,7 +57,7 @@ app_users -> member_measurements (korisnik koji je unio mjerenje)
 Trenutno vazne postavke:
 
 - `booking_mode`: `open_booking` ili `fixed_schedule`
-- `allow_makeups`: dopusta li studio nadoknade
+- `cancellation_cutoff_hours`: rok za povrat kvote, od 0 do 168 sati
 - `class_session_generation_weeks_ahead`: broj tjedana unaprijed za generiranje termina
 - `payment_recipient_name`, `payment_iban`, `payment_model`, `payment_reference`, `payment_description`: podaci za HUB3 uplatu
 - `payment_member_reminder_days`, `payment_admin_reminder_days`, `payment_notification_time`: raspored podsjetnika
@@ -68,7 +68,7 @@ Servis je odgovoran za provjeru dopustenog kljuca, tipa i vrijednosti.
 ## Statusi
 
 - `class_sessions`: `scheduled`, `cancelled`, `completed`
-- `bookings`: `booked`, `cancelled`, `attended`, `no_show`, `waitlisted`
+- `bookings`: `booked`, `cancelled`, `late_cancelled`, `attended`, `no_show`, `waitlisted`
 - `recurring_class_schedules`: `active`, `paused`, `ended`; `status_effective_from`
   biljezi datum pocetka pauze ili zavrsetka
 - `class_sessions.cancellation_reason` i `bookings.cancellation_reason` razlikuju

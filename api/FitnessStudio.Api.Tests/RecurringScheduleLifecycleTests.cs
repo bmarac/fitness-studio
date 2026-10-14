@@ -45,6 +45,7 @@ public class RecurringScheduleLifecycleTests
         };
         session.Bookings.Add(Booking(1, "fixed_schedule", BookingStatuses.Booked));
         session.Bookings.Add(Booking(2, "self_service", BookingStatuses.Booked));
+        session.Bookings.Add(Booking(4, "fixed_schedule", BookingStatuses.LateCancelled));
         session.Bookings.Add(Booking(
             3,
             "fixed_schedule",
@@ -74,6 +75,9 @@ public class RecurringScheduleLifecycleTests
         Assert.Equal("schedule_paused", session.Bookings.Single(item => item.MemberId == 1).CancellationReason);
         Assert.Equal("schedule_paused", session.Bookings.Single(item => item.MemberId == 2).CancellationReason);
         Assert.Equal("single_session", session.Bookings.Single(item => item.MemberId == 3).CancellationReason);
+        Assert.Equal(
+            "schedule_paused_late_cancelled",
+            session.Bookings.Single(item => item.MemberId == 4).CancellationReason);
 
         Assert.True(RecurringClassSchedulesService.CanRestoreFixedBooking(
             session.Bookings.Single(item => item.MemberId == 1)));
@@ -81,10 +85,13 @@ public class RecurringScheduleLifecycleTests
             session.Bookings.Single(item => item.MemberId == 2)));
         Assert.False(RecurringClassSchedulesService.CanRestoreFixedBooking(
             session.Bookings.Single(item => item.MemberId == 3)));
+        Assert.False(RecurringClassSchedulesService.CanRestoreFixedBooking(
+            session.Bookings.Single(item => item.MemberId == 4)));
 
         Assert.Equal(BookingStatuses.Cancelled, session.Bookings.Single(item => item.MemberId == 1).Status);
         Assert.Equal(BookingStatuses.Cancelled, session.Bookings.Single(item => item.MemberId == 2).Status);
         Assert.Equal(BookingStatuses.Cancelled, session.Bookings.Single(item => item.MemberId == 3).Status);
+        Assert.Equal(BookingStatuses.Cancelled, session.Bookings.Single(item => item.MemberId == 4).Status);
     }
 
     private static Booking Booking(

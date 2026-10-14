@@ -29,4 +29,7 @@ public class UpdateStudioConfigurationRequest
     public IReadOnlyList<int> AdminReminderDays { get; set; } = [2];
 
     public TimeOnly NotificationTime { get; set; } = new(9, 0);
+
+    [Range(0, 168)]
+    public int CancellationCutoffHours { get; set; } = 12;
 }

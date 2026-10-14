@@ -169,13 +169,9 @@ public partial class FitnessStudioDbContext : DbContext
 
             entity.HasIndex(e => e.MemberId, "bookings_member_id_idx");
 
-            entity.HasIndex(e => e.MakeupForBookingId, "bookings_one_active_makeup_per_cancelled_booking")
-                .IsUnique()
-                .HasFilter("((makeup_for_booking_id IS NOT NULL) AND ((status)::text = ANY ((ARRAY['booked'::character varying, 'attended'::character varying, 'no_show'::character varying, 'waitlisted'::character varying])::text[])))");
-
             entity.HasIndex(e => new { e.MemberId, e.ClassSessionId }, "bookings_one_active_per_member_session")
                 .IsUnique()
-                .HasFilter("((status)::text = ANY ((ARRAY['booked'::character varying, 'attended'::character varying, 'no_show'::character varying, 'waitlisted'::character varying])::text[]))");
+                .HasFilter("((status)::text = ANY ((ARRAY['booked'::character varying, 'attended'::character varying, 'no_show'::character varying, 'waitlisted'::character varying, 'late_cancelled'::character varying])::text[]))");
 
             entity.HasIndex(e => e.StudioId, "bookings_studio_id_idx");
 
@@ -198,7 +194,6 @@ public partial class FitnessStudioDbContext : DbContext
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("now()")
                 .HasColumnName("created_at");
-            entity.Property(e => e.MakeupForBookingId).HasColumnName("makeup_for_booking_id");
             entity.Property(e => e.MemberId).HasColumnName("member_id");
             entity.Property(e => e.Status)
                 .HasMaxLength(30)
@@ -213,10 +208,6 @@ public partial class FitnessStudioDbContext : DbContext
                 .HasForeignKey(d => d.ClassSessionId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("bookings_class_session_id_fkey");
-
-            entity.HasOne(d => d.MakeupForBooking).WithOne(p => p.InverseMakeupForBooking)
-                .HasForeignKey<Booking>(d => d.MakeupForBookingId)
-                .HasConstraintName("bookings_makeup_for_booking_id_fkey");
 
             entity.HasOne(d => d.Member).WithMany(p => p.Bookings)
                 .HasForeignKey(d => d.MemberId)

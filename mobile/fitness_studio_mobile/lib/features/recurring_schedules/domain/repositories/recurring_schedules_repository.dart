@@ -5,6 +5,7 @@ import '../entities/recurring_schedule.dart';
 import '../entities/trainer_option.dart';
 import '../entities/fixed_schedule_member.dart';
 import '../entities/schedule_member_option.dart';
+import '../entities/update_recurring_schedule_draft.dart';
 
 abstract class RecurringSchedulesRepository {
   Future<Result<ScheduleFormData>> getFormData();
@@ -32,6 +33,11 @@ abstract class RecurringSchedulesRepository {
   });
 
   Future<Result<void>> createSchedule(RecurringScheduleDraft draft);
+
+  Future<Result<void>> updateSchedule(
+    int id,
+    UpdateRecurringScheduleDraft draft,
+  );
 
   Future<Result<void>> changeScheduleStatus({
     required int id,

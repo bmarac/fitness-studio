@@ -914,6 +914,12 @@ abstract class AppLocalizations {
   /// **'Otkazano'**
   String get bookingStatusCancelled;
 
+  /// No description provided for @bookingStatusLateCancelled.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kasni otkaz'**
+  String get bookingStatusLateCancelled;
+
   /// No description provided for @bookingStatusWaitlisted.
   ///
   /// In hr, this message translates to:
@@ -925,6 +931,30 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Rezervirano'**
   String get bookingStatusBooked;
+
+  /// No description provided for @bookingSettingsTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Rezervacije'**
+  String get bookingSettingsTitle;
+
+  /// No description provided for @cancellationCutoffHoursLabel.
+  ///
+  /// In hr, this message translates to:
+  /// **'Rok za povrat treninga (sati)'**
+  String get cancellationCutoffHoursLabel;
+
+  /// No description provided for @cancellationCutoffHoursDescription.
+  ///
+  /// In hr, this message translates to:
+  /// **'Vrijednost od 0 do 168 sati prije početka treninga.'**
+  String get cancellationCutoffHoursDescription;
+
+  /// No description provided for @cancellationCutoffHoursValidation.
+  ///
+  /// In hr, this message translates to:
+  /// **'Unesite cijeli broj od 0 do 168.'**
+  String get cancellationCutoffHoursValidation;
 
   /// No description provided for @activeWorkouts.
   ///
@@ -2214,6 +2244,42 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Članove fiksne grupe nije moguće učitati.'**
   String get scheduleMembersLoadError;
+
+  /// No description provided for @editSchedule.
+  ///
+  /// In hr, this message translates to:
+  /// **'Uredi raspored'**
+  String get editSchedule;
+
+  /// No description provided for @effectiveFromLabel.
+  ///
+  /// In hr, this message translates to:
+  /// **'Promjena vrijedi od'**
+  String get effectiveFromLabel;
+
+  /// No description provided for @confirmScheduleUpdate.
+  ///
+  /// In hr, this message translates to:
+  /// **'Spremi promjenu'**
+  String get confirmScheduleUpdate;
+
+  /// No description provided for @scheduleUpdated.
+  ///
+  /// In hr, this message translates to:
+  /// **'Promjena rasporeda je spremljena.'**
+  String get scheduleUpdated;
+
+  /// No description provided for @scheduleValidFrom.
+  ///
+  /// In hr, this message translates to:
+  /// **'Od {date}'**
+  String scheduleValidFrom(String date);
+
+  /// No description provided for @scheduleValidUntil.
+  ///
+  /// In hr, this message translates to:
+  /// **'Do {date}'**
+  String scheduleValidUntil(String date);
 }
 
 class _AppLocalizationsDelegate

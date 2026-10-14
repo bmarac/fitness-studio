@@ -18,6 +18,9 @@ import 'package:fitness_studio_mobile/features/recurring_schedules/domain/reposi
 import 'package:fitness_studio_mobile/features/recurring_schedules/domain/entities/recurring_schedule_draft.dart';
 import 'package:fitness_studio_mobile/features/recurring_schedules/domain/entities/schedule_form_data.dart';
 import 'package:fitness_studio_mobile/features/recurring_schedules/domain/entities/trainer_option.dart';
+import 'package:fitness_studio_mobile/features/recurring_schedules/domain/entities/update_recurring_schedule_draft.dart';
+import 'package:fitness_studio_mobile/features/recurring_schedules/domain/usecases/get_trainers.dart';
+import 'package:fitness_studio_mobile/features/recurring_schedules/domain/usecases/update_recurring_schedule.dart';
 import 'package:fitness_studio_mobile/injection/service_locator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -48,6 +51,10 @@ void main() {
       )
       ..registerSingleton<MoveFixedScheduleMember>(
         MoveFixedScheduleMember(repository),
+      )
+      ..registerSingleton<GetTrainers>(GetTrainers(repository))
+      ..registerSingleton<UpdateRecurringSchedule>(
+        UpdateRecurringSchedule(repository),
       );
   });
 
@@ -114,6 +121,54 @@ void main() {
     expect(tester.widget<Card>(fullFinder).color, errorColor);
   });
 
+  testWidgets('shows validity labels for current and upcoming versions', (
+    tester,
+  ) async {
+    final repository =
+        serviceLocator<RecurringSchedulesRepository>() as _FakeRepository;
+    final today = DateUtils.dateOnly(DateTime.now());
+    repository.schedules.addAll([
+      RecurringSchedule(
+        id: 20,
+        classTypeName: 'Pilates',
+        trainerId: 8,
+        trainerName: 'Ana Horvat',
+        dayOfWeek: 3,
+        startsAtTime: '18:00:00',
+        durationMinutes: 60,
+        capacity: 12,
+        activeMemberCount: 7,
+        validFrom: today.subtract(const Duration(days: 30)),
+        validUntil: today.add(const Duration(days: 6)),
+        status: 'active',
+        statusEffectiveFrom: null,
+      ),
+      RecurringSchedule(
+        id: 21,
+        classTypeName: 'Pilates',
+        trainerId: 8,
+        trainerName: 'Ana Horvat',
+        dayOfWeek: 3,
+        startsAtTime: '19:00:00',
+        durationMinutes: 60,
+        capacity: 12,
+        activeMemberCount: 7,
+        validFrom: today.add(const Duration(days: 7)),
+        validUntil: null,
+        status: 'active',
+        statusEffectiveFrom: null,
+      ),
+    ]);
+
+    await tester.pumpWidget(
+      localizedTestApp(home: const RecurringSchedulesScreen()),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Do '), findsOneWidget);
+    expect(find.textContaining('Od '), findsOneWidget);
+  });
+
   testWidgets('keeps one-line and two-line schedule cards the same height', (
     tester,
   ) async {
@@ -156,6 +211,43 @@ void main() {
     expect(find.text('Premjesti'), findsOneWidget);
     expect(find.text('Pauziraj'), findsOneWidget);
     expect(find.text('Završi'), findsOneWidget);
+    expect(find.text('Uredi raspored'), findsOneWidget);
+  });
+
+  testWidgets('admin edits a prefilled recurring schedule', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          loginControllerProvider.overrideWith(
+            () => _FakeLoginController(const ['admin']),
+          ),
+        ],
+        child: localizedTestApp(home: const RecurringSchedulesScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('recurring-schedule-card-1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('edit-recurring-schedule')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Uredi raspored'), findsOneWidget);
+    expect(find.text('Ana Horvat'), findsWidgets);
+    final capacity = find.byKey(const ValueKey('edit-schedule-capacity'));
+    expect(tester.widget<TextFormField>(capacity).controller!.text, '12');
+    await tester.enterText(capacity, '14');
+    await tester.tap(find.byKey(const ValueKey('save-schedule-update')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('12 → 14'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Spremi promjenu').last);
+    await tester.pumpAndSettle();
+
+    final repository =
+        serviceLocator<RecurringSchedulesRepository>() as _FakeRepository;
+    expect(repository.updatedScheduleId, 1);
+    expect(repository.updatedDraft?.capacity, 14);
+    expect(find.text('Promjena rasporeda je spremljena.'), findsOneWidget);
   });
 
   testWidgets('moves a fixed member after destination confirmation', (
@@ -304,6 +396,7 @@ void main() {
       find.byKey(const ValueKey('add-fixed-schedule-member')),
       findsNothing,
     );
+    expect(find.byKey(const ValueKey('edit-recurring-schedule')), findsNothing);
   });
 
   testWidgets('keeps weekday headers fixed while schedules scroll', (
@@ -432,6 +525,8 @@ class _FakeRepository implements RecurringSchedulesRepository {
   int? addedScheduleId;
   DateTime? addedStartsOn;
   final memberOptionStartsOn = <DateTime>[];
+  int? updatedScheduleId;
+  UpdateRecurringScheduleDraft? updatedDraft;
 
   final schedules = <RecurringSchedule>[
     _schedule(1, 'Pilates', 1, '18:00:00', 'active', 7),
@@ -541,6 +636,16 @@ class _FakeRepository implements RecurringSchedulesRepository {
   }
 
   @override
+  Future<Result<void>> updateSchedule(
+    int id,
+    UpdateRecurringScheduleDraft draft,
+  ) async {
+    updatedScheduleId = id;
+    updatedDraft = draft;
+    return const Success(null);
+  }
+
+  @override
   Future<Result<ScheduleFormData>> getFormData() async => Success(
     ScheduleFormData(
       classTypes: const [
@@ -569,7 +674,15 @@ class _FakeRepository implements RecurringSchedulesRepository {
   );
 
   @override
-  Future<Result<List<TrainerOption>>> getTrainers() async => const Success([]);
+  Future<Result<List<TrainerOption>>> getTrainers() async => const Success([
+    TrainerOption(
+      id: 8,
+      firstName: 'Ana',
+      lastName: 'Horvat',
+      status: 'active',
+    ),
+    TrainerOption(id: 9, firstName: 'Iva', lastName: 'Marić', status: 'active'),
+  ]);
 
   static RecurringSchedule _schedule(
     int id,

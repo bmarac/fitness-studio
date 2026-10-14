@@ -16,7 +16,7 @@ public class SchedulingStatusValidationTests
         var attribute = new AllowedBookingStatusAttribute();
         var context = ValidationContext();
 
-        foreach (var status in BookingStatuses.All)
+        foreach (var status in BookingStatuses.ManuallyAssignable)
         {
             Assert.Null(attribute.GetValidationResult(status, context));
             Assert.Null(attribute.GetValidationResult(status.ToUpperInvariant(), context));
@@ -39,10 +39,21 @@ public class SchedulingStatusValidationTests
 
         var error = Assert.Single(results);
         Assert.Contains("Status must be one of", error.ErrorMessage);
-        foreach (var status in BookingStatuses.All)
+        foreach (var status in BookingStatuses.ManuallyAssignable)
         {
             Assert.Contains(status, error.ErrorMessage);
         }
+    }
+
+    [Fact]
+    public void BookingRequestRejectsSystemManagedLateCancellationStatus()
+    {
+        var request = new UpdateBookingStatusRequest
+        {
+            Status = BookingStatuses.LateCancelled
+        };
+
+        Assert.Single(Validate(request));
     }
 
     [Fact]

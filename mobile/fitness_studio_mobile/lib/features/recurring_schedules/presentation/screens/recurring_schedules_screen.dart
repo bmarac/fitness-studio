@@ -18,6 +18,7 @@ import '../../domain/usecases/get_recurring_schedules.dart';
 import '../../domain/usecases/get_schedule_member_options.dart';
 import '../../domain/usecases/move_fixed_schedule_member.dart';
 import '../widgets/create_schedule_form.dart';
+import '../widgets/edit_schedule_form.dart';
 import '../widgets/recurring_schedule_actions.dart';
 
 class RecurringSchedulesScreen extends StatefulWidget {
@@ -236,6 +237,12 @@ class _RecurringSchedulesScreenState extends State<RecurringSchedulesScreen> {
             Navigator.of(context).pop();
             _changeStatus(schedule, action);
           },
+          onEdit: () {
+            Navigator.of(context).pop();
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) _openEditSchedule(schedule);
+            });
+          },
         ),
       );
       if (addedMemberName != null && mounted) {
@@ -254,6 +261,24 @@ class _RecurringSchedulesScreenState extends State<RecurringSchedulesScreen> {
 
     if (!_canSelectDestination(schedule, selection)) return;
     await _confirmMove(schedule, selection);
+  }
+
+  Future<void> _openEditSchedule(RecurringSchedule schedule) async {
+    final updated = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (sheetContext) => EditScheduleForm(
+        schedule: schedule,
+        onUpdated: () => Navigator.of(sheetContext).pop(true),
+      ),
+    );
+    if (updated != true || !mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(context.l10n.scheduleUpdated)));
+    await _load();
   }
 
   bool _canSelectDestination(
@@ -590,6 +615,25 @@ class _ScheduleCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.bodySmall,
                 ),
+                if (schedule.validFrom.isAfter(
+                  DateUtils.dateOnly(DateTime.now()),
+                )) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    context.l10n.scheduleValidFrom(
+                      context.formatDate(schedule.validFrom),
+                    ),
+                    style: theme.textTheme.labelSmall,
+                  ),
+                ] else if (schedule.validUntil != null) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    context.l10n.scheduleValidUntil(
+                      context.formatDate(schedule.validUntil!),
+                    ),
+                    style: theme.textTheme.labelSmall,
+                  ),
+                ],
                 const SizedBox(height: 4),
                 Text(
                   context.l10n.scheduleFixedOccupancy(
@@ -623,11 +667,13 @@ class _ScheduleMembersSheet extends ConsumerStatefulWidget {
     required this.schedule,
     required this.onMove,
     required this.onAction,
+    required this.onEdit,
   });
 
   final RecurringSchedule schedule;
   final ValueChanged<FixedScheduleMember> onMove;
   final ValueChanged<RecurringScheduleAction> onAction;
+  final VoidCallback onEdit;
 
   @override
   ConsumerState<_ScheduleMembersSheet> createState() =>
@@ -711,6 +757,13 @@ class _ScheduleMembersSheetState extends ConsumerState<_ScheduleMembersSheet> {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
+                    if (isAdmin && schedule.status == 'active')
+                      OutlinedButton.icon(
+                        key: const ValueKey('edit-recurring-schedule'),
+                        onPressed: widget.onEdit,
+                        icon: const Icon(Icons.edit_outlined),
+                        label: Text(context.l10n.editSchedule),
+                      ),
                     if (schedule.status == 'active')
                       OutlinedButton(
                         onPressed: () =>

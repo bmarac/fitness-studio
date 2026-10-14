@@ -407,6 +407,10 @@ class _BookingStatusBadge extends StatelessWidget {
       'attended' => (context.l10n.bookingStatusAttended, Colors.green),
       'no_show' => (context.l10n.bookingStatusNoShow, Colors.red),
       'cancelled' => (context.l10n.bookingStatusCancelled, Colors.grey),
+      'late_cancelled' => (
+        context.l10n.bookingStatusLateCancelled,
+        Colors.deepOrange,
+      ),
       'waitlisted' => (context.l10n.bookingStatusWaitlisted, Colors.orange),
       _ => (context.l10n.bookingStatusBooked, Colors.blue),
     };

@@ -135,7 +135,21 @@ seed_count=$(docker exec "$container_name" psql \
   --tuples-only \
   --no-align \
   --command "SELECT COUNT(*) FROM members WHERE studio_id = 1;")
-[ "$seed_count" = "8" ] || fail "expected 8 seeded members, found $seed_count"
+[ "$seed_count" = "9" ] || fail "expected 9 seeded members, found $seed_count"
+makeup_column_count=$(docker exec "$container_name" psql \
+  --username fitness \
+  --dbname "$postgres_database" \
+  --tuples-only \
+  --no-align \
+  --command "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'bookings' AND column_name = 'makeup_for_booking_id';")
+[ "$makeup_column_count" = "0" ] || fail "legacy makeup_for_booking_id column still exists"
+legacy_makeup_setting_count=$(docker exec "$container_name" psql \
+  --username fitness \
+  --dbname "$postgres_database" \
+  --tuples-only \
+  --no-align \
+  --command "SELECT COUNT(*) FROM studio_settings WHERE setting = 'allow_makeups';")
+[ "$legacy_makeup_setting_count" = "0" ] || fail "legacy allow_makeups setting still exists"
 
 echo "Verifying migration of existing multi-studio accounts..."
 docker exec "$container_name" createdb \
@@ -173,6 +187,11 @@ docker exec "$container_name" psql \
   --username fitness \
   --dbname fitness_studio_migration_verify \
   --file /fitness-studio-db/migrations/012_global_accounts.sql >/dev/null
+docker exec "$container_name" psql \
+  --set ON_ERROR_STOP=1 \
+  --username fitness \
+  --dbname fitness_studio_migration_verify \
+  --file /fitness-studio-db/migrations/013_simplify_booking_cancellations.sql >/dev/null
 migrated_accounts=$(docker exec "$container_name" psql \
   --username fitness \
   --dbname fitness_studio_migration_verify \
@@ -295,7 +314,7 @@ expect_status 200
 
 request GET /api/members "$filip_token"
 expect_status 200
-printf '%s' "$response_body" | jq -e 'length == 8 and all(.[]; .email != "other.studio@example.test")' >/dev/null \
+printf '%s' "$response_body" | jq -e 'length == 9 and all(.[]; .email != "other.studio@example.test")' >/dev/null \
   || fail "member listing is not studio-scoped"
 
 echo "Verifying recurring schedule lifecycle..."
@@ -312,6 +331,16 @@ schedule_body=$(jq -nc \
 request POST /api/recurring-class-schedules "$filip_token" "$schedule_body"
 expect_status 201
 schedule_id=$(printf '%s' "$response_body" | jq -er '.id')
+schedule_update_body=$(jq -nc \
+  --argjson trainerId "$trainer_id" \
+  --arg effectiveFrom "$today" \
+  '{trainerId:$trainerId,dayOfWeek:7,startsAtTime:"22:30:00",capacity:6,effectiveFrom:$effectiveFrom}')
+request PUT "/api/recurring-class-schedules/$schedule_id" "$filip_token" "$schedule_update_body"
+expect_status 204
+request GET "/api/recurring-class-schedules/$schedule_id" "$filip_token"
+expect_status 200
+printf '%s' "$response_body" | jq -e '.startsAtTime == "22:30:00" and .capacity == 6' >/dev/null \
+  || fail "recurring schedule update was not persisted"
 request PATCH "/api/recurring-class-schedules/$schedule_id/pause" "$filip_token" "{\"effectiveFrom\":\"$today\"}"
 expect_status 204
 request PATCH "/api/recurring-class-schedules/$schedule_id/resume" "$filip_token" "{\"effectiveFrom\":\"$today\"}"
@@ -359,8 +388,28 @@ pilot_session_id=$(printf '%s' "$response_body" | jq -er \
   '[.[] | select(.status == "scheduled" and .bookedCount < .capacity and .startsAt > $now)][0].id')
 request POST /api/bookings "$pilot_token" "{\"memberId\":$pilot_member_id,\"classSessionId\":$pilot_session_id}"
 expect_status 201
+pilot_booking_id=$(printf '%s' "$response_body" | jq -er '.id')
 
-echo "Verifying booking cancellation and membership limit..."
+echo "Verifying booking cancellation behavior..."
+request GET /api/studio-settings/cancellation_cutoff_hours "$filip_token"
+expect_status 200
+printf '%s' "$response_body" | jq -e '.value == "12" and .valueType == "integer"' >/dev/null \
+  || fail "cancellation cutoff default was not migrated"
+request PUT /api/studio-settings/cancellation_cutoff_hours "$filip_token" \
+  '{"value":"168","valueType":"integer"}'
+expect_status 200
+request DELETE "/api/bookings/$pilot_booking_id" "$pilot_token"
+expect_status 204
+request GET /api/bookings "$pilot_token"
+expect_status 200
+printf '%s' "$response_body" | jq -e --argjson id "$pilot_booking_id" \
+  'any(.[]; .id == $id and .status == "late_cancelled")' >/dev/null \
+  || fail "late cancellation status was not persisted"
+request POST /api/bookings "$pilot_token" "{\"memberId\":$pilot_member_id,\"classSessionId\":$pilot_session_id}"
+expect_status 409
+request PUT /api/studio-settings/cancellation_cutoff_hours "$filip_token" \
+  '{"value":"0","valueType":"integer"}'
+expect_status 200
 request GET /api/profile "$ana_token"
 expect_status 200
 ana_member_id=$(printf '%s' "$response_body" | jq -er '.member.id')
@@ -389,8 +438,11 @@ request POST /api/bookings "$ana_token" "{\"memberId\":$ana_member_id,\"classSes
 expect_status 201
 replacement_booking_id=$(printf '%s' "$response_body" | jq -er '.id')
 request POST /api/bookings "$ana_token" "{\"memberId\":$ana_member_id,\"classSessionId\":$limit_session_id}"
-expect_status 409
+expect_status 201
+limit_booking_id=$(printf '%s' "$response_body" | jq -er '.id')
 request DELETE "/api/bookings/$replacement_booking_id" "$ana_token"
+expect_status 204
+request DELETE "/api/bookings/$limit_booking_id" "$ana_token"
 expect_status 204
 
 echo "Verifying billing, HUB3 and payment transitions..."

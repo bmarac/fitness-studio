@@ -59,6 +59,7 @@ public class StudioConfigurationControllerTests
         [1, 3],
         [5],
         new TimeOnly(9, 0),
+        12,
         true);
 
     private sealed class FakeService : IStudioConfigurationService

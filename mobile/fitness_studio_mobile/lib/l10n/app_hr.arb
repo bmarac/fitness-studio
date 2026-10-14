@@ -147,8 +147,13 @@
   "bookingStatusAttended": "Odrađeno",
   "bookingStatusNoShow": "Nije došao",
   "bookingStatusCancelled": "Otkazano",
+  "bookingStatusLateCancelled": "Kasni otkaz",
   "bookingStatusWaitlisted": "Lista čekanja",
   "bookingStatusBooked": "Rezervirano",
+  "bookingSettingsTitle": "Rezervacije",
+  "cancellationCutoffHoursLabel": "Rok za povrat treninga (sati)",
+  "cancellationCutoffHoursDescription": "Vrijednost od 0 do 168 sati prije početka treninga.",
+  "cancellationCutoffHoursValidation": "Unesite cijeli broj od 0 do 168.",
   "activeWorkouts": "Aktivni treninzi",
   "completedWorkouts": "Završeni treninzi",
   "cancelledWorkouts": "Otkazani treninzi",
@@ -387,5 +392,13 @@
   "@moveMemberConfirmation": {"placeholders": {"memberName": {"type": "String"}, "classType": {"type": "String"}, "weekday": {"type": "String"}, "time": {"type": "String"}}},
   "confirmMove": "Premjesti",
   "fixedScheduleMemberMoved": "Član je premješten u novi raspored.",
-  "scheduleMembersLoadError": "Članove fiksne grupe nije moguće učitati."
+  "scheduleMembersLoadError": "Članove fiksne grupe nije moguće učitati.",
+  "editSchedule": "Uredi raspored",
+  "effectiveFromLabel": "Promjena vrijedi od",
+  "confirmScheduleUpdate": "Spremi promjenu",
+  "scheduleUpdated": "Promjena rasporeda je spremljena.",
+  "scheduleValidFrom": "Od {date}",
+  "@scheduleValidFrom": {"placeholders": {"date": {"type": "String"}}},
+  "scheduleValidUntil": "Do {date}",
+  "@scheduleValidUntil": {"placeholders": {"date": {"type": "String"}}}
 }

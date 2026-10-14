@@ -199,6 +199,11 @@ public class MemberFixedSchedulesService : IMemberFixedSchedulesService
 
                 var existingBooking = session.Bookings
                     .FirstOrDefault(item => item.MemberId == request.MemberId);
+                if (existingBooking?.Status == BookingStatuses.LateCancelled)
+                {
+                    continue;
+                }
+
                 var membershipDecision = await _membershipBookingPolicy.EvaluateAsync(
                     request.MemberId,
                     session.StartsAt,
@@ -210,7 +215,7 @@ public class MemberFixedSchedulesService : IMemberFixedSchedulesService
 
                 var occupied = session.Bookings.Count(item =>
                     item.MemberId != request.MemberId
-                    && BookingStatuses.CapacityCounting.Contains(item.Status));
+                    && BookingStatuses.OccupiesCapacity.Contains(item.Status));
                 var bookingStatus = occupied < session.Capacity
                     ? BookingStatuses.Booked
                     : BookingStatuses.Waitlisted;
@@ -551,7 +556,7 @@ public class MemberFixedSchedulesService : IMemberFixedSchedulesService
 
             var occupied = session.Bookings.Count(item =>
                 item.MemberId != source.MemberId
-                && BookingStatuses.CapacityCounting.Contains(item.Status));
+                && BookingStatuses.OccupiesCapacity.Contains(item.Status));
             var bookingStatus = occupied < session.Capacity
                 ? BookingStatuses.Booked
                 : BookingStatuses.Waitlisted;

@@ -10,6 +10,7 @@ import 'package:fitness_studio_mobile/features/recurring_schedules/data/datasour
 import 'package:fitness_studio_mobile/features/recurring_schedules/data/repositories/recurring_schedules_repository_impl.dart';
 import 'package:fitness_studio_mobile/features/recurring_schedules/domain/entities/recurring_schedule_draft.dart';
 import 'package:fitness_studio_mobile/features/recurring_schedules/domain/entities/schedule_form_data.dart';
+import 'package:fitness_studio_mobile/features/recurring_schedules/domain/entities/update_recurring_schedule_draft.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -59,6 +60,16 @@ void main() {
         validFrom: DateTime(2026, 10, 20),
       ),
     );
+    await repository.updateSchedule(
+      41,
+      UpdateRecurringScheduleDraft(
+        trainerId: 9,
+        dayOfWeek: 4,
+        startsAtTime: DateTime(2026, 1, 1, 19),
+        capacity: 14,
+        effectiveFrom: DateTime(2026, 11, 1),
+      ),
+    );
     final formData = (form as Success<ScheduleFormData>).value;
 
     expect((schedules as Success).value.single.id, 41);
@@ -78,6 +89,7 @@ void main() {
         'POST /api/member-fixed-schedules',
         'PATCH /api/recurring-class-schedules/41/pause',
         'POST /api/recurring-class-schedules',
+        'PUT /api/recurring-class-schedules/41',
       ]),
     );
     expect(
@@ -105,6 +117,13 @@ void main() {
       adapter.request('POST', '/api/recurring-class-schedules').data,
       containsPair('startsAtTime', '09:05:00'),
     );
+    expect(adapter.request('PUT', '/api/recurring-class-schedules/41').data, {
+      'trainerId': 9,
+      'dayOfWeek': 4,
+      'startsAtTime': '19:00:00',
+      'capacity': 14,
+      'effectiveFrom': '2026-11-01',
+    });
   });
 }
 

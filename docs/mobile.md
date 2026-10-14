@@ -57,6 +57,7 @@ Dodatne rute:
   za aktivne, pauzirane i zavrsene rasporede
 - upravljanje rasporedima nudi pauzu, nastavak i trajni zavrsetak od odabranog datuma
 - otkazivanje konkretnog termina uz provjeru uloge
+- administratorska postavka roka za povrat kvote pri otkazivanju
 - pregled polaznika za admina ili dodijeljenog trenera
 - upravljanje polaznicima s detalja termina preko izbornika uz svakog clana
 - **Ukloni s ovog termina** otkazuje samo odabranu rezervaciju
@@ -66,7 +67,8 @@ Dodatne rute:
   od odabranog datuma; buduci termini popunjavaju se odmah
 - **Rasporedi** je početni i srednji tab za trenera/admina, dok član nakon prijave
   i dalje prvo vidi **Moje treninge**; član ondje vidi sve svoje rezervacije
-  kronološki i može otkazati pojedini budući termin, dok admin može filtrirati
+  kronološki, razlikuje **Otkazano** od **Kasni otkaz** i može otkazati pojedini
+  budući termin, dok admin može filtrirati
   pregled termina po aktivnom treneru ili odabrati **Svi treneri**
 - evidencija prisutnosti i nedolaska na zapocetim terminima
 - profil prijavljenog korisnika s osobnim podacima, ulogama i studijem
@@ -139,3 +141,6 @@ Na ekranu **Rasporedi** klik na karticu otvara modal s aktivnim clanovima fiksne
 grupe. Akcije pauziranja, nastavka i zavrsavanja nalaze se na dnu modala. Akcija
 **Premjesti** uz clana zatvara modal i prebacuje mrezu u odabir aktivnog odredista;
 izvorni i puni rasporedi su onemoguceni, a promjena se izvrsava tek nakon potvrde.
+Admin u istom modalu moze urediti trenera, dan, vrijeme i kapacitet od odabranog
+datuma. Buduca verzija i prethodna verzija prikazuju se istodobno s oznakama
+**od** i **do**, a postojeci clanovi i rezervacije automatski se prenose.

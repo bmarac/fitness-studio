@@ -114,7 +114,7 @@ public class MembershipBookingPolicyTests
     }
 
     [Fact]
-    public async Task FixedSchedulesReplaceWeeklyLimitAndCancellationOpensMakeupSlot()
+    public async Task FixedSchedulesReplaceWeeklyLimitAndCancellationReturnsQuota()
     {
         await using var db = CreateDatabase();
         var fixture = AddFixedScheduleMembership(db);
@@ -123,6 +123,7 @@ public class MembershipBookingPolicyTests
             BookingStatuses.Booked,
             BookingStatuses.Attended,
             BookingStatuses.NoShow,
+            BookingStatuses.LateCancelled,
             BookingStatuses.Cancelled,
             BookingStatuses.Waitlisted
         };
@@ -146,7 +147,7 @@ public class MembershipBookingPolicyTests
         Assert.Equal(new DateOnly(2026, 10, 3), beforeCancellation.PeriodStartsOn);
         Assert.Equal(new DateOnly(2026, 11, 2), beforeCancellation.PeriodEndsOn);
         Assert.Equal(8, beforeCancellation.Allowed);
-        Assert.Equal(3, beforeCancellation.Used);
+        Assert.Equal(4, beforeCancellation.Used);
 
         db.Bookings.Single(item => item.Status == BookingStatuses.Booked).Status =
             BookingStatuses.Cancelled;
@@ -157,7 +158,7 @@ public class MembershipBookingPolicyTests
             new DateTime(2026, 10, 20, 16, 0, 0, DateTimeKind.Utc));
 
         Assert.Equal(8, afterCancellation.Allowed);
-        Assert.Equal(2, afterCancellation.Used);
+        Assert.Equal(3, afterCancellation.Used);
     }
 
     [Fact]
@@ -187,21 +188,24 @@ public class MembershipBookingPolicyTests
         db.Bookings.First().Status = BookingStatuses.Cancelled;
         await db.SaveChangesAsync();
 
-        var makeupAvailable = await policy.EvaluateAsync(fixture.Member.Id, target);
+        var quotaAvailable = await policy.EvaluateAsync(fixture.Member.Id, target);
 
-        Assert.Equal(MembershipBookingDecisionStatus.Allowed, makeupAvailable.Status);
-        Assert.Equal(7, makeupAvailable.Used);
-        Assert.Equal(8, makeupAvailable.Allowed);
+        Assert.Equal(MembershipBookingDecisionStatus.Allowed, quotaAvailable.Status);
+        Assert.Equal(7, quotaAvailable.Used);
+        Assert.Equal(8, quotaAvailable.Allowed);
     }
 
     [Fact]
     public void UsageStatuses_ExcludeCancelledAndWaitlisted()
     {
-        Assert.Contains(BookingStatuses.Booked, BookingStatuses.CapacityCounting);
-        Assert.Contains(BookingStatuses.Attended, BookingStatuses.CapacityCounting);
-        Assert.Contains(BookingStatuses.NoShow, BookingStatuses.CapacityCounting);
-        Assert.DoesNotContain(BookingStatuses.Cancelled, BookingStatuses.CapacityCounting);
-        Assert.DoesNotContain(BookingStatuses.Waitlisted, BookingStatuses.CapacityCounting);
+        Assert.Contains(BookingStatuses.Booked, BookingStatuses.CountsAgainstMembership);
+        Assert.Contains(BookingStatuses.Attended, BookingStatuses.CountsAgainstMembership);
+        Assert.Contains(BookingStatuses.NoShow, BookingStatuses.CountsAgainstMembership);
+        Assert.Contains(BookingStatuses.LateCancelled, BookingStatuses.CountsAgainstMembership);
+        Assert.DoesNotContain(BookingStatuses.Cancelled, BookingStatuses.CountsAgainstMembership);
+        Assert.DoesNotContain(BookingStatuses.Waitlisted, BookingStatuses.CountsAgainstMembership);
+        Assert.DoesNotContain(BookingStatuses.LateCancelled, BookingStatuses.OccupiesCapacity);
+        Assert.Contains(BookingStatuses.LateCancelled, BookingStatuses.BlocksDuplicateBooking);
     }
 
     private static FitnessStudioDbContext CreateDatabase() => new(

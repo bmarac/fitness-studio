@@ -36,6 +36,12 @@ void main() {
       status: 'cancelled',
       classTypeName: 'Otkazani trening',
     );
+    final lateCancelled = _booking(
+      id: 4,
+      startsAt: DateTime(2021, 10, 8, 19),
+      status: 'late_cancelled',
+      classTypeName: 'Kasno otkazani trening',
+    );
 
     await tester.pumpWidget(
       ProviderScope(
@@ -47,8 +53,8 @@ void main() {
             () => _FakeMemberBookingsController({
               WorkoutFilter.active: [future],
               WorkoutFilter.completed: [past],
-              WorkoutFilter.cancelled: [cancelled],
-              WorkoutFilter.all: [future, cancelled, past],
+              WorkoutFilter.cancelled: [lateCancelled, cancelled],
+              WorkoutFilter.all: [future, lateCancelled, cancelled, past],
             }),
           ),
         ],
@@ -70,6 +76,15 @@ void main() {
     expect(find.text('Prošli trening'), findsOneWidget);
     expect(find.text('Odrađeno'), findsOneWidget);
     expect(find.text('Budući trening'), findsNothing);
+
+    await tester.tap(find.byTooltip('Filtriraj treninge'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Otkazani').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Otkazani trening'), findsOneWidget);
+    expect(find.text('Kasno otkazani trening'), findsOneWidget);
+    expect(find.text('Kasni otkaz'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Filtriraj treninge'));
     await tester.pumpAndSettle();
@@ -246,7 +261,7 @@ Booking _booking({
   classSessionEndsAt: startsAt.add(const Duration(hours: 1)),
   status: status,
   bookedAt: startsAt.subtract(const Duration(days: 14)),
-  cancelledAt: status == 'cancelled'
+  cancelledAt: status == 'cancelled' || status == 'late_cancelled'
       ? startsAt.subtract(const Duration(days: 1))
       : null,
   attendedAt: status == 'attended'

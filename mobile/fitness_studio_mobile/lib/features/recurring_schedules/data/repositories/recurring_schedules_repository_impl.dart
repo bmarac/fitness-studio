@@ -7,6 +7,7 @@ import '../../domain/entities/schedule_form_data.dart';
 import '../../domain/entities/trainer_option.dart';
 import '../../domain/entities/fixed_schedule_member.dart';
 import '../../domain/entities/schedule_member_option.dart';
+import '../../domain/entities/update_recurring_schedule_draft.dart';
 import '../../domain/repositories/recurring_schedules_repository.dart';
 import '../datasources/recurring_schedules_remote_data_source.dart';
 
@@ -125,6 +126,19 @@ class RecurringSchedulesRepositoryImpl implements RecurringSchedulesRepository {
       return FailureResult(error.toFailure());
     } on FormatException {
       return const FailureResult(Failure(FailureKind.readScheduleResponse));
+    }
+  }
+
+  @override
+  Future<Result<void>> updateSchedule(
+    int id,
+    UpdateRecurringScheduleDraft draft,
+  ) async {
+    try {
+      await _remoteDataSource.updateSchedule(id, draft);
+      return const Success<void>(null);
+    } on ApiException catch (error) {
+      return FailureResult(error.toFailure());
     }
   }
 

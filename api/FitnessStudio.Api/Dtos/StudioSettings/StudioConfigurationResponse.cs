@@ -11,4 +11,5 @@ public record StudioConfigurationResponse(
     IReadOnlyList<int> MemberReminderDays,
     IReadOnlyList<int> AdminReminderDays,
     TimeOnly NotificationTime,
+    int CancellationCutoffHours,
     bool IsPaymentComplete);

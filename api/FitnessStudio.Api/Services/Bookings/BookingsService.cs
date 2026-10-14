@@ -106,11 +106,13 @@ public class BookingsService : IBookingsService
                 && booking.ClassSession.EndsAt > now),
             "completed" => bookings.Where(booking =>
                 booking.Status != BookingStatuses.Cancelled
+                && booking.Status != BookingStatuses.LateCancelled
                 && (booking.Status == BookingStatuses.Attended
                     || booking.Status == BookingStatuses.NoShow
                     || booking.ClassSession.EndsAt <= now)),
             "cancelled" => bookings.Where(booking =>
-                booking.Status == BookingStatuses.Cancelled),
+                booking.Status == BookingStatuses.Cancelled
+                || booking.Status == BookingStatuses.LateCancelled),
             "all" => bookings,
             _ => throw new ArgumentOutOfRangeException(nameof(filter), filter, null)
         };
@@ -159,7 +161,8 @@ public class BookingsService : IBookingsService
             .Where(booking =>
                 booking.StudioId == _currentUser.StudioId
                 && booking.ClassSessionId == classSessionId
-                && booking.Status != BookingStatuses.Cancelled)
+                && booking.Status != BookingStatuses.Cancelled
+                && booking.Status != BookingStatuses.LateCancelled)
             .OrderBy(booking => booking.Member.LastName)
             .ThenBy(booking => booking.Member.FirstName)
             .ProjectTo<BookingResponse>(_configurationProvider)
@@ -301,8 +304,8 @@ public class BookingsService : IBookingsService
             }
         }
 
-        if (BookingStatuses.CapacityCounting.Contains(status)
-            && !BookingStatuses.CapacityCounting.Contains(booking.Status))
+        if (BookingStatuses.CountsAgainstMembership.Contains(status)
+            && !BookingStatuses.CountsAgainstMembership.Contains(booking.Status))
         {
             var membershipResult = await _membershipBookingPolicy.EvaluateAsync(
                 booking.MemberId,
@@ -361,20 +364,24 @@ public class BookingsService : IBookingsService
                 "Trainers can cancel bookings only for their own class sessions.");
         }
 
-        if (isOwner && !isAdmin && !isAssignedTrainer
-            && !CanMemberCancel(booking, DateTime.UtcNow))
-        {
-            return ServiceResult.Conflict(
-                "Booking cannot be cancelled.",
-                "Members can cancel only an active booking for a future scheduled class session.");
-        }
-
-        if (booking.Status == BookingStatuses.Cancelled)
+        if (booking.Status == BookingStatuses.Cancelled
+            || booking.Status == BookingStatuses.LateCancelled)
         {
             return ServiceResult.Success();
         }
 
-        ApplyStatus(booking, BookingStatuses.Cancelled);
+        var now = DateTime.UtcNow;
+
+        if (!CanMemberCancel(booking, now))
+        {
+            return ServiceResult.Conflict(
+                "Booking cannot be cancelled.",
+                "Only an active booking for a future scheduled class session can be cancelled.");
+        }
+
+        var cutoffHours = await GetCancellationCutoffHoursAsync();
+        var cancellationStatus = GetCancellationStatus(booking, now, cutoffHours);
+        ApplyStatus(booking, cancellationStatus, now);
         await _dbContext.SaveChangesAsync();
 
         return ServiceResult.Success();
@@ -386,6 +393,36 @@ public class BookingsService : IBookingsService
                 || booking.Status == BookingStatuses.Waitlisted)
             && booking.ClassSession.Status == ClassSessionStatuses.Scheduled
             && booking.ClassSession.StartsAt > utcNow;
+    }
+
+    internal static string GetCancellationStatus(
+        Booking booking,
+        DateTime utcNow,
+        int cutoffHours)
+    {
+        if (booking.Status == BookingStatuses.Waitlisted
+            || utcNow <= booking.ClassSession.StartsAt.AddHours(-cutoffHours))
+        {
+            return BookingStatuses.Cancelled;
+        }
+
+        return BookingStatuses.LateCancelled;
+    }
+
+    private async Task<int> GetCancellationCutoffHoursAsync()
+    {
+        var configured = await _dbContext.StudioSettings
+            .AsNoTracking()
+            .Where(setting =>
+                setting.StudioId == _currentUser.StudioId
+                && setting.Setting == "cancellation_cutoff_hours")
+            .Select(setting => setting.Value)
+            .SingleOrDefaultAsync();
+
+        return int.TryParse(configured, out var cutoffHours)
+            && cutoffHours is >= 0 and <= 168
+                ? cutoffHours
+                : 12;
     }
 
     private async Task<ServiceResult> ValidateBookingCanBeCreatedAsync(long memberId, long classSessionId)
@@ -480,7 +517,7 @@ public class BookingsService : IBookingsService
         var bookedCount = await _dbContext.Bookings.CountAsync(booking =>
             booking.StudioId == _currentUser.StudioId
             && booking.ClassSessionId == classSessionId
-            && BookingStatuses.CapacityCounting.Contains(booking.Status)
+            && BookingStatuses.OccupiesCapacity.Contains(booking.Status)
             && (!ignoredBookingId.HasValue || booking.Id != ignoredBookingId.Value));
 
         if (bookedCount >= classSession.Capacity)
@@ -499,23 +536,28 @@ public class BookingsService : IBookingsService
             booking.StudioId == _currentUser.StudioId
             && booking.MemberId == memberId
             && booking.ClassSessionId == classSessionId
-            && BookingStatuses.Active.Contains(booking.Status));
+            && BookingStatuses.BlocksDuplicateBooking.Contains(booking.Status));
     }
 
-    private static void ApplyStatus(Booking booking, string status)
+    private static void ApplyStatus(
+        Booking booking,
+        string status,
+        DateTime? changedAt = null)
     {
+        var now = changedAt ?? DateTime.UtcNow;
         booking.Status = status;
-        booking.UpdatedAt = DateTime.UtcNow;
+        booking.UpdatedAt = now;
 
-        if (status == BookingStatuses.Cancelled)
+        if (status == BookingStatuses.Cancelled
+            || status == BookingStatuses.LateCancelled)
         {
-            booking.CancelledAt = DateTime.UtcNow;
+            booking.CancelledAt = now;
             return;
         }
 
         if (status == BookingStatuses.Attended)
         {
-            booking.AttendedAt = DateTime.UtcNow;
+            booking.AttendedAt = now;
         }
 
         if (status == BookingStatuses.Booked)

@@ -61,7 +61,8 @@ public class MemberBookingsQueryTests
             Booking(2, BookingStatuses.NoShow, Now.AddDays(-1), Now.AddDays(-1).AddHours(1)),
             Booking(3, BookingStatuses.Booked, Now.AddHours(-2), Now.AddHours(-1)),
             Booking(4, BookingStatuses.Booked, Now.AddHours(1), Now.AddHours(2)),
-            Booking(5, BookingStatuses.Cancelled, Now.AddMinutes(-30), Now.AddMinutes(30))
+            Booking(5, BookingStatuses.Cancelled, Now.AddMinutes(-30), Now.AddMinutes(30)),
+            Booking(6, BookingStatuses.LateCancelled, Now.AddDays(-3), Now.AddDays(-3).AddHours(1))
         }.AsQueryable();
 
         var result = BookingsService.FilterAndOrderMemberBookings(
@@ -80,7 +81,8 @@ public class MemberBookingsQueryTests
         {
             Booking(1, BookingStatuses.Cancelled, sameStart, sameStart.AddHours(1)),
             Booking(2, BookingStatuses.Cancelled, sameStart, sameStart.AddHours(1)),
-            Booking(3, BookingStatuses.Booked, Now.AddDays(1), Now.AddDays(1).AddHours(1))
+            Booking(3, BookingStatuses.Booked, Now.AddDays(1), Now.AddDays(1).AddHours(1)),
+            Booking(4, BookingStatuses.LateCancelled, Now.AddDays(-2), Now.AddDays(-2).AddHours(1))
         }.AsQueryable();
 
         var cancelled = BookingsService.FilterAndOrderMemberBookings(
@@ -92,8 +94,8 @@ public class MemberBookingsQueryTests
             "all",
             Now).Select(booking => booking.Id).ToList();
 
-        Assert.Equal([2, 1], cancelled);
-        Assert.Equal([3, 2, 1], all);
+        Assert.Equal([2, 1, 4], cancelled);
+        Assert.Equal([3, 2, 1, 4], all);
     }
 
     private static Booking Booking(

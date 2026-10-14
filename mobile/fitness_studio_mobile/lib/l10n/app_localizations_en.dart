@@ -475,10 +475,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bookingStatusCancelled => 'Cancelled';
 
   @override
+  String get bookingStatusLateCancelled => 'Late cancellation';
+
+  @override
   String get bookingStatusWaitlisted => 'Waitlisted';
 
   @override
   String get bookingStatusBooked => 'Booked';
+
+  @override
+  String get bookingSettingsTitle => 'Bookings';
+
+  @override
+  String get cancellationCutoffHoursLabel => 'Session return cutoff (hours)';
+
+  @override
+  String get cancellationCutoffHoursDescription =>
+      'A value from 0 to 168 hours before the session starts.';
+
+  @override
+  String get cancellationCutoffHoursValidation =>
+      'Enter a whole number from 0 to 168.';
 
   @override
   String get activeWorkouts => 'Active workouts';
@@ -1223,4 +1240,26 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get scheduleMembersLoadError =>
       'The fixed group members could not be loaded.';
+
+  @override
+  String get editSchedule => 'Edit schedule';
+
+  @override
+  String get effectiveFromLabel => 'Change takes effect';
+
+  @override
+  String get confirmScheduleUpdate => 'Save change';
+
+  @override
+  String get scheduleUpdated => 'The schedule change was saved.';
+
+  @override
+  String scheduleValidFrom(String date) {
+    return 'From $date';
+  }
+
+  @override
+  String scheduleValidUntil(String date) {
+    return 'Until $date';
+  }
 }

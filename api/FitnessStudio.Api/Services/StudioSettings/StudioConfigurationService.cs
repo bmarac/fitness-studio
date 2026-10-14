@@ -23,7 +23,8 @@ public partial class StudioConfigurationService : IStudioConfigurationService
             ["payment_description"] = "",
             ["payment_member_reminder_days"] = "0,1",
             ["payment_admin_reminder_days"] = "2",
-            ["payment_notification_time"] = "09:00"
+            ["payment_notification_time"] = "09:00",
+            ["cancellation_cutoff_hours"] = "12"
         };
 
     private static readonly string[] ManagedKeys =
@@ -90,6 +91,13 @@ public partial class StudioConfigurationService : IStudioConfigurationService
                 "Reminder offsets must be unique values from 0 to 365.");
         }
 
+        if (request.CancellationCutoffHours is < 0 or > 168)
+        {
+            return ServiceResult<StudioConfigurationResponse>.Conflict(
+                "Invalid cancellation cutoff.",
+                "Cancellation cutoff must be between 0 and 168 hours.");
+        }
+
         var values = new Dictionary<string, string>
         {
             ["payment_recipient_name"] = request.RecipientName.Trim(),
@@ -102,7 +110,9 @@ public partial class StudioConfigurationService : IStudioConfigurationService
             ["payment_admin_reminder_days"] = string.Join(
                 ',', request.AdminReminderDays.Order()),
             ["payment_notification_time"] = request.NotificationTime.ToString(
-                "HH:mm", CultureInfo.InvariantCulture)
+                "HH:mm", CultureInfo.InvariantCulture),
+            ["cancellation_cutoff_hours"] = request.CancellationCutoffHours.ToString(
+                CultureInfo.InvariantCulture)
         };
 
         var managedKeys = values.Keys.Append(JoinCodeKey).ToArray();
@@ -115,7 +125,12 @@ public partial class StudioConfigurationService : IStudioConfigurationService
 
         foreach (var pair in values)
         {
-            Upsert(existing, pair.Key, pair.Value, now);
+            Upsert(
+                existing,
+                pair.Key,
+                pair.Value,
+                now,
+                pair.Key == "cancellation_cutoff_hours" ? "integer" : "string");
         }
 
         var existingJoinCode = existing.FirstOrDefault(
@@ -155,7 +170,8 @@ public partial class StudioConfigurationService : IStudioConfigurationService
         IReadOnlyCollection<StudioSetting> existing,
         string key,
         string value,
-        DateTime now)
+        DateTime now,
+        string valueType = "string")
     {
         var setting = existing.FirstOrDefault(item => item.Setting == key);
         if (setting is null)
@@ -164,13 +180,14 @@ public partial class StudioConfigurationService : IStudioConfigurationService
             {
                 StudioId = _currentUser.StudioId,
                 Setting = key,
-                ValueType = "string",
+                ValueType = valueType,
                 CreatedAt = now
             };
             _db.StudioSettings.Add(setting);
         }
 
         setting.Value = value;
+        setting.ValueType = valueType;
         setting.UpdatedAt = now;
     }
 
@@ -199,6 +216,7 @@ public partial class StudioConfigurationService : IStudioConfigurationService
                 Value("payment_notification_time"),
                 "HH:mm",
                 CultureInfo.InvariantCulture),
+            ParseCancellationCutoff(Value("cancellation_cutoff_hours")),
             !string.IsNullOrWhiteSpace(recipient)
                 && IsValidIban(iban)
                 && !string.IsNullOrWhiteSpace(reference)
@@ -210,6 +228,12 @@ public partial class StudioConfigurationService : IStudioConfigurationService
         .Select(int.Parse)
         .Order()
         .ToArray();
+
+    private static int ParseCancellationCutoff(string value) =>
+        int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var hours)
+            && hours is >= 0 and <= 168
+                ? hours
+                : 12;
 
     private static bool ValidDays(IEnumerable<int> days)
     {

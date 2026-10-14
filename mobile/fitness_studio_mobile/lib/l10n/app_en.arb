@@ -136,8 +136,13 @@
   "bookingStatusAttended": "Attended",
   "bookingStatusNoShow": "No-show",
   "bookingStatusCancelled": "Cancelled",
+  "bookingStatusLateCancelled": "Late cancellation",
   "bookingStatusWaitlisted": "Waitlisted",
   "bookingStatusBooked": "Booked",
+  "bookingSettingsTitle": "Bookings",
+  "cancellationCutoffHoursLabel": "Session return cutoff (hours)",
+  "cancellationCutoffHoursDescription": "A value from 0 to 168 hours before the session starts.",
+  "cancellationCutoffHoursValidation": "Enter a whole number from 0 to 168.",
   "activeWorkouts": "Active workouts",
   "completedWorkouts": "Completed workouts",
   "cancelledWorkouts": "Cancelled workouts",
@@ -366,5 +371,13 @@
   "@moveMemberConfirmation": {"placeholders": {"memberName": {"type": "String"}, "classType": {"type": "String"}, "weekday": {"type": "String"}, "time": {"type": "String"}}},
   "confirmMove": "Move",
   "fixedScheduleMemberMoved": "The member was moved to the new schedule.",
-  "scheduleMembersLoadError": "The fixed group members could not be loaded."
+  "scheduleMembersLoadError": "The fixed group members could not be loaded.",
+  "editSchedule": "Edit schedule",
+  "effectiveFromLabel": "Change takes effect",
+  "confirmScheduleUpdate": "Save change",
+  "scheduleUpdated": "The schedule change was saved.",
+  "scheduleValidFrom": "From {date}",
+  "@scheduleValidFrom": {"placeholders": {"date": {"type": "String"}}},
+  "scheduleValidUntil": "Until {date}",
+  "@scheduleValidUntil": {"placeholders": {"date": {"type": "String"}}}
 }

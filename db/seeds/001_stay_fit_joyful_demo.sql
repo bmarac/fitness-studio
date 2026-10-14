@@ -26,7 +26,7 @@ FROM studios
 CROSS JOIN (VALUES
   ('join_code', 'STAYFIT', 'string'),
   ('booking_mode', 'fixed_schedule', 'enum'),
-  ('allow_makeups', 'true', 'boolean'),
+  ('cancellation_cutoff_hours', '12', 'integer'),
   ('class_session_generation_weeks_ahead', '4', 'integer')
 ) AS settings(setting, value, value_type)
 WHERE studios.name = 'Stay Fit & Joyful';

@@ -478,10 +478,27 @@ class AppLocalizationsHr extends AppLocalizations {
   String get bookingStatusCancelled => 'Otkazano';
 
   @override
+  String get bookingStatusLateCancelled => 'Kasni otkaz';
+
+  @override
   String get bookingStatusWaitlisted => 'Lista čekanja';
 
   @override
   String get bookingStatusBooked => 'Rezervirano';
+
+  @override
+  String get bookingSettingsTitle => 'Rezervacije';
+
+  @override
+  String get cancellationCutoffHoursLabel => 'Rok za povrat treninga (sati)';
+
+  @override
+  String get cancellationCutoffHoursDescription =>
+      'Vrijednost od 0 do 168 sati prije početka treninga.';
+
+  @override
+  String get cancellationCutoffHoursValidation =>
+      'Unesite cijeli broj od 0 do 168.';
 
   @override
   String get activeWorkouts => 'Aktivni treninzi';
@@ -1226,4 +1243,26 @@ class AppLocalizationsHr extends AppLocalizations {
   @override
   String get scheduleMembersLoadError =>
       'Članove fiksne grupe nije moguće učitati.';
+
+  @override
+  String get editSchedule => 'Uredi raspored';
+
+  @override
+  String get effectiveFromLabel => 'Promjena vrijedi od';
+
+  @override
+  String get confirmScheduleUpdate => 'Spremi promjenu';
+
+  @override
+  String get scheduleUpdated => 'Promjena rasporeda je spremljena.';
+
+  @override
+  String scheduleValidFrom(String date) {
+    return 'Od $date';
+  }
+
+  @override
+  String scheduleValidUntil(String date) {
+    return 'Do $date';
+  }
 }

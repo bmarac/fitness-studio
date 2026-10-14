@@ -12,6 +12,7 @@ class StudioConfiguration {
     required this.memberReminderDays,
     required this.adminReminderDays,
     required this.notificationTime,
+    required this.cancellationCutoffHours,
     required this.isPaymentComplete,
   });
 
@@ -25,6 +26,7 @@ class StudioConfiguration {
   final List<int> memberReminderDays;
   final List<int> adminReminderDays;
   final String notificationTime;
+  final int cancellationCutoffHours;
   final bool isPaymentComplete;
 
   factory StudioConfiguration.fromJson(Map<String, dynamic> json) =>
@@ -41,6 +43,7 @@ class StudioConfiguration {
         adminReminderDays: (json['adminReminderDays'] as List<dynamic>)
             .cast<int>(),
         notificationTime: json['notificationTime'] as String,
+        cancellationCutoffHours: json['cancellationCutoffHours'] as int,
         isPaymentComplete: json['isPaymentComplete'] as bool,
       );
 
@@ -55,6 +58,7 @@ class StudioConfiguration {
     'memberReminderDays': memberReminderDays,
     'adminReminderDays': adminReminderDays,
     'notificationTime': notificationTime,
+    'cancellationCutoffHours': cancellationCutoffHours,
   };
 }
 

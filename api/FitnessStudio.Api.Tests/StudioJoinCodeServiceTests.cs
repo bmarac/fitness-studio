@@ -61,6 +61,31 @@ public class StudioJoinCodeServiceTests
         Assert.Equal(ServiceResultStatus.Conflict, invalid.Status);
     }
 
+    [Theory]
+    [InlineData("-1", "integer")]
+    [InlineData("169", "integer")]
+    [InlineData("12", "string")]
+    public async Task CancellationCutoffRejectsInvalidGenericSettingValues(
+        string value,
+        string valueType)
+    {
+        await using var db = CreateDatabase();
+        db.Studios.Add(Studio(1));
+        await db.SaveChangesAsync();
+        var service = new StudioSettingsService(db, new Context(1));
+
+        var result = await service.UpsertSettingAsync(
+            "cancellation_cutoff_hours",
+            new UpsertStudioSettingRequest
+            {
+                Value = value,
+                ValueType = valueType
+            });
+
+        Assert.Equal(ServiceResultStatus.Conflict, result.Status);
+        Assert.Empty(db.StudioSettings);
+    }
+
     private static FitnessStudioDbContext CreateDatabase() => new(
         new DbContextOptionsBuilder<FitnessStudioDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
