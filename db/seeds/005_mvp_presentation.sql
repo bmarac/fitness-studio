@@ -3,6 +3,33 @@ BEGIN;
 -- Keep the demo studio ready for the complete MVP walkthrough. This seed is
 -- intentionally idempotent so it can also be applied to an existing demo
 -- database without removing or resetting user-created data.
+INSERT INTO members (
+  studio_id,
+  first_name,
+  last_name,
+  email,
+  phone,
+  date_of_birth,
+  status
+)
+SELECT
+  studios.id,
+  'Mia',
+  'Radić',
+  'mia.radic@stayfitjoyful.demo',
+  '+385 91 555 0199',
+  '1998-05-16'::DATE,
+  'active'
+FROM studios
+WHERE studios.name = 'Stay Fit & Joyful'
+ON CONFLICT (studio_id, email) DO UPDATE SET
+  first_name = EXCLUDED.first_name,
+  last_name = EXCLUDED.last_name,
+  phone = EXCLUDED.phone,
+  date_of_birth = EXCLUDED.date_of_birth,
+  status = EXCLUDED.status,
+  updated_at = now();
+
 INSERT INTO studio_settings (studio_id, setting, value, value_type)
 SELECT studios.id, settings.setting, settings.value, 'string'
 FROM studios

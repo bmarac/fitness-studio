@@ -78,6 +78,26 @@ public class RecurringClassSchedulesControllerTests
     }
 
     [Fact]
+    public async Task GetAvailableMembersReturnsItemsAndForwardsDate()
+    {
+        var startsOn = new DateOnly(2026, 10, 20);
+        var members = new List<AvailableFixedScheduleMemberResponse>();
+        var service = new FakeRecurringClassSchedulesService
+        {
+            GetAvailableMembersResult =
+                ServiceResult<List<AvailableFixedScheduleMemberResponse>>.Success(members)
+        };
+        var controller = new RecurringClassSchedulesController(service);
+
+        var action = await controller.GetAvailableMembers(41, startsOn);
+
+        var ok = Assert.IsType<OkObjectResult>(action.Result);
+        Assert.Same(members, ok.Value);
+        Assert.Equal(41, service.LastGetAvailableMembersId);
+        Assert.Equal(startsOn, service.LastGetAvailableMembersStartsOn);
+    }
+
+    [Fact]
     public async Task CreateScheduleReturnsCreatedAtGetAndForwardsRequest()
     {
         var schedule = Schedule();
@@ -249,6 +269,10 @@ public class RecurringClassSchedulesControllerTests
             AuthRoles.Staff);
         SchedulingControllerTestAssertions.MethodRequiresRole(
             type,
+            nameof(RecurringClassSchedulesController.GetAvailableMembers),
+            AuthRoles.Admin);
+        SchedulingControllerTestAssertions.MethodRequiresRole(
+            type,
             nameof(RecurringClassSchedulesController.CreateSchedule),
             AuthRoles.Staff);
         SchedulingControllerTestAssertions.MethodRequiresRole(
@@ -324,6 +348,7 @@ public class RecurringClassSchedulesControllerTests
         public List<RecurringClassScheduleResponse> GetSchedulesResult { get; init; } = [];
         public ServiceResult<RecurringClassScheduleResponse> GetScheduleResult { get; init; } = null!;
         public ServiceResult<List<MemberFixedScheduleResponse>> GetScheduleMembersResult { get; init; } = null!;
+        public ServiceResult<List<AvailableFixedScheduleMemberResponse>> GetAvailableMembersResult { get; init; } = null!;
         public ServiceResult<RecurringClassScheduleResponse> CreateScheduleResult { get; init; } = null!;
         public ServiceResult UpdateScheduleResult { get; init; } = null!;
         public ServiceResult PauseResult { get; init; } = null!;
@@ -332,6 +357,8 @@ public class RecurringClassSchedulesControllerTests
         public ServiceResult DeleteScheduleResult { get; init; } = null!;
         public long? LastGetScheduleId { get; private set; }
         public long? LastGetScheduleMembersId { get; private set; }
+        public long? LastGetAvailableMembersId { get; private set; }
+        public DateOnly? LastGetAvailableMembersStartsOn { get; private set; }
         public CreateRecurringClassScheduleRequest? LastCreateRequest { get; private set; }
         public long? LastUpdateScheduleId { get; private set; }
         public UpdateRecurringClassScheduleRequest? LastUpdateRequest { get; private set; }
@@ -356,6 +383,15 @@ public class RecurringClassSchedulesControllerTests
         {
             LastGetScheduleMembersId = id;
             return Task.FromResult(GetScheduleMembersResult);
+        }
+
+        public Task<ServiceResult<List<AvailableFixedScheduleMemberResponse>>> GetAvailableMembersAsync(
+            long id,
+            DateOnly startsOn)
+        {
+            LastGetAvailableMembersId = id;
+            LastGetAvailableMembersStartsOn = startsOn;
+            return Task.FromResult(GetAvailableMembersResult);
         }
 
         public Task<ServiceResult<RecurringClassScheduleResponse>> CreateScheduleAsync(

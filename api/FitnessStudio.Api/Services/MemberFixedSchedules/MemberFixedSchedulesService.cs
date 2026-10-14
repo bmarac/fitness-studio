@@ -3,6 +3,7 @@ using FitnessStudio.Api.Data;
 using FitnessStudio.Api.Domain.Auth;
 using FitnessStudio.Api.Domain.Bookings;
 using FitnessStudio.Api.Domain.ClassSessions;
+using FitnessStudio.Api.Domain.Members;
 using FitnessStudio.Api.Dtos.MemberFixedSchedules;
 using FitnessStudio.Api.Entities;
 using FitnessStudio.Api.Services.Interfaces;
@@ -77,6 +78,10 @@ public class MemberFixedSchedulesService : IMemberFixedSchedulesService
     public async Task<ServiceResult<MemberFixedScheduleResponse>> CreateScheduleAsync(
         CreateMemberFixedScheduleRequest request)
     {
+        var now = DateTime.UtcNow;
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync(
+            IsolationLevel.Serializable);
+
         var validationResult = await ValidateRequestAsync(request);
         if (validationResult is not null)
         {
@@ -86,7 +91,76 @@ public class MemberFixedSchedulesService : IMemberFixedSchedulesService
                 validationResult.Error);
         }
 
-        var now = DateTime.UtcNow;
+        var memberStatus = await _dbContext.Members
+            .Where(member =>
+                member.Id == request.MemberId
+                && member.StudioId == _currentUser.StudioId)
+            .Select(member => member.Status)
+            .SingleAsync();
+        if (memberStatus != MemberStatuses.Active)
+        {
+            return ServiceResult<MemberFixedScheduleResponse>.Conflict(
+                "Member is not active.",
+                "Only active members can be assigned to a fixed schedule.");
+        }
+
+        var recurringSchedule = await _dbContext.RecurringClassSchedules
+            .Include(item => item.ClassSessions.Where(session => session.StartsAt >= now))
+                .ThenInclude(session => session.Bookings)
+            .SingleAsync(schedule =>
+                schedule.Id == request.RecurringScheduleId
+                && schedule.StudioId == _currentUser.StudioId);
+        if (recurringSchedule.Status != "active")
+        {
+            return ServiceResult<MemberFixedScheduleResponse>.Conflict(
+                "Recurring schedule is not active.",
+                "Members can be assigned only to an active recurring schedule.");
+        }
+
+        var alreadyAssigned = await _dbContext.MemberFixedSchedules.AnyAsync(item =>
+            item.StudioId == _currentUser.StudioId
+            && item.MemberId == request.MemberId
+            && item.RecurringScheduleId == request.RecurringScheduleId
+            && (item.Status == "active" || item.Status == "paused"));
+        if (alreadyAssigned)
+        {
+            return ServiceResult<MemberFixedScheduleResponse>.Conflict(
+                "Fixed schedule already exists.",
+                "This member already has an active or paused assignment to the recurring schedule.");
+        }
+
+        var assignedMemberCount = await _dbContext.MemberFixedSchedules.CountAsync(item =>
+            item.StudioId == _currentUser.StudioId
+            && item.RecurringScheduleId == request.RecurringScheduleId
+            && item.Status == "active"
+            && (!item.EndsOn.HasValue || item.EndsOn.Value >= request.StartsOn)
+            && (!request.EndsOn.HasValue || item.StartsOn <= request.EndsOn.Value));
+        if (assignedMemberCount >= recurringSchedule.Capacity)
+        {
+            return ServiceResult<MemberFixedScheduleResponse>.Conflict(
+                "Recurring schedule is full.",
+                "The recurring schedule has no available fixed places.");
+        }
+
+        await _membershipBookingPolicy.AcquireMemberLockAsync(request.MemberId);
+
+        var assignmentEndsOn = request.EndsOn.HasValue
+            && (!recurringSchedule.ValidUntil.HasValue
+                || request.EndsOn.Value < recurringSchedule.ValidUntil.Value)
+            ? request.EndsOn
+            : recurringSchedule.ValidUntil;
+        if (!await FixedSchedulePackagePolicy.AllowsAssignmentAsync(
+                _dbContext,
+                _currentUser.StudioId,
+                request.MemberId,
+                request.StartsOn,
+                assignmentEndsOn))
+        {
+            return ServiceResult<MemberFixedScheduleResponse>.Conflict(
+                "Membership package limit reached.",
+                "The member's membership package does not allow another fixed schedule.");
+        }
+
         var schedule = new MemberFixedSchedule
         {
             StudioId = _currentUser.StudioId,
@@ -104,12 +178,86 @@ public class MemberFixedSchedulesService : IMemberFixedSchedulesService
         try
         {
             await _dbContext.SaveChangesAsync();
+
+            var timezoneId = await _dbContext.Studios
+                .Where(studio => studio.Id == _currentUser.StudioId)
+                .Select(studio => studio.Timezone)
+                .SingleAsync();
+            var timezone = TimeZoneInfo.FindSystemTimeZoneById(timezoneId);
+
+            foreach (var session in recurringSchedule.ClassSessions
+                .Where(item => item.Status == ClassSessionStatuses.Scheduled)
+                .OrderBy(item => item.StartsAt))
+            {
+                var localDate = DateOnly.FromDateTime(
+                    TimeZoneInfo.ConvertTimeFromUtc(session.StartsAt, timezone));
+                if (localDate < request.StartsOn
+                    || (request.EndsOn.HasValue && localDate > request.EndsOn.Value))
+                {
+                    continue;
+                }
+
+                var existingBooking = session.Bookings
+                    .FirstOrDefault(item => item.MemberId == request.MemberId);
+                var membershipDecision = await _membershipBookingPolicy.EvaluateAsync(
+                    request.MemberId,
+                    session.StartsAt,
+                    existingBooking?.Id);
+                if (!membershipDecision.IsAllowed)
+                {
+                    continue;
+                }
+
+                var occupied = session.Bookings.Count(item =>
+                    item.MemberId != request.MemberId
+                    && BookingStatuses.CapacityCounting.Contains(item.Status));
+                var bookingStatus = occupied < session.Capacity
+                    ? BookingStatuses.Booked
+                    : BookingStatuses.Waitlisted;
+
+                if (existingBooking is null)
+                {
+                    session.Bookings.Add(new Booking
+                    {
+                        StudioId = _currentUser.StudioId,
+                        MemberId = request.MemberId,
+                        BookingSource = "fixed_schedule",
+                        Status = bookingStatus,
+                        BookedAt = now,
+                        CreatedAt = now,
+                        UpdatedAt = now
+                    });
+                }
+                else
+                {
+                    existingBooking.Status = bookingStatus;
+                    existingBooking.BookingSource = "fixed_schedule";
+                    existingBooking.CancelledAt = null;
+                    existingBooking.CancellationReason = null;
+                    existingBooking.UpdatedAt = now;
+                }
+
+                // Persist each reservation so membership usage checks for later
+                // sessions in the same transaction include earlier reservations.
+                await _dbContext.SaveChangesAsync();
+            }
+
+            await transaction.CommitAsync();
         }
         catch (DbUpdateException)
         {
+            await transaction.RollbackAsync();
             return ServiceResult<MemberFixedScheduleResponse>.Conflict(
                 "Fixed schedule already exists.",
-                "This member already has an active or paused assignment to the recurring schedule.");
+                "The fixed schedule changed while the member was being assigned.");
+        }
+        catch (PostgresException exception)
+            when (exception.SqlState == PostgresErrorCodes.SerializationFailure)
+        {
+            await transaction.RollbackAsync();
+            return ServiceResult<MemberFixedScheduleResponse>.Conflict(
+                "Fixed schedule cannot be created.",
+                "The fixed schedule changed while the member was being assigned.");
         }
 
         return await GetScheduleAsync(schedule.Id);
@@ -117,6 +265,9 @@ public class MemberFixedSchedulesService : IMemberFixedSchedulesService
 
     public async Task<ServiceResult> UpdateScheduleAsync(long id, UpdateMemberFixedScheduleRequest request)
     {
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync(
+            IsolationLevel.Serializable);
+
         var schedule = await _dbContext.MemberFixedSchedules.FirstOrDefaultAsync(item =>
             item.Id == id && item.StudioId == _currentUser.StudioId);
 
@@ -133,16 +284,51 @@ public class MemberFixedSchedulesService : IMemberFixedSchedulesService
             return validationResult;
         }
 
+        var normalizedStatus = Normalize(request.Status);
+        var activeAssignmentChangesScope = normalizedStatus == "active"
+            && (schedule.Status != "active"
+                || schedule.MemberId != request.MemberId
+                || schedule.RecurringScheduleId != request.RecurringScheduleId
+                || schedule.StartsOn != request.StartsOn
+                || schedule.EndsOn != request.EndsOn);
+        if (activeAssignmentChangesScope)
+        {
+            await _membershipBookingPolicy.AcquireMemberLockAsync(request.MemberId);
+            var targetValidUntil = await _dbContext.RecurringClassSchedules
+                .Where(item =>
+                    item.Id == request.RecurringScheduleId
+                    && item.StudioId == _currentUser.StudioId)
+                .Select(item => item.ValidUntil)
+                .SingleAsync();
+            var assignmentEndsOn = request.EndsOn.HasValue
+                && (!targetValidUntil.HasValue || request.EndsOn.Value < targetValidUntil.Value)
+                ? request.EndsOn
+                : targetValidUntil;
+            if (!await FixedSchedulePackagePolicy.AllowsAssignmentAsync(
+                    _dbContext,
+                    _currentUser.StudioId,
+                    request.MemberId,
+                    request.StartsOn,
+                    assignmentEndsOn,
+                    schedule.Id))
+            {
+                return ServiceResult.Conflict(
+                    "Membership package limit reached.",
+                    "The member's membership package does not allow another fixed schedule.");
+            }
+        }
+
         schedule.MemberId = request.MemberId;
         schedule.RecurringScheduleId = request.RecurringScheduleId;
         schedule.StartsOn = request.StartsOn;
         schedule.EndsOn = request.EndsOn;
-        schedule.Status = Normalize(request.Status);
+        schedule.Status = normalizedStatus;
         schedule.UpdatedAt = DateTime.UtcNow;
 
         try
         {
             await _dbContext.SaveChangesAsync();
+            await transaction.CommitAsync();
         }
         catch (DbUpdateException)
         {

@@ -887,6 +887,85 @@ class AppLocalizationsEn extends AppLocalizations {
   String get membershipPlansSubtitle => 'Manage pricing';
 
   @override
+  String get memberPackagesTitle => 'Members and plans';
+
+  @override
+  String get memberPackagesSubtitle => 'Assign or change a member’s plan';
+
+  @override
+  String get memberPackagesFilterAll => 'All members';
+
+  @override
+  String memberPackagesFilterMissing(int count) {
+    return 'Without a plan ($count)';
+  }
+
+  @override
+  String get memberPackageMissing => 'No active plan';
+
+  @override
+  String memberPackageFrom(String start) {
+    return 'Valid from $start';
+  }
+
+  @override
+  String memberPackagePeriod(String start, String end) {
+    return '$start – $end';
+  }
+
+  @override
+  String get memberPackageInactiveMemberHint =>
+      'Plans cannot be changed for an inactive member.';
+
+  @override
+  String get assignMemberPackage => 'Assign plan';
+
+  @override
+  String get changeMemberPackage => 'Change plan';
+
+  @override
+  String assignPackageTo(String memberName) {
+    return 'Assign plan: $memberName';
+  }
+
+  @override
+  String changePackageFor(String memberName) {
+    return 'Change plan: $memberName';
+  }
+
+  @override
+  String get memberPackageStartsOn => 'Membership start';
+
+  @override
+  String get memberPackageEndsOn => 'Membership end';
+
+  @override
+  String get memberPackageNoEndDate => 'No end date';
+
+  @override
+  String get memberPackageClearEnd => 'Clear end date';
+
+  @override
+  String get memberPackagePlanRequired => 'Select a plan.';
+
+  @override
+  String get memberPackageEndAfterStart =>
+      'The end date must be after the start date.';
+
+  @override
+  String get memberPackageOverlap =>
+      'The member already has a plan that overlaps the selected period.';
+
+  @override
+  String get noActiveMembershipPlans =>
+      'There are no active plans available for assignment.';
+
+  @override
+  String memberPackageSaved(String memberName) {
+    return 'The plan for $memberName was saved.';
+  }
+
+  @override
   String get addMembershipPlan => 'Add plan';
 
   @override
@@ -1065,6 +1144,47 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get noFixedScheduleMembers =>
       'This schedule currently has no fixed group members.';
+
+  @override
+  String get addFixedScheduleMember => 'Add member';
+
+  @override
+  String get addFixedScheduleMemberAction => 'Add to fixed group';
+
+  @override
+  String get fixedScheduleStartsOn => 'Fixed schedule start';
+
+  @override
+  String get noMembersForFixedSchedule =>
+      'There are no available active members.';
+
+  @override
+  String fixedScheduleMemberAdded(String memberName) {
+    return '$memberName was added to the fixed group.';
+  }
+
+  @override
+  String get fixedScheduleInactiveMember =>
+      'Only an active member can be added to a fixed group.';
+
+  @override
+  String get fixedScheduleInactiveSchedule =>
+      'Members can be added only to an active schedule.';
+
+  @override
+  String get fixedScheduleAlreadyAssigned =>
+      'The member is already assigned to this fixed schedule.';
+
+  @override
+  String get fixedScheduleFull => 'The fixed group has no available places.';
+
+  @override
+  String get fixedScheduleChanged =>
+      'The schedule changed in the meantime. Please try again.';
+
+  @override
+  String get fixedSchedulePackageLimit =>
+      'The member’s package does not allow another fixed schedule.';
 
   @override
   String get moveFixedScheduleMember => 'Move';

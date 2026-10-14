@@ -7,6 +7,7 @@ using FitnessStudio.Api.Dtos.MemberFixedSchedules;
 using FitnessStudio.Api.Dtos.RecurringClassSchedules;
 using FitnessStudio.Api.Entities;
 using FitnessStudio.Api.Services.Interfaces;
+using FitnessStudio.Api.Services.MemberFixedSchedules;
 using Microsoft.EntityFrameworkCore;
 
 namespace FitnessStudio.Api.Services.RecurringClassSchedules;
@@ -106,6 +107,39 @@ public class RecurringClassSchedulesService : IRecurringClassSchedulesService
             .ToListAsync();
 
         return ServiceResult<List<MemberFixedScheduleResponse>>.Success(members);
+    }
+
+    public async Task<ServiceResult<List<AvailableFixedScheduleMemberResponse>>> GetAvailableMembersAsync(
+        long id,
+        DateOnly startsOn)
+    {
+        var schedule = await _dbContext.RecurringClassSchedules
+            .AsNoTracking()
+            .FirstOrDefaultAsync(item => item.Id == id && item.StudioId == _currentUser.StudioId);
+
+        if (schedule is null)
+        {
+            return ServiceResult<List<AvailableFixedScheduleMemberResponse>>.NotFound(
+                "Recurring class schedule not found.",
+                "A recurring schedule with this id does not exist.");
+        }
+
+        if (schedule.Status != "active"
+            || startsOn < schedule.ValidFrom
+            || (schedule.ValidUntil.HasValue && startsOn > schedule.ValidUntil.Value))
+        {
+            return ServiceResult<List<AvailableFixedScheduleMemberResponse>>.Conflict(
+                "Recurring schedule is unavailable.",
+                "Members can be assigned only while the recurring schedule is active.");
+        }
+
+        var members = await FixedSchedulePackagePolicy.GetAvailableMembersAsync(
+            _dbContext,
+            _currentUser.StudioId,
+            id,
+            startsOn,
+            schedule.ValidUntil);
+        return ServiceResult<List<AvailableFixedScheduleMemberResponse>>.Success(members);
     }
 
     public async Task<ServiceResult<RecurringClassScheduleResponse>> CreateScheduleAsync(

@@ -33,6 +33,13 @@ poslovni endpointi studio-scoped JWT. Podaci se ogranicavaju na studio iz JWT-a.
 sprema se kao pocetak ritma naplate, odmah se stvaraju svi dospjeli mjesecni
 obracuni, a odgovor vraca clanstvo, `createdObligations` i `nextBillingOn`.
 
+Razdoblja clanstva tretiraju se kao poluotvorena (`startsOn` je ukljucen,
+`endsOn` nije). API odbija drugo clanstvo istog clana koje se vremenski
+preklapa. `isActive` se racuna prema danasnjem datumu u vremenskoj zoni studija
+i zahtijeva da je clanstvo vec pocelo. Promjena paketa na postojecem clanstvu
+ne mijenja pocetak ni sljedeci datum naplate; vec nastale obveze zadrzavaju
+snimljeni naziv i iznos starog paketa.
+
 ## Posebne operacije
 
 ### Clanovi
@@ -113,6 +120,19 @@ bilo kojeg trenera svojeg studija, dok trener moze kreirati raspored samo za
 `GET /api/recurring-class-schedules/{id}/members` vraca trenutno aktivne clanove
 fiksne grupe, sortirane po prezimenu i imenu. Admin moze otvoriti svaki raspored
 studija, a trener samo vlastiti.
+
+`GET /api/recurring-class-schedules/{id}/available-members?startsOn=YYYY-MM-DD`
+dostupan je samo adminu i vraca aktivne clanove koje je moguce dodati od odabranog
+datuma. Clan mora imati clanarinu za taj datum; tjedni paket smije imati najvise
+`sessionLimit` aktivnih preklapajucih fiksnih dodjela, neograniceni paket nema taj
+limit, a ograniceni mjesecni i ukupni paketi nisu dostupni za fiksne grupe.
+
+`POST /api/member-fixed-schedules` dostupan je samo adminu. Aktivna dodjela stvara
+se transakcijski zajedno s rezervacijama vec generiranih buducih termina od
+`startsOn`. Neaktivni clanovi, neaktivni ili puni rasporedi i ponovljene aktivne ili
+pauzirane dodjele odbijaju se. Termin bez slobodnog mjesta dobiva rezervaciju na
+listi cekanja, a termini koje clanarina ne pokriva ostaju bez rezervacije. Paketni
+limit ponovno se provjerava u istoj transakciji nakon zakljucavanja clana.
 
 ### Polaznici termina
 

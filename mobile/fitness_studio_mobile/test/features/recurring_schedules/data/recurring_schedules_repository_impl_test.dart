@@ -29,10 +29,19 @@ void main() {
 
     final schedules = await repository.getSchedules();
     final members = await repository.getScheduleMembers(41);
+    final memberOptions = await repository.getMemberOptions(
+      41,
+      DateTime(2026, 10, 20),
+    );
     final form = await repository.getFormData();
     await repository.moveFixedScheduleMember(
       assignmentId: 91,
       targetScheduleId: 42,
+    );
+    await repository.addFixedScheduleMember(
+      memberId: 22,
+      scheduleId: 41,
+      startsOn: DateTime(2026, 10, 20),
     );
     await repository.changeScheduleStatus(
       id: 41,
@@ -54,6 +63,7 @@ void main() {
 
     expect((schedules as Success).value.single.id, 41);
     expect((members as Success).value.single.memberName, 'Iva Ivić');
+    expect((memberOptions as Success).value.single.fullName, 'Mia Marić');
     expect(formData.classTypes.single.name, 'Pilates');
     expect(formData.trainers.single.fullName, 'Ana Horvat');
     expect(
@@ -63,7 +73,9 @@ void main() {
         'GET /api/recurring-class-schedules/41/members',
         'GET /api/class-types',
         'GET /api/trainers',
+        'GET /api/recurring-class-schedules/41/available-members',
         'PATCH /api/member-fixed-schedules/91/move',
+        'POST /api/member-fixed-schedules',
         'PATCH /api/recurring-class-schedules/41/pause',
         'POST /api/recurring-class-schedules',
       ]),
@@ -72,6 +84,19 @@ void main() {
       adapter.request('PATCH', '/api/member-fixed-schedules/91/move').data,
       {'targetRecurringScheduleId': 42},
     );
+    expect(
+      adapter
+          .request('GET', '/api/recurring-class-schedules/41/available-members')
+          .queryParameters,
+      {'startsOn': '2026-10-20'},
+    );
+    expect(adapter.request('POST', '/api/member-fixed-schedules').data, {
+      'memberId': 22,
+      'recurringScheduleId': 41,
+      'startsOn': '2026-10-20',
+      'endsOn': null,
+      'status': 'active',
+    });
     expect(
       adapter.request('PATCH', '/api/recurring-class-schedules/41/pause').data,
       {'effectiveFrom': '2026-10-15'},
@@ -135,6 +160,15 @@ class _RecurringSchedulesAdapter implements HttpClientAdapter {
       ],
       '/api/trainers' => [
         {'id': 8, 'firstName': 'Ana', 'lastName': 'Horvat', 'status': 'active'},
+      ],
+      '/api/recurring-class-schedules/41/available-members' => [
+        {
+          'id': 22,
+          'firstName': 'Mia',
+          'lastName': 'Marić',
+          'email': 'mia@example.com',
+          'status': 'active',
+        },
       ],
       _ => <String, dynamic>{},
     };

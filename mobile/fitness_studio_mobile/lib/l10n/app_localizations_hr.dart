@@ -893,6 +893,85 @@ class AppLocalizationsHr extends AppLocalizations {
   String get membershipPlansSubtitle => 'Upravljaj cjenikom';
 
   @override
+  String get memberPackagesTitle => 'Članovi i paketi';
+
+  @override
+  String get memberPackagesSubtitle => 'Dodijeli ili promijeni paket članu';
+
+  @override
+  String get memberPackagesFilterAll => 'Svi članovi';
+
+  @override
+  String memberPackagesFilterMissing(int count) {
+    return 'Bez paketa ($count)';
+  }
+
+  @override
+  String get memberPackageMissing => 'Nema aktivnog paketa';
+
+  @override
+  String memberPackageFrom(String start) {
+    return 'Vrijedi od $start';
+  }
+
+  @override
+  String memberPackagePeriod(String start, String end) {
+    return '$start – $end';
+  }
+
+  @override
+  String get memberPackageInactiveMemberHint =>
+      'Pakete nije moguće mijenjati neaktivnom članu.';
+
+  @override
+  String get assignMemberPackage => 'Dodijeli paket';
+
+  @override
+  String get changeMemberPackage => 'Promijeni paket';
+
+  @override
+  String assignPackageTo(String memberName) {
+    return 'Dodijeli paket: $memberName';
+  }
+
+  @override
+  String changePackageFor(String memberName) {
+    return 'Promijeni paket: $memberName';
+  }
+
+  @override
+  String get memberPackageStartsOn => 'Početak članstva';
+
+  @override
+  String get memberPackageEndsOn => 'Kraj članstva';
+
+  @override
+  String get memberPackageNoEndDate => 'Bez datuma završetka';
+
+  @override
+  String get memberPackageClearEnd => 'Ukloni datum završetka';
+
+  @override
+  String get memberPackagePlanRequired => 'Odaberi paket.';
+
+  @override
+  String get memberPackageEndAfterStart =>
+      'Datum završetka mora biti nakon datuma početka.';
+
+  @override
+  String get memberPackageOverlap =>
+      'Član već ima paket koji se preklapa s odabranim razdobljem.';
+
+  @override
+  String get noActiveMembershipPlans =>
+      'Nema aktivnih paketa koje je moguće dodijeliti.';
+
+  @override
+  String memberPackageSaved(String memberName) {
+    return 'Paket za člana $memberName je spremljen.';
+  }
+
+  @override
   String get addMembershipPlan => 'Dodaj paket';
 
   @override
@@ -1070,6 +1149,46 @@ class AppLocalizationsHr extends AppLocalizations {
   @override
   String get noFixedScheduleMembers =>
       'Ovaj raspored trenutačno nema članova u fiksnoj grupi.';
+
+  @override
+  String get addFixedScheduleMember => 'Dodaj člana';
+
+  @override
+  String get addFixedScheduleMemberAction => 'Dodaj u fiksnu grupu';
+
+  @override
+  String get fixedScheduleStartsOn => 'Početak fiksnog rasporeda';
+
+  @override
+  String get noMembersForFixedSchedule => 'Nema dostupnih aktivnih članova.';
+
+  @override
+  String fixedScheduleMemberAdded(String memberName) {
+    return '$memberName je dodan/a u fiksnu grupu.';
+  }
+
+  @override
+  String get fixedScheduleInactiveMember =>
+      'Samo aktivan član može biti dodan u fiksnu grupu.';
+
+  @override
+  String get fixedScheduleInactiveSchedule =>
+      'Člana je moguće dodati samo u aktivan raspored.';
+
+  @override
+  String get fixedScheduleAlreadyAssigned =>
+      'Član je već dodan u ovaj fiksni raspored.';
+
+  @override
+  String get fixedScheduleFull => 'Fiksna grupa nema slobodnih mjesta.';
+
+  @override
+  String get fixedScheduleChanged =>
+      'Raspored je u međuvremenu promijenjen. Pokušaj ponovno.';
+
+  @override
+  String get fixedSchedulePackageLimit =>
+      'Paket člana ne dopušta dodatni fiksni termin.';
 
   @override
   String get moveFixedScheduleMember => 'Premjesti';

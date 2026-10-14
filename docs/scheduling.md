@@ -51,6 +51,11 @@ zivotnog ciklusa rasporeda. Clana je moguce premjestiti od danas na drugi aktivn
 raspored s dostupnim fiksnim mjestom; buduce rezervacije prenose se transakcijski,
 a raniji dolasci ostaju na izvornom rasporedu.
 
+Admin moze dodati novog clana u grupu od odabranog datuma. Popis prikazuje samo
+aktivne clanove s paketom koji vrijedi na taj datum i slobodnim mjestom u tjednom
+limitu fiksnih grupa. Aktivne preklapajuce dodjele trose limit; pauzirane,
+otkazane i zavrsene dodjele ne trose ga.
+
 ## Planirano
 
 Promjena buducih termina jos nije implementirana. Predlozeno ponasanje je zatvoriti stari raspored dan prije datuma promjene, kreirati novi raspored i otkazati stare generirane buduce termine koje zamjenjuje novi raspored. Povijesni termini ne bi se brisali.

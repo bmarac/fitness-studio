@@ -6,9 +6,12 @@ import 'package:fitness_studio_mobile/features/auth/presentation/state/login_sta
 import 'package:fitness_studio_mobile/features/recurring_schedules/domain/entities/class_type_option.dart';
 import 'package:fitness_studio_mobile/features/recurring_schedules/domain/entities/fixed_schedule_member.dart';
 import 'package:fitness_studio_mobile/features/recurring_schedules/domain/entities/recurring_schedule.dart';
+import 'package:fitness_studio_mobile/features/recurring_schedules/domain/entities/schedule_member_option.dart';
+import 'package:fitness_studio_mobile/features/recurring_schedules/domain/usecases/add_fixed_schedule_member.dart';
 import 'package:fitness_studio_mobile/features/recurring_schedules/domain/usecases/change_recurring_schedule_status.dart';
 import 'package:fitness_studio_mobile/features/recurring_schedules/domain/usecases/get_recurring_schedules.dart';
 import 'package:fitness_studio_mobile/features/recurring_schedules/domain/usecases/get_fixed_schedule_members.dart';
+import 'package:fitness_studio_mobile/features/recurring_schedules/domain/usecases/get_schedule_member_options.dart';
 import 'package:fitness_studio_mobile/features/recurring_schedules/domain/usecases/move_fixed_schedule_member.dart';
 import 'package:fitness_studio_mobile/features/recurring_schedules/presentation/screens/recurring_schedules_screen.dart';
 import 'package:fitness_studio_mobile/features/recurring_schedules/domain/repositories/recurring_schedules_repository.dart';
@@ -37,6 +40,12 @@ void main() {
       ..registerSingleton<GetFixedScheduleMembers>(
         GetFixedScheduleMembers(repository),
       )
+      ..registerSingleton<GetScheduleMemberOptions>(
+        GetScheduleMemberOptions(repository),
+      )
+      ..registerSingleton<AddFixedScheduleMember>(
+        AddFixedScheduleMember(repository),
+      )
       ..registerSingleton<MoveFixedScheduleMember>(
         MoveFixedScheduleMember(repository),
       );
@@ -50,7 +59,14 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(400, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
-      localizedTestApp(home: const RecurringSchedulesScreen()),
+      ProviderScope(
+        overrides: [
+          loginControllerProvider.overrideWith(
+            () => _FakeLoginController(const ['admin']),
+          ),
+        ],
+        child: localizedTestApp(home: const RecurringSchedulesScreen()),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -72,7 +88,14 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      localizedTestApp(home: const RecurringSchedulesScreen()),
+      ProviderScope(
+        overrides: [
+          loginControllerProvider.overrideWith(
+            () => _FakeLoginController(const ['admin']),
+          ),
+        ],
+        child: localizedTestApp(home: const RecurringSchedulesScreen()),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -113,7 +136,14 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      localizedTestApp(home: const RecurringSchedulesScreen()),
+      ProviderScope(
+        overrides: [
+          loginControllerProvider.overrideWith(
+            () => _FakeLoginController(const ['admin']),
+          ),
+        ],
+        child: localizedTestApp(home: const RecurringSchedulesScreen()),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -132,7 +162,14 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      localizedTestApp(home: const RecurringSchedulesScreen()),
+      ProviderScope(
+        overrides: [
+          loginControllerProvider.overrideWith(
+            () => _FakeLoginController(const ['admin']),
+          ),
+        ],
+        child: localizedTestApp(home: const RecurringSchedulesScreen()),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -168,6 +205,105 @@ void main() {
     expect(repository.movedAssignmentId, 91);
     expect(repository.movedTargetScheduleId, 2);
     expect(find.text('Član je premješten u novi raspored.'), findsOneWidget);
+  });
+
+  testWidgets('admin adds an available active member to a fixed schedule', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          loginControllerProvider.overrideWith(
+            () => _FakeLoginController(const ['admin']),
+          ),
+        ],
+        child: localizedTestApp(home: const RecurringSchedulesScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('recurring-schedule-card-1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('add-fixed-schedule-member')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('fixed-schedule-member-22')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('fixed-schedule-member-21')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const ValueKey('fixed-schedule-member-23')),
+      findsNothing,
+    );
+
+    final repository =
+        serviceLocator<RecurringSchedulesRepository>() as _FakeRepository;
+    final today = DateUtils.dateOnly(DateTime.now());
+    expect(repository.memberOptionStartsOn, [today]);
+
+    await tester.tap(find.byKey(const ValueKey('fixed-schedule-start-date')));
+    await tester.pumpAndSettle();
+    expect(find.byType(DatePickerDialog), findsOneWidget);
+    final selectedDay = today.day == 1 ? 2 : 1;
+    await tester.tap(find.text('$selectedDay').last);
+    await tester.tap(
+      find
+          .descendant(
+            of: find.byType(DatePickerDialog),
+            matching: find.byType(TextButton),
+          )
+          .last,
+    );
+    await tester.pumpAndSettle();
+    expect(repository.memberOptionStartsOn, [
+      today,
+      DateTime(today.year, today.month, selectedDay),
+    ]);
+
+    final memberTile = find.byKey(const ValueKey('fixed-schedule-member-22'));
+    await tester.ensureVisible(memberTile);
+    await tester.tap(
+      find.descendant(of: memberTile, matching: find.byType(Radio<int>)),
+    );
+    await tester.pump();
+    await tester.tap(
+      find.byKey(const ValueKey('confirm-add-fixed-schedule-member')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(repository.addedMemberId, 22);
+    expect(repository.addedScheduleId, 1);
+    expect(
+      repository.addedStartsOn,
+      DateTime(today.year, today.month, selectedDay),
+    );
+    expect(find.text('Mia Marić je dodan/a u fiksnu grupu.'), findsOneWidget);
+  });
+
+  testWidgets('trainer cannot add a fixed schedule member', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          loginControllerProvider.overrideWith(
+            () => _FakeLoginController(const ['trainer'], trainerId: 8),
+          ),
+        ],
+        child: localizedTestApp(home: const RecurringSchedulesScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('recurring-schedule-card-1')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('add-fixed-schedule-member')),
+      findsNothing,
+    );
   });
 
   testWidgets('keeps weekday headers fixed while schedules scroll', (
@@ -292,6 +428,10 @@ void main() {
 class _FakeRepository implements RecurringSchedulesRepository {
   int? movedAssignmentId;
   int? movedTargetScheduleId;
+  int? addedMemberId;
+  int? addedScheduleId;
+  DateTime? addedStartsOn;
+  final memberOptionStartsOn = <DateTime>[];
 
   final schedules = <RecurringSchedule>[
     _schedule(1, 'Pilates', 1, '18:00:00', 'active', 7),
@@ -317,6 +457,49 @@ class _FakeRepository implements RecurringSchedulesRepository {
   ) async => const Success([
     FixedScheduleMember(assignmentId: 91, memberId: 21, memberName: 'Iva Ivić'),
   ]);
+
+  @override
+  Future<Result<List<ScheduleMemberOption>>> getMemberOptions(
+    int scheduleId,
+    DateTime startsOn,
+  ) async {
+    memberOptionStartsOn.add(startsOn);
+    return const Success([
+      ScheduleMemberOption(
+        id: 21,
+        firstName: 'Iva',
+        lastName: 'Ivić',
+        email: 'iva@example.com',
+        status: 'active',
+      ),
+      ScheduleMemberOption(
+        id: 22,
+        firstName: 'Mia',
+        lastName: 'Marić',
+        email: 'mia@example.com',
+        status: 'active',
+      ),
+      ScheduleMemberOption(
+        id: 23,
+        firstName: 'Ana',
+        lastName: 'Anić',
+        email: 'ana@example.com',
+        status: 'inactive',
+      ),
+    ]);
+  }
+
+  @override
+  Future<Result<void>> addFixedScheduleMember({
+    required int memberId,
+    required int scheduleId,
+    required DateTime startsOn,
+  }) async {
+    addedMemberId = memberId;
+    addedScheduleId = scheduleId;
+    addedStartsOn = startsOn;
+    return const Success(null);
+  }
 
   @override
   Future<Result<void>> moveFixedScheduleMember({

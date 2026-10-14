@@ -94,6 +94,8 @@ primijenjene; nova promjena dobiva novu numeriranu migraciju.
 Demo podaci za Stay Fit & Joyful nalaze se u `db/seeds/001_stay_fit_joyful_demo.sql`.
 Testni clanovi, clanarine, fiksne dodjele i rezervacije nalaze se u
 `db/seeds/002_stay_fit_joyful_members.sql` i primjenjuju se nakon osnovnog demo seeda.
+Prezentacijski seed dodaje i aktivnu clanicu Miju Radic bez paketa kako bi se
+mogao demonstrirati administratorski tijek prve dodjele paketa.
 Antropometrijski parametri za demo studio nalaze se u
 `db/seeds/003_stay_fit_joyful_measurement_parameters.sql`.
 Cetiri povijesna mjerenja za Anu nalaze se u

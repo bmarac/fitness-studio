@@ -1634,6 +1634,132 @@ abstract class AppLocalizations {
   /// **'Upravljaj cjenikom'**
   String get membershipPlansSubtitle;
 
+  /// No description provided for @memberPackagesTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Članovi i paketi'**
+  String get memberPackagesTitle;
+
+  /// No description provided for @memberPackagesSubtitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Dodijeli ili promijeni paket članu'**
+  String get memberPackagesSubtitle;
+
+  /// No description provided for @memberPackagesFilterAll.
+  ///
+  /// In hr, this message translates to:
+  /// **'Svi članovi'**
+  String get memberPackagesFilterAll;
+
+  /// No description provided for @memberPackagesFilterMissing.
+  ///
+  /// In hr, this message translates to:
+  /// **'Bez paketa ({count})'**
+  String memberPackagesFilterMissing(int count);
+
+  /// No description provided for @memberPackageMissing.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nema aktivnog paketa'**
+  String get memberPackageMissing;
+
+  /// No description provided for @memberPackageFrom.
+  ///
+  /// In hr, this message translates to:
+  /// **'Vrijedi od {start}'**
+  String memberPackageFrom(String start);
+
+  /// No description provided for @memberPackagePeriod.
+  ///
+  /// In hr, this message translates to:
+  /// **'{start} – {end}'**
+  String memberPackagePeriod(String start, String end);
+
+  /// No description provided for @memberPackageInactiveMemberHint.
+  ///
+  /// In hr, this message translates to:
+  /// **'Pakete nije moguće mijenjati neaktivnom članu.'**
+  String get memberPackageInactiveMemberHint;
+
+  /// No description provided for @assignMemberPackage.
+  ///
+  /// In hr, this message translates to:
+  /// **'Dodijeli paket'**
+  String get assignMemberPackage;
+
+  /// No description provided for @changeMemberPackage.
+  ///
+  /// In hr, this message translates to:
+  /// **'Promijeni paket'**
+  String get changeMemberPackage;
+
+  /// No description provided for @assignPackageTo.
+  ///
+  /// In hr, this message translates to:
+  /// **'Dodijeli paket: {memberName}'**
+  String assignPackageTo(String memberName);
+
+  /// No description provided for @changePackageFor.
+  ///
+  /// In hr, this message translates to:
+  /// **'Promijeni paket: {memberName}'**
+  String changePackageFor(String memberName);
+
+  /// No description provided for @memberPackageStartsOn.
+  ///
+  /// In hr, this message translates to:
+  /// **'Početak članstva'**
+  String get memberPackageStartsOn;
+
+  /// No description provided for @memberPackageEndsOn.
+  ///
+  /// In hr, this message translates to:
+  /// **'Kraj članstva'**
+  String get memberPackageEndsOn;
+
+  /// No description provided for @memberPackageNoEndDate.
+  ///
+  /// In hr, this message translates to:
+  /// **'Bez datuma završetka'**
+  String get memberPackageNoEndDate;
+
+  /// No description provided for @memberPackageClearEnd.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ukloni datum završetka'**
+  String get memberPackageClearEnd;
+
+  /// No description provided for @memberPackagePlanRequired.
+  ///
+  /// In hr, this message translates to:
+  /// **'Odaberi paket.'**
+  String get memberPackagePlanRequired;
+
+  /// No description provided for @memberPackageEndAfterStart.
+  ///
+  /// In hr, this message translates to:
+  /// **'Datum završetka mora biti nakon datuma početka.'**
+  String get memberPackageEndAfterStart;
+
+  /// No description provided for @memberPackageOverlap.
+  ///
+  /// In hr, this message translates to:
+  /// **'Član već ima paket koji se preklapa s odabranim razdobljem.'**
+  String get memberPackageOverlap;
+
+  /// No description provided for @noActiveMembershipPlans.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nema aktivnih paketa koje je moguće dodijeliti.'**
+  String get noActiveMembershipPlans;
+
+  /// No description provided for @memberPackageSaved.
+  ///
+  /// In hr, this message translates to:
+  /// **'Paket za člana {memberName} je spremljen.'**
+  String memberPackageSaved(String memberName);
+
   /// No description provided for @addMembershipPlan.
   ///
   /// In hr, this message translates to:
@@ -1963,6 +2089,72 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Ovaj raspored trenutačno nema članova u fiksnoj grupi.'**
   String get noFixedScheduleMembers;
+
+  /// No description provided for @addFixedScheduleMember.
+  ///
+  /// In hr, this message translates to:
+  /// **'Dodaj člana'**
+  String get addFixedScheduleMember;
+
+  /// No description provided for @addFixedScheduleMemberAction.
+  ///
+  /// In hr, this message translates to:
+  /// **'Dodaj u fiksnu grupu'**
+  String get addFixedScheduleMemberAction;
+
+  /// No description provided for @fixedScheduleStartsOn.
+  ///
+  /// In hr, this message translates to:
+  /// **'Početak fiksnog rasporeda'**
+  String get fixedScheduleStartsOn;
+
+  /// No description provided for @noMembersForFixedSchedule.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nema dostupnih aktivnih članova.'**
+  String get noMembersForFixedSchedule;
+
+  /// No description provided for @fixedScheduleMemberAdded.
+  ///
+  /// In hr, this message translates to:
+  /// **'{memberName} je dodan/a u fiksnu grupu.'**
+  String fixedScheduleMemberAdded(String memberName);
+
+  /// No description provided for @fixedScheduleInactiveMember.
+  ///
+  /// In hr, this message translates to:
+  /// **'Samo aktivan član može biti dodan u fiksnu grupu.'**
+  String get fixedScheduleInactiveMember;
+
+  /// No description provided for @fixedScheduleInactiveSchedule.
+  ///
+  /// In hr, this message translates to:
+  /// **'Člana je moguće dodati samo u aktivan raspored.'**
+  String get fixedScheduleInactiveSchedule;
+
+  /// No description provided for @fixedScheduleAlreadyAssigned.
+  ///
+  /// In hr, this message translates to:
+  /// **'Član je već dodan u ovaj fiksni raspored.'**
+  String get fixedScheduleAlreadyAssigned;
+
+  /// No description provided for @fixedScheduleFull.
+  ///
+  /// In hr, this message translates to:
+  /// **'Fiksna grupa nema slobodnih mjesta.'**
+  String get fixedScheduleFull;
+
+  /// No description provided for @fixedScheduleChanged.
+  ///
+  /// In hr, this message translates to:
+  /// **'Raspored je u međuvremenu promijenjen. Pokušaj ponovno.'**
+  String get fixedScheduleChanged;
+
+  /// No description provided for @fixedSchedulePackageLimit.
+  ///
+  /// In hr, this message translates to:
+  /// **'Paket člana ne dopušta dodatni fiksni termin.'**
+  String get fixedSchedulePackageLimit;
 
   /// No description provided for @moveFixedScheduleMember.
   ///

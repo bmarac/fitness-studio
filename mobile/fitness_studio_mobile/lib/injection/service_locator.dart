@@ -33,6 +33,9 @@ import '../features/class_sessions/domain/usecases/get_my_class_sessions.dart';
 import '../features/membership_plans/data/membership_plans_remote_data_source.dart';
 import '../features/membership_plans/data/membership_plans_repository_impl.dart';
 import '../features/membership_plans/domain/repositories/membership_plans_repository.dart';
+import '../features/member_packages/data/member_packages_remote_data_source.dart';
+import '../features/member_packages/data/member_packages_repository_impl.dart';
+import '../features/member_packages/domain/repositories/member_packages_repository.dart';
 import '../features/profile/data/datasources/profile_remote_data_source.dart';
 import '../features/payments/data/payments_remote_data_source.dart';
 import '../features/profile/data/repositories/profile_repository_impl.dart';
@@ -46,7 +49,9 @@ import '../features/recurring_schedules/data/datasources/recurring_schedules_rem
 import '../features/recurring_schedules/data/repositories/recurring_schedules_repository_impl.dart';
 import '../features/recurring_schedules/domain/repositories/recurring_schedules_repository.dart';
 import '../features/recurring_schedules/domain/usecases/change_recurring_schedule_status.dart';
+import '../features/recurring_schedules/domain/usecases/add_fixed_schedule_member.dart';
 import '../features/recurring_schedules/domain/usecases/get_recurring_schedules.dart';
+import '../features/recurring_schedules/domain/usecases/get_schedule_member_options.dart';
 import '../features/recurring_schedules/domain/usecases/get_trainers.dart';
 import '../features/recurring_schedules/domain/usecases/get_fixed_schedule_members.dart';
 import '../features/recurring_schedules/domain/usecases/move_fixed_schedule_member.dart';
@@ -131,8 +136,18 @@ Future<void> configureDependencies() async {
     ..registerLazySingleton<GetTrainers>(
       () => GetTrainers(serviceLocator<RecurringSchedulesRepository>()),
     )
+    ..registerLazySingleton<GetScheduleMemberOptions>(
+      () => GetScheduleMemberOptions(
+        serviceLocator<RecurringSchedulesRepository>(),
+      ),
+    )
     ..registerLazySingleton<ChangeRecurringScheduleStatus>(
       () => ChangeRecurringScheduleStatus(
+        serviceLocator<RecurringSchedulesRepository>(),
+      ),
+    )
+    ..registerLazySingleton<AddFixedScheduleMember>(
+      () => AddFixedScheduleMember(
         serviceLocator<RecurringSchedulesRepository>(),
       ),
     )
@@ -185,6 +200,14 @@ Future<void> configureDependencies() async {
     ..registerLazySingleton<MembershipPlansRepository>(
       () => MembershipPlansRepositoryImpl(
         serviceLocator<MembershipPlansRemoteDataSource>(),
+      ),
+    )
+    ..registerLazySingleton<MemberPackagesRemoteDataSource>(
+      () => MemberPackagesRemoteDataSource(serviceLocator<ApiClient>()),
+    )
+    ..registerLazySingleton<MemberPackagesRepository>(
+      () => MemberPackagesRepositoryImpl(
+        serviceLocator<MemberPackagesRemoteDataSource>(),
       ),
     )
     ..registerLazySingleton<ProfileRepository>(

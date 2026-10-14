@@ -148,6 +148,8 @@ class _ProfileContent extends StatelessWidget {
             const SizedBox(height: 16),
             const _MembershipPlansCard(),
             const SizedBox(height: 16),
+            const _MemberPackagesCard(),
+            const SizedBox(height: 16),
             const _StudioSettingsCard(),
             const SizedBox(height: 16),
             const _PaymentsCard(admin: true),
@@ -204,6 +206,21 @@ class _MembershipPlansCard extends StatelessWidget {
       subtitle: Text(context.l10n.membershipPlansSubtitle),
       trailing: const Icon(Icons.chevron_right),
       onTap: () => context.push(AppRoutes.membershipPlansPath),
+    ),
+  );
+}
+
+class _MemberPackagesCard extends StatelessWidget {
+  const _MemberPackagesCard();
+
+  @override
+  Widget build(BuildContext context) => Card(
+    child: ListTile(
+      leading: const Icon(Icons.badge_outlined),
+      title: Text(context.l10n.memberPackagesTitle),
+      subtitle: Text(context.l10n.memberPackagesSubtitle),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => context.push(AppRoutes.memberPackagesPath),
     ),
   );
 }

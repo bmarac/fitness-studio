@@ -4,6 +4,7 @@ import '../entities/schedule_form_data.dart';
 import '../entities/recurring_schedule.dart';
 import '../entities/trainer_option.dart';
 import '../entities/fixed_schedule_member.dart';
+import '../entities/schedule_member_option.dart';
 
 abstract class RecurringSchedulesRepository {
   Future<Result<ScheduleFormData>> getFormData();
@@ -13,6 +14,17 @@ abstract class RecurringSchedulesRepository {
   Future<Result<List<RecurringSchedule>>> getSchedules();
 
   Future<Result<List<FixedScheduleMember>>> getScheduleMembers(int scheduleId);
+
+  Future<Result<List<ScheduleMemberOption>>> getMemberOptions(
+    int scheduleId,
+    DateTime startsOn,
+  );
+
+  Future<Result<void>> addFixedScheduleMember({
+    required int memberId,
+    required int scheduleId,
+    required DateTime startsOn,
+  });
 
   Future<Result<void>> moveFixedScheduleMember({
     required int assignmentId,

@@ -6,6 +6,7 @@ import '../../domain/entities/recurring_schedule.dart';
 import '../../domain/entities/schedule_form_data.dart';
 import '../../domain/entities/trainer_option.dart';
 import '../../domain/entities/fixed_schedule_member.dart';
+import '../../domain/entities/schedule_member_option.dart';
 import '../../domain/repositories/recurring_schedules_repository.dart';
 import '../datasources/recurring_schedules_remote_data_source.dart';
 
@@ -46,6 +47,40 @@ class RecurringSchedulesRepositoryImpl implements RecurringSchedulesRepository {
       return FailureResult(error.toFailure());
     } on FormatException {
       return const FailureResult(Failure(FailureKind.readMembers));
+    }
+  }
+
+  @override
+  Future<Result<List<ScheduleMemberOption>>> getMemberOptions(
+    int scheduleId,
+    DateTime startsOn,
+  ) async {
+    try {
+      return Success(
+        await _remoteDataSource.getMemberOptions(scheduleId, startsOn),
+      );
+    } on ApiException catch (error) {
+      return FailureResult(error.toFailure());
+    } on FormatException {
+      return const FailureResult(Failure(FailureKind.readMembers));
+    }
+  }
+
+  @override
+  Future<Result<void>> addFixedScheduleMember({
+    required int memberId,
+    required int scheduleId,
+    required DateTime startsOn,
+  }) async {
+    try {
+      await _remoteDataSource.addFixedScheduleMember(
+        memberId: memberId,
+        scheduleId: scheduleId,
+        startsOn: startsOn,
+      );
+      return const Success(null);
+    } on ApiException catch (error) {
+      return FailureResult(error.toFailure());
     }
   }
 

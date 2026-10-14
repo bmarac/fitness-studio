@@ -6,6 +6,8 @@ import 'package:fitness_studio_mobile/features/bookings/presentation/state/membe
 import 'package:fitness_studio_mobile/features/class_sessions/presentation/state/class_sessions_controller.dart';
 import 'package:fitness_studio_mobile/features/class_sessions/presentation/state/class_sessions_state.dart';
 import 'package:fitness_studio_mobile/features/membership_plans/presentation/state/membership_plans_providers.dart';
+import 'package:fitness_studio_mobile/features/member_packages/domain/entities/member_package.dart';
+import 'package:fitness_studio_mobile/features/member_packages/presentation/state/member_packages_providers.dart';
 import 'package:fitness_studio_mobile/features/profile/domain/entities/profile.dart';
 import 'package:fitness_studio_mobile/features/profile/presentation/state/profile_provider.dart';
 import 'package:fitness_studio_mobile/features/progress/domain/entities/member_progress.dart';
@@ -13,6 +15,7 @@ import 'package:fitness_studio_mobile/features/progress/presentation/state/membe
 import 'package:fitness_studio_mobile/features/progress/presentation/state/progress_management_providers.dart';
 import 'package:fitness_studio_mobile/features/recurring_schedules/domain/entities/recurring_schedule.dart';
 import 'package:fitness_studio_mobile/features/recurring_schedules/domain/entities/fixed_schedule_member.dart';
+import 'package:fitness_studio_mobile/features/recurring_schedules/domain/entities/schedule_member_option.dart';
 import 'package:fitness_studio_mobile/features/recurring_schedules/domain/usecases/get_recurring_schedules.dart';
 import 'package:fitness_studio_mobile/features/recurring_schedules/domain/repositories/recurring_schedules_repository.dart';
 import 'package:fitness_studio_mobile/features/recurring_schedules/domain/entities/recurring_schedule_draft.dart';
@@ -212,6 +215,63 @@ void main() {
     expect(find.text('Još nema paketa.'), findsOneWidget);
   });
 
+  testWidgets('only admin can open member packages route', (tester) async {
+    final adminContainer = ProviderContainer(
+      overrides: [
+        loginControllerProvider.overrideWith(_LoggedInAdminController.new),
+        memberPackagesProvider.overrideWith(
+          (ref) async => const MemberPackageOverview(
+            members: [],
+            memberships: [],
+            plans: [],
+          ),
+        ),
+      ],
+    );
+    addTearDown(adminContainer.dispose);
+    final adminRouter = adminContainer.read(appRouterProvider);
+    adminRouter.go(AppRoutes.memberPackagesPath);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: adminContainer,
+        child: localizedRouterTestApp(router: adminRouter),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      adminRouter.routeInformationProvider.value.uri.path,
+      AppRoutes.memberPackagesPath,
+    );
+    expect(find.text('Članovi i paketi'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    final memberContainer = ProviderContainer(
+      overrides: [
+        loginControllerProvider.overrideWith(_LoggedInMemberController.new),
+        profileProvider.overrideWith((ref) async => _memberProfile),
+      ],
+    );
+    addTearDown(memberContainer.dispose);
+    final memberRouter = memberContainer.read(appRouterProvider);
+    memberRouter.go(AppRoutes.memberPackagesPath);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: memberContainer,
+        child: localizedRouterTestApp(router: memberRouter),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      memberRouter.routeInformationProvider.value.uri.path,
+      AppRoutes.profile,
+    );
+    expect(find.text('Članovi i paketi'), findsNothing);
+  });
+
   testWidgets('member can open anthropometry route', (tester) async {
     final container = _memberAnthropometryContainer();
     addTearDown(container.dispose);
@@ -361,6 +421,19 @@ class _EmptyRecurringSchedulesRepository
   Future<Result<List<FixedScheduleMember>>> getScheduleMembers(
     int scheduleId,
   ) async => const Success([]);
+
+  @override
+  Future<Result<List<ScheduleMemberOption>>> getMemberOptions(
+    int scheduleId,
+    DateTime startsOn,
+  ) async => const Success([]);
+
+  @override
+  Future<Result<void>> addFixedScheduleMember({
+    required int memberId,
+    required int scheduleId,
+    required DateTime startsOn,
+  }) async => const Success(null);
 
   @override
   Future<Result<void>> moveFixedScheduleMember({

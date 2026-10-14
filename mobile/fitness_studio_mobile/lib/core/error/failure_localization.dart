@@ -28,6 +28,33 @@ extension LocalizedFailure on Failure {
           'Membership plan cannot be deleted because related memberships exist.') {
         return context.l10n.membershipPlanCannotDeleteMessage;
       }
+      if (message ==
+          'This member already has a membership that overlaps the selected period.') {
+        return context.l10n.memberPackageOverlap;
+      }
+      if (message ==
+          'Only active members can be assigned to a fixed schedule.') {
+        return context.l10n.fixedScheduleInactiveMember;
+      }
+      if (message ==
+          'Members can be assigned only to an active recurring schedule.') {
+        return context.l10n.fixedScheduleInactiveSchedule;
+      }
+      if (message ==
+          'This member already has an active or paused assignment to the recurring schedule.') {
+        return context.l10n.fixedScheduleAlreadyAssigned;
+      }
+      if (message == 'The recurring schedule has no available fixed places.') {
+        return context.l10n.fixedScheduleFull;
+      }
+      if (message ==
+          'The fixed schedule changed while the member was being assigned.') {
+        return context.l10n.fixedScheduleChanged;
+      }
+      if (message ==
+          "The member's membership package does not allow another fixed schedule.") {
+        return context.l10n.fixedSchedulePackageLimit;
+      }
       return message;
     }
 

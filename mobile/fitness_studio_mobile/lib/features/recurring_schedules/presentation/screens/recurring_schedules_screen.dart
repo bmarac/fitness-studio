@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/error/failure.dart';
 import '../../../../core/error/failure_localization.dart';
 import '../../../../core/error/result.dart';
 import '../../../../core/l10n/localization.dart';
 import '../../../../injection/service_locator.dart';
+import '../../../auth/presentation/state/login_controller.dart';
+import '../../../auth/presentation/state/login_state.dart';
 import '../../domain/entities/recurring_schedule.dart';
 import '../../domain/entities/fixed_schedule_member.dart';
+import '../../domain/entities/schedule_member_option.dart';
+import '../../domain/usecases/add_fixed_schedule_member.dart';
 import '../../domain/usecases/change_recurring_schedule_status.dart';
 import '../../domain/usecases/get_fixed_schedule_members.dart';
 import '../../domain/usecases/get_recurring_schedules.dart';
+import '../../domain/usecases/get_schedule_member_options.dart';
 import '../../domain/usecases/move_fixed_schedule_member.dart';
 import '../widgets/create_schedule_form.dart';
 import '../widgets/recurring_schedule_actions.dart';
@@ -210,7 +216,7 @@ class _RecurringSchedulesScreenState extends State<RecurringSchedulesScreen> {
   Future<void> _handleScheduleTap(RecurringSchedule schedule) async {
     final selection = _moveSelection;
     if (selection == null) {
-      await showModalBottomSheet<void>(
+      final addedMemberName = await showModalBottomSheet<String>(
         context: context,
         isScrollControlled: true,
         showDragHandle: true,
@@ -232,6 +238,17 @@ class _RecurringSchedulesScreenState extends State<RecurringSchedulesScreen> {
           },
         ),
       );
+      if (addedMemberName != null && mounted) {
+        await _load();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              context.l10n.fixedScheduleMemberAdded(addedMemberName),
+            ),
+          ),
+        );
+      }
       return;
     }
 
@@ -601,7 +618,7 @@ class _ScheduleCard extends StatelessWidget {
       value.length >= 5 ? value.substring(0, 5) : value;
 }
 
-class _ScheduleMembersSheet extends StatefulWidget {
+class _ScheduleMembersSheet extends ConsumerStatefulWidget {
   const _ScheduleMembersSheet({
     required this.schedule,
     required this.onMove,
@@ -613,10 +630,11 @@ class _ScheduleMembersSheet extends StatefulWidget {
   final ValueChanged<RecurringScheduleAction> onAction;
 
   @override
-  State<_ScheduleMembersSheet> createState() => _ScheduleMembersSheetState();
+  ConsumerState<_ScheduleMembersSheet> createState() =>
+      _ScheduleMembersSheetState();
 }
 
-class _ScheduleMembersSheetState extends State<_ScheduleMembersSheet> {
+class _ScheduleMembersSheetState extends ConsumerState<_ScheduleMembersSheet> {
   List<FixedScheduleMember>? _members;
   Failure? _failure;
 
@@ -647,6 +665,9 @@ class _ScheduleMembersSheetState extends State<_ScheduleMembersSheet> {
   @override
   Widget build(BuildContext context) {
     final schedule = widget.schedule;
+    final authState = ref.watch(loginControllerProvider);
+    final isAdmin =
+        authState is LoginSuccess && authState.session.user.hasRole('admin');
 
     return SafeArea(
       top: false,
@@ -660,11 +681,26 @@ class _ScheduleMembersSheetState extends State<_ScheduleMembersSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                context.l10n.fixedScheduleMembers,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      context.l10n.fixedScheduleMembers,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  if (isAdmin &&
+                      schedule.status == 'active' &&
+                      schedule.activeMemberCount < schedule.capacity)
+                    TextButton.icon(
+                      key: const ValueKey('add-fixed-schedule-member'),
+                      onPressed: _openAddMember,
+                      icon: const Icon(Icons.person_add_alt_1_outlined),
+                      label: Text(context.l10n.addFixedScheduleMember),
+                    ),
+                ],
               ),
               const SizedBox(height: 12),
               Flexible(child: _buildMembers()),
@@ -700,6 +736,25 @@ class _ScheduleMembersSheetState extends State<_ScheduleMembersSheet> {
         ),
       ),
     );
+  }
+
+  Future<void> _openAddMember() async {
+    final members = _members;
+    if (members == null) return;
+
+    final memberName = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (context) => _AddFixedScheduleMemberSheet(
+        schedule: widget.schedule,
+        excludedMemberIds: members.map((member) => member.memberId).toSet(),
+      ),
+    );
+    if (memberName == null || !mounted) return;
+
+    Navigator.of(context).pop(memberName);
   }
 
   Widget _buildMembers() {
@@ -757,6 +812,218 @@ class _ScheduleMembersSheetState extends State<_ScheduleMembersSheet> {
         );
       },
     );
+  }
+}
+
+class _AddFixedScheduleMemberSheet extends StatefulWidget {
+  const _AddFixedScheduleMemberSheet({
+    required this.schedule,
+    required this.excludedMemberIds,
+  });
+
+  final RecurringSchedule schedule;
+  final Set<int> excludedMemberIds;
+
+  @override
+  State<_AddFixedScheduleMemberSheet> createState() =>
+      _AddFixedScheduleMemberSheetState();
+}
+
+class _AddFixedScheduleMemberSheetState
+    extends State<_AddFixedScheduleMemberSheet> {
+  List<ScheduleMemberOption>? _members;
+  Failure? _failure;
+  int? _selectedMemberId;
+  String _query = '';
+  bool _isSubmitting = false;
+  late DateTime _startsOn;
+
+  @override
+  void initState() {
+    super.initState();
+    final today = DateUtils.dateOnly(DateTime.now());
+    _startsOn = today.isBefore(widget.schedule.validFrom)
+        ? widget.schedule.validFrom
+        : today;
+    _loadMembers();
+  }
+
+  Future<void> _loadMembers() async {
+    setState(() {
+      _members = null;
+      _failure = null;
+    });
+    final result = await serviceLocator<GetScheduleMemberOptions>()(
+      widget.schedule.id,
+      _startsOn,
+    );
+    if (!mounted) return;
+    switch (result) {
+      case Success(value: final members):
+        setState(() => _members = members);
+      case FailureResult(failure: final failure):
+        setState(() => _failure = failure);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(20, 0, 20, 16 + bottomInset),
+      child: SizedBox(
+        height: (MediaQuery.sizeOf(context).height - bottomInset) * 0.78,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              context.l10n.addFixedScheduleMember,
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              key: const ValueKey('fixed-schedule-member-search'),
+              onChanged: (value) => setState(() => _query = value),
+              decoration: InputDecoration(
+                labelText: context.l10n.searchMembers,
+                prefixIcon: const Icon(Icons.search),
+                border: const OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              key: const ValueKey('fixed-schedule-start-date'),
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.calendar_today_outlined),
+              title: Text(context.l10n.fixedScheduleStartsOn),
+              subtitle: Text(context.formatDate(_startsOn)),
+              trailing: const Icon(Icons.edit_calendar_outlined),
+              onTap: _selectStartDate,
+            ),
+            const Divider(height: 1),
+            Expanded(child: _buildMembers()),
+            const SizedBox(height: 12),
+            FilledButton(
+              key: const ValueKey('confirm-add-fixed-schedule-member'),
+              onPressed: _selectedMemberId == null || _isSubmitting
+                  ? null
+                  : _submit,
+              child: _isSubmitting
+                  ? const SizedBox.square(
+                      dimension: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(context.l10n.addFixedScheduleMemberAction),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMembers() {
+    if (_members == null && _failure == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_failure case final failure?) {
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(failure.localized(context), textAlign: TextAlign.center),
+          const SizedBox(height: 8),
+          OutlinedButton(
+            onPressed: _loadMembers,
+            child: Text(context.l10n.actionRetry),
+          ),
+        ],
+      );
+    }
+
+    final query = _query.trim().toLowerCase();
+    final available =
+        _members!
+            .where(
+              (member) =>
+                  member.status == 'active' &&
+                  !widget.excludedMemberIds.contains(member.id),
+            )
+            .where(
+              (member) =>
+                  query.isEmpty ||
+                  member.fullName.toLowerCase().contains(query) ||
+                  member.email.toLowerCase().contains(query),
+            )
+            .toList(growable: false)
+          ..sort((first, second) => first.fullName.compareTo(second.fullName));
+
+    if (available.isEmpty) {
+      return Center(child: Text(context.l10n.noMembersForFixedSchedule));
+    }
+
+    return RadioGroup<int>(
+      groupValue: _selectedMemberId,
+      onChanged: (value) {
+        if (!_isSubmitting) setState(() => _selectedMemberId = value);
+      },
+      child: ListView.builder(
+        itemCount: available.length,
+        itemBuilder: (context, index) {
+          final member = available[index];
+          return RadioListTile<int>(
+            key: ValueKey('fixed-schedule-member-${member.id}'),
+            value: member.id,
+            enabled: !_isSubmitting,
+            title: Text(member.fullName),
+            subtitle: Text(member.email),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _selectStartDate() async {
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: _startsOn,
+      firstDate: widget.schedule.validFrom,
+      lastDate:
+          widget.schedule.validUntil ??
+          _startsOn.add(const Duration(days: 1825)),
+    );
+    if (selected != null && mounted) {
+      setState(() {
+        _startsOn = DateUtils.dateOnly(selected);
+        _selectedMemberId = null;
+      });
+      await _loadMembers();
+    }
+  }
+
+  Future<void> _submit() async {
+    final memberId = _selectedMemberId;
+    final members = _members;
+    if (memberId == null || members == null) return;
+
+    setState(() => _isSubmitting = true);
+    final result = await serviceLocator<AddFixedScheduleMember>()(
+      memberId: memberId,
+      scheduleId: widget.schedule.id,
+      startsOn: _startsOn,
+    );
+    if (!mounted) return;
+    setState(() => _isSubmitting = false);
+
+    switch (result) {
+      case Success():
+        final member = members.singleWhere((item) => item.id == memberId);
+        Navigator.of(context).pop(member.fullName);
+      case FailureResult(failure: final failure):
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(failure.localized(context))));
+    }
   }
 }
 

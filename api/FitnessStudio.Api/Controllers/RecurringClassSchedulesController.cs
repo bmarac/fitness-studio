@@ -37,6 +37,18 @@ public class RecurringClassSchedulesController : ControllerBase
         return result.Status == ServiceResultStatus.Success ? Ok(result.Value) : this.ToActionResult(result);
     }
 
+    [Authorize(Roles = AuthRoles.Admin)]
+    [HttpGet("{id:long}/available-members")]
+    public async Task<ActionResult<List<AvailableFixedScheduleMemberResponse>>> GetAvailableMembers(
+        long id,
+        [FromQuery] DateOnly startsOn)
+    {
+        var result = await _service.GetAvailableMembersAsync(id, startsOn);
+        return result.Status == ServiceResultStatus.Success
+            ? Ok(result.Value)
+            : this.ToActionResult(result);
+    }
+
     [Authorize(Roles = AuthRoles.Staff)]
     [HttpPost]
     public async Task<ActionResult<RecurringClassScheduleResponse>> CreateSchedule(

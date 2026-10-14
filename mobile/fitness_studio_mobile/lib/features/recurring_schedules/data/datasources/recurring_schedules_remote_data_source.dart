@@ -4,6 +4,7 @@ import '../models/class_type_option_model.dart';
 import '../models/trainer_option_model.dart';
 import '../models/recurring_schedule_model.dart';
 import '../models/fixed_schedule_member_model.dart';
+import '../../domain/entities/schedule_member_option.dart';
 
 class RecurringSchedulesRemoteDataSource {
   const RecurringSchedulesRemoteDataSource(this._apiClient);
@@ -47,6 +48,46 @@ class RecurringSchedulesRemoteDataSource {
               FixedScheduleMemberModel.fromJson(item as Map<String, dynamic>),
         )
         .toList();
+  }
+
+  Future<List<ScheduleMemberOption>> getMemberOptions(
+    int scheduleId,
+    DateTime startsOn,
+  ) async {
+    final response = await _apiClient.get<List<dynamic>>(
+      '/api/recurring-class-schedules/$scheduleId/available-members',
+      queryParameters: {'startsOn': _formatDate(startsOn)},
+    );
+
+    return (response.data ?? [])
+        .map((item) {
+          final json = item as Map<String, dynamic>;
+          return ScheduleMemberOption(
+            id: (json['id'] as num).toInt(),
+            firstName: json['firstName'] as String,
+            lastName: json['lastName'] as String,
+            email: json['email'] as String,
+            status: json['status'] as String,
+          );
+        })
+        .toList(growable: false);
+  }
+
+  Future<void> addFixedScheduleMember({
+    required int memberId,
+    required int scheduleId,
+    required DateTime startsOn,
+  }) async {
+    await _apiClient.post<Map<String, dynamic>>(
+      '/api/member-fixed-schedules',
+      data: {
+        'memberId': memberId,
+        'recurringScheduleId': scheduleId,
+        'startsOn': _formatDate(startsOn),
+        'endsOn': null,
+        'status': 'active',
+      },
+    );
   }
 
   Future<void> moveFixedScheduleMember({

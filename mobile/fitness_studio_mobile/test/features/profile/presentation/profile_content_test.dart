@@ -73,13 +73,17 @@ void main() {
     await _pumpProfile(tester, _adminProfile);
 
     expect(find.text('Osobni podaci'), findsNothing);
-    expect(find.text('Naplata članarina'), findsOneWidget);
     expect(find.text('Postavke studija'), findsOneWidget);
     expect(find.text('Pristup, naplata i podsjetnici'), findsOneWidget);
     expect(find.text('Postavke plaćanja'), findsNothing);
     expect(find.text('Treneri'), findsOneWidget);
     expect(find.text('Cjenik'), findsOneWidget);
     expect(find.text('Upravljaj cjenikom'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Članovi i paketi'), 300);
+    expect(find.text('Članovi i paketi'), findsOneWidget);
+    expect(find.text('Dodijeli ili promijeni paket članu'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Naplata članarina'), 300);
+    expect(find.text('Naplata članarina'), findsOneWidget);
     expect(find.text('Pregledaj i unaprijed dodaj trenere'), findsOneWidget);
   });
 }

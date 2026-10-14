@@ -32,6 +32,7 @@ Dodatne rute:
 - `/profil/clanovi/{memberId}/antropometrija`
 - `/profil/clanovi/{memberId}/novo-mjerenje`
 - `/profil/clanarine`
+- `/profil/clanovi-i-paketi`
 - `/profil/treneri`
 - `/profil/treneri/novi-trener`
 - `/profil/postavke-placanja`
@@ -61,6 +62,8 @@ Dodatne rute:
 - **Ukloni s ovog termina** otkazuje samo odabranu rezervaciju
 - **Ukloni iz fiksne grupe** otkazuje odabrani i buduce termine iste fiksne dodjele
 - trenerski pregled **Moji treninzi** s današnjim, nadolazećim i završenim terminima
+- admin na popisu clanova fiksnog rasporeda moze pretragom dodati aktivnog clana
+  od odabranog datuma; buduci termini popunjavaju se odmah
 - **Rasporedi** je početni i srednji tab za trenera/admina, dok član nakon prijave
   i dalje prvo vidi **Moje treninge**; član ondje vidi sve svoje rezervacije
   kronološki i može otkazati pojedini budući termin, dok admin može filtrirati
@@ -74,6 +77,8 @@ Dodatne rute:
 - sazetak posljednjih mjerenja i promjene na profilu clana
 - detaljni ekran napretka s odabirom parametra, linijskim grafom i povijesti
 - trenerski popis clanova s pretragom i pregledom napretka odabranog clana
+- administratorski popis clanova s pretragom, prikazom aktivnog paketa te
+  dodjelom ili trenutnom promjenom paketa
 - unos vlastitog mjerenja za clana te unos mjerenja clanova za trenera i admina, s aktivnim rucnim parametrima studija
 - debug login forma s unaprijed popunjenim Filipovim racunom
 - clanski pregled obracuna, HUB3 koda, prijava uplate i zavrsetak clanstva
@@ -91,6 +96,13 @@ Serverske vjerodajnice ne spremaju se u repozitorij. Bez Firebase konfiguracije
 in-app obavijesti i dalje rade.
 
 Ekran **Profil** koristi `GET /api/profile` i prilagodjava sadrzaj povezanim ulogama. Korisnik koji je istodobno clan i trener dobiva obje vrste podataka, dok se neprimjenjive sekcije ne prikazuju.
+
+Admin preko kartice **Clanovi i paketi** otvara `/profil/clanovi-i-paketi`.
+Ekran objedinjuje clanove, clanstva i cjenik, dopusta dodjelu samo aktivnih
+paketa aktivnim clanovima te omogucuje promjenu paketa na postojecem aktivnom
+clanstvu. Aktivni clanovi bez paketa prikazuju se prvi, a filter **Bez paketa**
+izdvaja samo clanove kojima admin moze odmah dodijeliti paket. Dodjela
+automatski pokrece obracun od datuma pocetka clanstva.
 
 Kartica **Antropometrija** na profilu vodi na detaljni ekran tjelesnih mjerenja. Profil ne ucitava ni prikazuje sazetak mjerenja. Detaljni ekran koristi `fl_chart`, omogucuje izbor svih dostupnih parametara, prikazuje graf i zapise od najnovijeg prema najstarijem te clanu nudi unos vlastitog mjerenja. Stara ruta `/profil/napredak` preusmjerava na `/profil/antropometrija`.
 

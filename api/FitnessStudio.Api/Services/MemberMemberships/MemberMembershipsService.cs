@@ -24,10 +24,11 @@ public class MemberMembershipsService : IMemberMembershipsService
         _paymentSettingsService = paymentSettingsService;
     }
 
-    public Task<List<MemberMembershipResponse>> GetMembershipsAsync()
+    public async Task<List<MemberMembershipResponse>> GetMembershipsAsync()
     {
-        return Project(QueryMemberships()
-            .OrderByDescending(membership => membership.StartsOn))
+        var today = await GetStudioTodayAsync();
+        return await Project(QueryMemberships()
+                .OrderByDescending(membership => membership.StartsOn), today)
             .ToListAsync();
     }
 
@@ -47,13 +48,14 @@ public class MemberMembershipsService : IMemberMembershipsService
                     && membership.MemberId == _currentUser.MemberId.Value
                     && membership.StartsOn <= today
                     && (!membership.EndsOn.HasValue || membership.EndsOn.Value > today))
-                .OrderByDescending(membership => membership.StartsOn))
+                .OrderByDescending(membership => membership.StartsOn), today)
             .FirstOrDefaultAsync();
     }
 
     public async Task<ServiceResult<MemberMembershipResponse>> GetMembershipAsync(long id)
     {
-        var membership = await Project(QueryMemberships().Where(item => item.Id == id))
+        var today = await GetStudioTodayAsync();
+        var membership = await Project(QueryMemberships().Where(item => item.Id == id), today)
             .FirstOrDefaultAsync();
 
         return membership is null
@@ -107,7 +109,7 @@ public class MemberMembershipsService : IMemberMembershipsService
                 "A membership with this id does not exist.");
         }
 
-        var validationResult = await ValidateRequestAsync(request);
+        var validationResult = await ValidateRequestAsync(request, id);
         if (validationResult is not null)
         {
             return validationResult;
@@ -191,7 +193,8 @@ public class MemberMembershipsService : IMemberMembershipsService
             membership.EndsOn,
             membership.BillingStartsOn,
             membership.NextBillingOn,
-            !membership.EndsOn.HasValue || membership.EndsOn.Value > today);
+            membership.StartsOn <= today
+            && (!membership.EndsOn.HasValue || membership.EndsOn.Value > today));
         return ServiceResult<SetMembershipBillingResponse>.Success(
             new SetMembershipBillingResponse(response, created, membership.NextBillingOn));
     }
@@ -237,7 +240,9 @@ public class MemberMembershipsService : IMemberMembershipsService
         return query;
     }
 
-    private static IQueryable<MemberMembershipResponse> Project(IQueryable<MemberMembership> query)
+    private static IQueryable<MemberMembershipResponse> Project(
+        IQueryable<MemberMembership> query,
+        DateOnly today)
     {
         return query.Select(membership => new MemberMembershipResponse(
             membership.Id,
@@ -249,10 +254,13 @@ public class MemberMembershipsService : IMemberMembershipsService
             membership.EndsOn,
             membership.BillingStartsOn,
             membership.NextBillingOn,
-            !membership.EndsOn.HasValue || membership.EndsOn.Value > DateOnly.FromDateTime(DateTime.UtcNow)));
+            membership.StartsOn <= today
+            && (!membership.EndsOn.HasValue || membership.EndsOn.Value > today)));
     }
 
-    private async Task<ServiceResult?> ValidateRequestAsync(CreateMemberMembershipRequest request)
+    private async Task<ServiceResult?> ValidateRequestAsync(
+        CreateMemberMembershipRequest request,
+        long? ignoredMembershipId = null)
     {
         if (request.EndsOn.HasValue && request.EndsOn.Value <= request.StartsOn)
         {
@@ -283,6 +291,19 @@ public class MemberMembershipsService : IMemberMembershipsService
             return ServiceResult.Conflict(
                 "Membership plan does not exist.",
                 "Membership must reference a plan from the current studio.");
+        }
+
+        var overlaps = await _dbContext.MemberMemberships.AnyAsync(membership =>
+            membership.StudioId == _currentUser.StudioId
+            && membership.MemberId == request.MemberId
+            && (!ignoredMembershipId.HasValue || membership.Id != ignoredMembershipId.Value)
+            && (!request.EndsOn.HasValue || membership.StartsOn < request.EndsOn.Value)
+            && (!membership.EndsOn.HasValue || membership.EndsOn.Value > request.StartsOn));
+        if (overlaps)
+        {
+            return ServiceResult.Conflict(
+                "Membership periods overlap.",
+                "This member already has a membership that overlaps the selected period.");
         }
 
         return null;

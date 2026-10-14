@@ -8,6 +8,9 @@ public interface IRecurringClassSchedulesService
     Task<List<RecurringClassScheduleResponse>> GetSchedulesAsync();
     Task<ServiceResult<RecurringClassScheduleResponse>> GetScheduleAsync(long id);
     Task<ServiceResult<List<MemberFixedScheduleResponse>>> GetScheduleMembersAsync(long id);
+    Task<ServiceResult<List<AvailableFixedScheduleMemberResponse>>> GetAvailableMembersAsync(
+        long id,
+        DateOnly startsOn);
     Task<ServiceResult<RecurringClassScheduleResponse>> CreateScheduleAsync(CreateRecurringClassScheduleRequest request);
     Task<ServiceResult> UpdateScheduleAsync(long id, UpdateRecurringClassScheduleRequest request);
     Task<ServiceResult> PauseScheduleAsync(long id, ChangeRecurringClassScheduleStatusRequest request);

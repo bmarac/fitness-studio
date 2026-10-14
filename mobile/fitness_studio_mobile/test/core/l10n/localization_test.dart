@@ -145,6 +145,43 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('localizes fixed schedule package limit failure', (tester) async {
+    const failure = Failure.remote(
+      "The member's membership package does not allow another fixed schedule.",
+      statusCode: 409,
+    );
+
+    await tester.pumpWidget(
+      localizedTestApp(
+        locale: const Locale('hr'),
+        home: Builder(builder: (context) => Text(failure.localized(context))),
+      ),
+    );
+
+    expect(
+      find.text('Paket člana ne dopušta dodatni fiksni termin.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('localizes overlapping membership periods', (tester) async {
+    const failure = Failure.remote(
+      'This member already has a membership that overlaps the selected period.',
+      statusCode: 409,
+    );
+
+    await tester.pumpWidget(
+      localizedTestApp(
+        home: Builder(builder: (context) => Text(failure.localized(context))),
+      ),
+    );
+
+    expect(
+      find.text('Član već ima paket koji se preklapa s odabranim razdobljem.'),
+      findsOneWidget,
+    );
+  });
 }
 
 class _InitialLoginController extends LoginController {
