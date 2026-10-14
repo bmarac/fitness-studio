@@ -6,6 +6,9 @@ abstract class ProgressRepository {
   Future<Result<MemberProgress>> getMemberProgress(int memberId);
   Future<Result<List<ProgressMember>>> getMembers();
   Future<Result<List<MeasurementParameter>>> getMeasurementParameters();
+  Future<Result<List<MeasurementParameter>>> saveMeasurementParameters(
+    List<MeasurementParameter> parameters,
+  );
   Future<Result<void>> createMeasurement(
     int memberId,
     NewMeasurement measurement,

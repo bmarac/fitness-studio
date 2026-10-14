@@ -68,4 +68,15 @@ public class ClassTypesController : ControllerBase
             ? NoContent()
             : this.ToActionResult(result);
     }
+
+    [Authorize(Roles = AuthRoles.Admin)]
+    [HttpPut("configuration")]
+    public async Task<ActionResult<List<ClassTypeResponse>>> SaveConfiguration(
+        SaveClassTypesConfigurationRequest request)
+    {
+        var result = await _classTypesService.SaveConfigurationAsync(request);
+        return result.Status == ServiceResultStatus.Success
+            ? Ok(result.Value)
+            : this.ToActionResult(result);
+    }
 }

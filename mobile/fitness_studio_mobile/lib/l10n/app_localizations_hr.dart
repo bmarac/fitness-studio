@@ -592,16 +592,6 @@ class AppLocalizationsHr extends AppLocalizations {
   String get invalidNumber => 'Unesi ispravan broj.';
 
   @override
-  String minimumValue(String value) {
-    return 'Najmanja vrijednost je $value.';
-  }
-
-  @override
-  String maximumValue(String value) {
-    return 'Najveća vrijednost je $value.';
-  }
-
-  @override
   String get enterOneValue => 'Unesi barem jednu vrijednost.';
 
   @override
@@ -1265,4 +1255,102 @@ class AppLocalizationsHr extends AppLocalizations {
   String scheduleValidUntil(String date) {
     return 'Do $date';
   }
+
+  @override
+  String get studioAccessEnabledSummary => 'Povezivanje kodom je uključeno';
+
+  @override
+  String get studioAccessDisabledSummary => 'Povezivanje kodom je isključeno';
+
+  @override
+  String bookingSettingsSummary(int hours) {
+    return 'Rok za povrat: $hours h';
+  }
+
+  @override
+  String paymentSettingsSummary(String recipient, String iban) {
+    return '$recipient · $iban';
+  }
+
+  @override
+  String reminderSettingsSummary(String time) {
+    return 'Slanje u $time';
+  }
+
+  @override
+  String get classTypesSettingsTitle => 'Vrste treninga';
+
+  @override
+  String classTypesSettingsSummary(int count) {
+    return '$count konfiguriranih vrsta';
+  }
+
+  @override
+  String get measurementParametersSettingsTitle => 'Parametri antropometrije';
+
+  @override
+  String get addClassType => 'Dodaj vrstu treninga';
+
+  @override
+  String get addMeasurementParameter => 'Dodaj parametar';
+
+  @override
+  String get reorderMeasurementParametersHint =>
+      'Dugo pritisnite stavku i povucite je za promjenu redoslijeda.';
+
+  @override
+  String get classTypeNameLabel => 'Naziv vrste treninga';
+
+  @override
+  String get descriptionLabel => 'Opis';
+
+  @override
+  String get defaultCapacityLabel => 'Zadani kapacitet';
+
+  @override
+  String get difficultyLevelLabel => 'Razina težine';
+
+  @override
+  String get difficultyBeginner => 'Početna';
+
+  @override
+  String get difficultyIntermediate => 'Srednja';
+
+  @override
+  String get difficultyAdvanced => 'Napredna';
+
+  @override
+  String get difficultyAllLevels => 'Sve razine';
+
+  @override
+  String get statusLabel => 'Status';
+
+  @override
+  String get deleteItem => 'Ukloni';
+
+  @override
+  String get parameterNameLabel => 'Naziv parametra';
+
+  @override
+  String get unitLabel => 'Jedinica';
+
+  @override
+  String get invalidInteger => 'Unesi cijeli broj.';
+
+  @override
+  String get discardChangesTitle => 'Odbaciti promjene?';
+
+  @override
+  String get discardChangesMessage =>
+      'Nespremljene promjene bit će izgubljene.';
+
+  @override
+  String get discardAction => 'Odbaci';
+
+  @override
+  String get configurationSaved => 'Konfiguracija je spremljena.';
+
+  @override
+  String get classTypeDeleteConflict =>
+      'Korištenu vrstu treninga nije moguće ukloniti. Označi je neaktivnom.';
 }

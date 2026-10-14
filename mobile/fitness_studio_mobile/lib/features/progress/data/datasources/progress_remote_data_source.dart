@@ -63,10 +63,46 @@ class ProgressRemoteDataSource {
             code: json['code'] as String,
             name: json['name'] as String,
             unit: json['unit'] as String?,
-            source: json['source'] as String,
-            minValue: (json['minValue'] as num?)?.toDouble(),
-            maxValue: (json['maxValue'] as num?)?.toDouble(),
-            decimalPlaces: (json['decimalPlaces'] as num).toInt(),
+            sortOrder: (json['sortOrder'] as num).toInt(),
+            status: json['status'] as String,
+          );
+        })
+        .toList(growable: false);
+  }
+
+  Future<List<MeasurementParameter>> saveMeasurementParameters(
+    List<MeasurementParameter> parameters,
+  ) async {
+    final response = await _apiClient.put<List<dynamic>>(
+      '/api/measurement-parameters/configuration',
+      data: {
+        'items': [
+          for (var index = 0; index < parameters.length; index++)
+            {
+              'id': parameters[index].id == 0 ? null : parameters[index].id,
+              'name': parameters[index].name.trim(),
+              'unit': parameters[index].unit?.trim().isEmpty ?? true
+                  ? null
+                  : parameters[index].unit!.trim(),
+              'sortOrder': index,
+              'status': parameters[index].status,
+            },
+        ],
+      },
+    );
+    final data = response.data;
+    if (data == null) {
+      throw const FormatException('Measurement parameters response is empty.');
+    }
+
+    return data
+        .map((item) {
+          final json = item as Map<String, dynamic>;
+          return MeasurementParameter(
+            id: (json['id'] as num).toInt(),
+            code: json['code'] as String,
+            name: json['name'] as String,
+            unit: json['unit'] as String?,
             sortOrder: (json['sortOrder'] as num).toInt(),
             status: json['status'] as String,
           );

@@ -44,9 +44,7 @@ class MemberProgressModel extends MemberProgress {
       name: json['name'] as String,
       unit: json['unit'] as String?,
       value: (json['value'] as num).toDouble(),
-      decimalPlaces: json['decimalPlaces'] as int,
       sortOrder: json['sortOrder'] as int,
-      source: json['source'] as String,
       measuredAt: includeMeasuredAt
           ? DateTime.parse(json['measuredAt'] as String).toLocal()
           : null,

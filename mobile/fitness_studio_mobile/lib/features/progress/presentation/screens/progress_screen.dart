@@ -225,7 +225,7 @@ class _ChangeIndicator extends StatelessWidget {
         Icon(icon, size: 18, color: Theme.of(context).colorScheme.secondary),
         const SizedBox(width: 4),
         Text(
-          '$sign${context.formatNumber(value, decimalDigits: parameter.decimalPlaces)}$unit',
+          '$sign${context.formatMeasurementNumber(value)}$unit',
           style: Theme.of(
             context,
           ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
@@ -304,10 +304,7 @@ class _ProgressChart extends StatelessWidget {
             showTitles: true,
             reservedSize: 44,
             getTitlesWidget: (value, meta) => Text(
-              context.formatNumber(
-                value,
-                decimalDigits: parameter.decimalPlaces,
-              ),
+              context.formatMeasurementNumber(value),
               style: theme.textTheme.labelSmall,
             ),
           ),
@@ -425,9 +422,6 @@ String _formatValue(
   double value,
   ProgressValue parameter,
 ) {
-  final number = context.formatNumber(
-    value,
-    decimalDigits: parameter.decimalPlaces,
-  );
+  final number = context.formatMeasurementNumber(value);
   return parameter.unit == null ? number : '$number ${parameter.unit}';
 }

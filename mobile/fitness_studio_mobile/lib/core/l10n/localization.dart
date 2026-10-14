@@ -26,6 +26,13 @@ extension LocalizationBuildContext on BuildContext {
         decimalDigits: decimalDigits,
       ).format(value);
 
+  String formatMeasurementNumber(num value) {
+    final formatter = NumberFormat.decimalPattern(l10n.localeName)
+      ..minimumFractionDigits = 0
+      ..maximumFractionDigits = 4;
+    return formatter.format(value);
+  }
+
   String formatCurrency(num value, String currency) =>
       NumberFormat.simpleCurrency(
         locale: l10n.localeName,

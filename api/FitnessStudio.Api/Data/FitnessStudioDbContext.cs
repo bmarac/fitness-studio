@@ -332,32 +332,16 @@ public partial class FitnessStudioDbContext : DbContext
             entity.Property(e => e.Id)
                 .UseIdentityAlwaysColumn()
                 .HasColumnName("id");
-            entity.Property(e => e.CalculationType)
-                .HasMaxLength(30)
-                .HasColumnName("calculation_type");
             entity.Property(e => e.Code)
                 .HasMaxLength(80)
                 .HasColumnName("code");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("now()")
                 .HasColumnName("created_at");
-            entity.Property(e => e.DecimalPlaces)
-                .HasDefaultValue((short)1)
-                .HasColumnName("decimal_places");
-            entity.Property(e => e.MaxValue)
-                .HasPrecision(12, 4)
-                .HasColumnName("max_value");
-            entity.Property(e => e.MinValue)
-                .HasPrecision(12, 4)
-                .HasColumnName("min_value");
             entity.Property(e => e.Name)
                 .HasMaxLength(120)
                 .HasColumnName("name");
             entity.Property(e => e.SortOrder).HasColumnName("sort_order");
-            entity.Property(e => e.Source)
-                .HasMaxLength(20)
-                .HasDefaultValueSql("'manual'::character varying")
-                .HasColumnName("source");
             entity.Property(e => e.Status)
                 .HasMaxLength(30)
                 .HasDefaultValueSql("'active'::character varying")
@@ -369,11 +353,6 @@ public partial class FitnessStudioDbContext : DbContext
             entity.Property(e => e.UpdatedAt)
                 .HasDefaultValueSql("now()")
                 .HasColumnName("updated_at");
-            entity.Property(e => e.ValueType)
-                .HasMaxLength(20)
-                .HasDefaultValueSql("'decimal'::character varying")
-                .HasColumnName("value_type");
-
             entity.HasOne(d => d.Studio).WithMany(p => p.MeasurementParameters)
                 .HasForeignKey(d => d.StudioId)
                 .OnDelete(DeleteBehavior.ClientSetNull)

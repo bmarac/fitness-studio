@@ -131,6 +131,72 @@ public class ClassTypesService : IClassTypesService
         return ServiceResult.Success();
     }
 
+    public async Task<ServiceResult<List<ClassTypeResponse>>> SaveConfigurationAsync(
+        SaveClassTypesConfigurationRequest request)
+    {
+        var itemIds = request.Items.Where(item => item.Id.HasValue)
+            .Select(item => item.Id!.Value).ToList();
+        if (itemIds.Count != itemIds.Distinct().Count()
+            || request.DeletedIds.Count != request.DeletedIds.Distinct().Count()
+            || itemIds.Intersect(request.DeletedIds).Any())
+        {
+            return ServiceResult<List<ClassTypeResponse>>.Conflict(
+                "Invalid class type configuration.",
+                "A class type can appear only once in the configuration.");
+        }
+
+        var normalizedNames = request.Items.Select(item => item.Name.Trim()).ToList();
+        if (normalizedNames.Count != normalizedNames.Distinct(StringComparer.OrdinalIgnoreCase).Count())
+        {
+            return ServiceResult<List<ClassTypeResponse>>.Conflict(
+                "Class type name already exists.",
+                "Class type names must be unique in the current studio.");
+        }
+
+        var requestedIds = itemIds.Concat(request.DeletedIds).Distinct().ToList();
+        var existing = await _dbContext.ClassTypes
+            .Where(item => item.StudioId == _currentUser.StudioId && requestedIds.Contains(item.Id))
+            .ToDictionaryAsync(item => item.Id);
+        if (existing.Count != requestedIds.Count)
+        {
+            return ServiceResult<List<ClassTypeResponse>>.NotFound(
+                "Class type not found.",
+                "Every class type must belong to the current studio.");
+        }
+
+        var now = DateTime.UtcNow;
+        foreach (var item in request.Items)
+        {
+            var entity = item.Id.HasValue ? existing[item.Id.Value] : new ClassType
+            {
+                StudioId = _currentUser.StudioId,
+                CreatedAt = now
+            };
+            entity.Name = item.Name.Trim();
+            entity.Description = string.IsNullOrWhiteSpace(item.Description) ? null : item.Description.Trim();
+            entity.DefaultDurationMinutes = item.DefaultDurationMinutes;
+            entity.DefaultCapacity = item.DefaultCapacity;
+            entity.DifficultyLevel = NormalizeValue(item.DifficultyLevel);
+            entity.Status = NormalizeValue(item.Status);
+            entity.UpdatedAt = now;
+            if (!item.Id.HasValue) _dbContext.ClassTypes.Add(entity);
+        }
+
+        _dbContext.ClassTypes.RemoveRange(request.DeletedIds.Select(id => existing[id]));
+        try
+        {
+            await _dbContext.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            return ServiceResult<List<ClassTypeResponse>>.Conflict(
+                "Class type configuration cannot be saved.",
+                "A class type cannot be deleted because related schedules or sessions exist.");
+        }
+
+        return ServiceResult<List<ClassTypeResponse>>.Success(await GetClassTypesAsync());
+    }
+
     private static string NormalizeValue(string value)
     {
         return value.ToLowerInvariant();

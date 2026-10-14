@@ -6,6 +6,7 @@ Ovaj direktorij sadrzi tehnicku i funkcionalnu dokumentaciju projekta Fitness St
 
 - [Arhitektura](architecture.md)
 - [Baza podataka](database.md)
+- [ER schema baze](database-schema.md)
 - [API](api.md)
 - [Autentifikacija i ovlasti](authentication.md)
 

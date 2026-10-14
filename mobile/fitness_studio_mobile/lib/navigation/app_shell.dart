@@ -25,7 +25,7 @@ class AppShell extends ConsumerWidget {
       bottomNavigationBar: NavigationBar(
         selectedIndex: navigationShell.currentIndex,
         onDestinationSelected: (index) {
-          if (index == 1) {
+          if (index == 0) {
             context.go(
               isStaff ? AppRoutes.recurringSchedules : AppRoutes.classSessions,
             );
@@ -38,16 +38,16 @@ class AppShell extends ConsumerWidget {
         },
         destinations: [
           NavigationDestination(
-            icon: const Icon(Icons.event_available_outlined),
-            selectedIcon: const Icon(Icons.event_available),
-            label: context.l10n.navMyWorkouts,
-          ),
-          NavigationDestination(
             icon: const Icon(Icons.calendar_month_outlined),
             selectedIcon: const Icon(Icons.calendar_month),
             label: isStaff
                 ? context.l10n.navRecurringSchedules
                 : context.l10n.navClassSessions,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.event_available_outlined),
+            selectedIcon: const Icon(Icons.event_available),
+            label: context.l10n.navMyWorkouts,
           ),
           NavigationDestination(
             icon: const Icon(Icons.person_outline),

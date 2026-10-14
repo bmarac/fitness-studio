@@ -22,10 +22,6 @@ class MeasurementParameter {
     required this.code,
     required this.name,
     required this.unit,
-    required this.source,
-    required this.minValue,
-    required this.maxValue,
-    required this.decimalPlaces,
     required this.sortOrder,
     required this.status,
   });
@@ -34,14 +30,10 @@ class MeasurementParameter {
   final String code;
   final String name;
   final String? unit;
-  final String source;
-  final double? minValue;
-  final double? maxValue;
-  final int decimalPlaces;
   final int sortOrder;
   final String status;
 
-  bool get canEnter => source == 'manual' && status == 'active';
+  bool get canEnter => status == 'active';
 }
 
 class NewMeasurementValue {

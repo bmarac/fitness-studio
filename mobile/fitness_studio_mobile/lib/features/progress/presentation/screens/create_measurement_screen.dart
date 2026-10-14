@@ -133,16 +133,6 @@ class _CreateMeasurementScreenState
     if (raw == null || raw.trim().isEmpty) return null;
     final value = double.tryParse(raw.replaceAll(',', '.'));
     if (value == null) return context.l10n.invalidNumber;
-    if (parameter.minValue != null && value < parameter.minValue!) {
-      return context.l10n.minimumValue(
-        context.formatNumber(parameter.minValue!),
-      );
-    }
-    if (parameter.maxValue != null && value > parameter.maxValue!) {
-      return context.l10n.maximumValue(
-        context.formatNumber(parameter.maxValue!),
-      );
-    }
     return null;
   }
 

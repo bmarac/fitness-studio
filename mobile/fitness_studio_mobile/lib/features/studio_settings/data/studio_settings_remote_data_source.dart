@@ -29,6 +29,34 @@ class StudioConfiguration {
   final int cancellationCutoffHours;
   final bool isPaymentComplete;
 
+  StudioConfiguration copyWith({
+    bool? joinByCodeEnabled,
+    String? joinCode,
+    String? recipientName,
+    String? iban,
+    String? paymentModel,
+    String? paymentReference,
+    String? paymentDescription,
+    List<int>? memberReminderDays,
+    List<int>? adminReminderDays,
+    String? notificationTime,
+    int? cancellationCutoffHours,
+  }) => StudioConfiguration(
+    joinByCodeEnabled: joinByCodeEnabled ?? this.joinByCodeEnabled,
+    joinCode: joinCode ?? this.joinCode,
+    recipientName: recipientName ?? this.recipientName,
+    iban: iban ?? this.iban,
+    paymentModel: paymentModel ?? this.paymentModel,
+    paymentReference: paymentReference ?? this.paymentReference,
+    paymentDescription: paymentDescription ?? this.paymentDescription,
+    memberReminderDays: memberReminderDays ?? this.memberReminderDays,
+    adminReminderDays: adminReminderDays ?? this.adminReminderDays,
+    notificationTime: notificationTime ?? this.notificationTime,
+    cancellationCutoffHours:
+        cancellationCutoffHours ?? this.cancellationCutoffHours,
+    isPaymentComplete: isPaymentComplete,
+  );
+
   factory StudioConfiguration.fromJson(Map<String, dynamic> json) =>
       StudioConfiguration(
         joinByCodeEnabled: json['joinByCodeEnabled'] as bool,

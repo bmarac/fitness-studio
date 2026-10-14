@@ -65,4 +65,15 @@ public class MeasurementParametersController : ControllerBase
             ? NoContent()
             : this.ToActionResult(result);
     }
+
+    [Authorize(Roles = AuthRoles.Admin)]
+    [HttpPut("configuration")]
+    public async Task<ActionResult<List<MeasurementParameterResponse>>> SaveConfiguration(
+        SaveMeasurementParametersConfigurationRequest request)
+    {
+        var result = await _service.SaveConfigurationAsync(request);
+        return result.Status == ServiceResultStatus.Success
+            ? Ok(result.Value)
+            : this.ToActionResult(result);
+    }
 }

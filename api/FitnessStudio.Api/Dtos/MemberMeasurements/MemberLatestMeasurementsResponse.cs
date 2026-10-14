@@ -10,7 +10,5 @@ public record MemberLatestMeasurementValueResponse(
     string Name,
     string? Unit,
     decimal Value,
-    short DecimalPlaces,
     int SortOrder,
-    string Source,
     DateTime MeasuredAt);

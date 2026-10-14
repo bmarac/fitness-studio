@@ -14,6 +14,4 @@ public record MemberMeasurementValueResponse(
     string Name,
     string? Unit,
     decimal Value,
-    short DecimalPlaces,
-    int SortOrder,
-    string Source);
+    int SortOrder);

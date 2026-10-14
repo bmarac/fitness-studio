@@ -34,6 +34,14 @@ class ProgressRepositoryImpl implements ProgressRepository {
       );
 
   @override
+  Future<Result<List<MeasurementParameter>>> saveMeasurementParameters(
+    List<MeasurementParameter> parameters,
+  ) => _guard(
+    () => _remoteDataSource.saveMeasurementParameters(parameters),
+    FailureKind.readMeasurementParameters,
+  );
+
+  @override
   Future<Result<void>> createMeasurement(
     int memberId,
     NewMeasurement measurement,

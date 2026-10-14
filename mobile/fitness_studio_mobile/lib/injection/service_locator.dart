@@ -56,6 +56,9 @@ import '../features/recurring_schedules/domain/usecases/get_trainers.dart';
 import '../features/recurring_schedules/domain/usecases/get_fixed_schedule_members.dart';
 import '../features/recurring_schedules/domain/usecases/move_fixed_schedule_member.dart';
 import '../features/recurring_schedules/domain/usecases/update_recurring_schedule.dart';
+import '../features/studio_settings/data/configuration_items_remote_data_source.dart';
+import '../features/studio_settings/data/studio_configuration_repository_impl.dart';
+import '../features/studio_settings/domain/studio_configuration_repository.dart';
 import '../features/trainers/data/trainers_management_remote_data_source.dart';
 import '../features/trainers/data/trainers_management_repository_impl.dart';
 import '../features/trainers/domain/repositories/trainers_management_repository.dart';
@@ -238,5 +241,13 @@ Future<void> configureDependencies() async {
     )
     ..registerLazySingleton<GetMemberProgress>(
       () => GetMemberProgress(serviceLocator<ProgressRepository>()),
+    )
+    ..registerLazySingleton<ConfigurationItemsRemoteDataSource>(
+      () => ConfigurationItemsRemoteDataSource(serviceLocator<ApiClient>()),
+    )
+    ..registerLazySingleton<StudioConfigurationRepository>(
+      () => StudioConfigurationRepositoryImpl(
+        serviceLocator<ConfigurationItemsRemoteDataSource>(),
+      ),
     );
 }

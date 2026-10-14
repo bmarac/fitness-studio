@@ -113,6 +113,8 @@ public class MeasurementControllersTests
             typeof(MeasurementParametersController), nameof(MeasurementParametersController.UpdateParameter), AuthRoles.Admin);
         SchedulingControllerTestAssertions.MethodRequiresRole(
             typeof(MeasurementParametersController), nameof(MeasurementParametersController.DeleteParameter), AuthRoles.Admin);
+        SchedulingControllerTestAssertions.MethodRequiresRole(
+            typeof(MeasurementParametersController), nameof(MeasurementParametersController.SaveConfiguration), AuthRoles.Admin);
         SchedulingControllerTestAssertions.ControllerRequiresAuthorization(typeof(MemberMeasurementsController));
         SchedulingControllerTestAssertions.MethodHasNoRoleOverride(
             typeof(MemberMeasurementsController), nameof(MemberMeasurementsController.CreateMeasurement));
@@ -121,7 +123,7 @@ public class MeasurementControllersTests
     }
 
     private static MeasurementParameterResponse Parameter() =>
-        new(11, "weight", "Weight", "kg", "decimal", "manual", null, 20, 500, 1, 1, "active");
+        new(11, "weight", "Weight", "kg", 1, "active");
 
     private static MemberMeasurementResponse Measurement() =>
         new(12, 7, DateTime.UtcNow, 1, null, []);
@@ -145,6 +147,9 @@ public class MeasurementControllersTests
         { Ids.Add(id); UpdateRequest = request; return Task.FromResult(Update); }
         public Task<ServiceResult> DeleteParameterAsync(long id)
         { Ids.Add(id); return Task.FromResult(Delete); }
+        public Task<ServiceResult<List<MeasurementParameterResponse>>> SaveConfigurationAsync(
+            SaveMeasurementParametersConfigurationRequest request) =>
+            Task.FromResult(ServiceResult<List<MeasurementParameterResponse>>.Success(List));
     }
 
     private sealed class MemberService : IMemberMeasurementsService

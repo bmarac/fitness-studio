@@ -1112,18 +1112,6 @@ abstract class AppLocalizations {
   /// **'Unesi ispravan broj.'**
   String get invalidNumber;
 
-  /// No description provided for @minimumValue.
-  ///
-  /// In hr, this message translates to:
-  /// **'Najmanja vrijednost je {value}.'**
-  String minimumValue(String value);
-
-  /// No description provided for @maximumValue.
-  ///
-  /// In hr, this message translates to:
-  /// **'Najveća vrijednost je {value}.'**
-  String maximumValue(String value);
-
   /// No description provided for @enterOneValue.
   ///
   /// In hr, this message translates to:
@@ -2280,6 +2268,180 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Do {date}'**
   String scheduleValidUntil(String date);
+
+  /// No description provided for @studioAccessEnabledSummary.
+  ///
+  /// In hr, this message translates to:
+  /// **'Povezivanje kodom je uključeno'**
+  String get studioAccessEnabledSummary;
+
+  /// No description provided for @studioAccessDisabledSummary.
+  ///
+  /// In hr, this message translates to:
+  /// **'Povezivanje kodom je isključeno'**
+  String get studioAccessDisabledSummary;
+
+  /// No description provided for @bookingSettingsSummary.
+  ///
+  /// In hr, this message translates to:
+  /// **'Rok za povrat: {hours} h'**
+  String bookingSettingsSummary(int hours);
+
+  /// No description provided for @paymentSettingsSummary.
+  ///
+  /// In hr, this message translates to:
+  /// **'{recipient} · {iban}'**
+  String paymentSettingsSummary(String recipient, String iban);
+
+  /// No description provided for @reminderSettingsSummary.
+  ///
+  /// In hr, this message translates to:
+  /// **'Slanje u {time}'**
+  String reminderSettingsSummary(String time);
+
+  /// No description provided for @classTypesSettingsTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Vrste treninga'**
+  String get classTypesSettingsTitle;
+
+  /// No description provided for @classTypesSettingsSummary.
+  ///
+  /// In hr, this message translates to:
+  /// **'{count} konfiguriranih vrsta'**
+  String classTypesSettingsSummary(int count);
+
+  /// No description provided for @measurementParametersSettingsTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Parametri antropometrije'**
+  String get measurementParametersSettingsTitle;
+
+  /// No description provided for @addClassType.
+  ///
+  /// In hr, this message translates to:
+  /// **'Dodaj vrstu treninga'**
+  String get addClassType;
+
+  /// No description provided for @addMeasurementParameter.
+  ///
+  /// In hr, this message translates to:
+  /// **'Dodaj parametar'**
+  String get addMeasurementParameter;
+
+  /// No description provided for @reorderMeasurementParametersHint.
+  ///
+  /// In hr, this message translates to:
+  /// **'Dugo pritisnite stavku i povucite je za promjenu redoslijeda.'**
+  String get reorderMeasurementParametersHint;
+
+  /// No description provided for @classTypeNameLabel.
+  ///
+  /// In hr, this message translates to:
+  /// **'Naziv vrste treninga'**
+  String get classTypeNameLabel;
+
+  /// No description provided for @descriptionLabel.
+  ///
+  /// In hr, this message translates to:
+  /// **'Opis'**
+  String get descriptionLabel;
+
+  /// No description provided for @defaultCapacityLabel.
+  ///
+  /// In hr, this message translates to:
+  /// **'Zadani kapacitet'**
+  String get defaultCapacityLabel;
+
+  /// No description provided for @difficultyLevelLabel.
+  ///
+  /// In hr, this message translates to:
+  /// **'Razina težine'**
+  String get difficultyLevelLabel;
+
+  /// No description provided for @difficultyBeginner.
+  ///
+  /// In hr, this message translates to:
+  /// **'Početna'**
+  String get difficultyBeginner;
+
+  /// No description provided for @difficultyIntermediate.
+  ///
+  /// In hr, this message translates to:
+  /// **'Srednja'**
+  String get difficultyIntermediate;
+
+  /// No description provided for @difficultyAdvanced.
+  ///
+  /// In hr, this message translates to:
+  /// **'Napredna'**
+  String get difficultyAdvanced;
+
+  /// No description provided for @difficultyAllLevels.
+  ///
+  /// In hr, this message translates to:
+  /// **'Sve razine'**
+  String get difficultyAllLevels;
+
+  /// No description provided for @statusLabel.
+  ///
+  /// In hr, this message translates to:
+  /// **'Status'**
+  String get statusLabel;
+
+  /// No description provided for @deleteItem.
+  ///
+  /// In hr, this message translates to:
+  /// **'Ukloni'**
+  String get deleteItem;
+
+  /// No description provided for @parameterNameLabel.
+  ///
+  /// In hr, this message translates to:
+  /// **'Naziv parametra'**
+  String get parameterNameLabel;
+
+  /// No description provided for @unitLabel.
+  ///
+  /// In hr, this message translates to:
+  /// **'Jedinica'**
+  String get unitLabel;
+
+  /// No description provided for @invalidInteger.
+  ///
+  /// In hr, this message translates to:
+  /// **'Unesi cijeli broj.'**
+  String get invalidInteger;
+
+  /// No description provided for @discardChangesTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Odbaciti promjene?'**
+  String get discardChangesTitle;
+
+  /// No description provided for @discardChangesMessage.
+  ///
+  /// In hr, this message translates to:
+  /// **'Nespremljene promjene bit će izgubljene.'**
+  String get discardChangesMessage;
+
+  /// No description provided for @discardAction.
+  ///
+  /// In hr, this message translates to:
+  /// **'Odbaci'**
+  String get discardAction;
+
+  /// No description provided for @configurationSaved.
+  ///
+  /// In hr, this message translates to:
+  /// **'Konfiguracija je spremljena.'**
+  String get configurationSaved;
+
+  /// No description provided for @classTypeDeleteConflict.
+  ///
+  /// In hr, this message translates to:
+  /// **'Korištenu vrstu treninga nije moguće ukloniti. Označi je neaktivnom.'**
+  String get classTypeDeleteConflict;
 }
 
 class _AppLocalizationsDelegate

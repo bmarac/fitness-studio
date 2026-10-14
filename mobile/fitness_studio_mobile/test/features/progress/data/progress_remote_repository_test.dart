@@ -27,7 +27,7 @@ void main() {
       expect(progress.history.single.note, 'Kontrola');
       expect(members.single.fullName, 'Ana Horvat');
       expect(parameters.first.code, 'height_cm');
-      expect(parameters.last.canEnter, isFalse);
+      expect(parameters.last.canEnter, isTrue);
       expect(
         adapter.requests.map((request) => request.path),
         containsAll([
@@ -64,6 +64,58 @@ void main() {
       ],
     });
   });
+
+  test(
+    'atomically saves simplified parameter configuration and order',
+    () async {
+      final adapter = _ProgressAdapter();
+      final source = _source(adapter);
+
+      await source.saveMeasurementParameters(const [
+        MeasurementParameter(
+          id: 0,
+          code: '',
+          name: 'Opseg struka',
+          unit: 'cm',
+          sortOrder: 0,
+          status: 'active',
+        ),
+        MeasurementParameter(
+          id: 3,
+          code: 'bmi',
+          name: 'BMI',
+          unit: null,
+          sortOrder: 1,
+          status: 'inactive',
+        ),
+      ]);
+
+      final request = adapter.requests.single;
+      expect(request.method, 'PUT');
+      expect(request.path, '/api/measurement-parameters/configuration');
+      expect(request.data, {
+        'items': [
+          {
+            'id': null,
+            'name': 'Opseg struka',
+            'unit': 'cm',
+            'sortOrder': 0,
+            'status': 'active',
+          },
+          {
+            'id': 3,
+            'name': 'BMI',
+            'unit': null,
+            'sortOrder': 1,
+            'status': 'inactive',
+          },
+        ],
+      });
+      expect(request.data['items'][0], isNot(contains('code')));
+      expect(request.data['items'][0], isNot(contains('valueType')));
+      expect(request.data['items'][0], isNot(contains('decimalPlaces')));
+    },
+  );
 
   test('repository maps success and malformed responses', () async {
     final successful = ProgressRepositoryImpl(_source(_ProgressAdapter()));
@@ -156,8 +208,12 @@ class _ProgressAdapter implements HttpClientAdapter {
                 },
               ],
       ('GET', '/api/measurement-parameters') => [
-        _parameter(1, 'height_cm', 'manual', 'active'),
-        _parameter(3, 'bmi', 'calculated', 'active'),
+        _parameter(1, 'height_cm', 'active'),
+        _parameter(3, 'bmi', 'active'),
+      ],
+      ('PUT', '/api/measurement-parameters/configuration') => [
+        _parameter(4, 'opseg_struka', 'active'),
+        _parameter(3, 'bmi', 'inactive'),
       ],
       _ => <String, dynamic>{},
     };
@@ -177,29 +233,19 @@ class _ProgressAdapter implements HttpClientAdapter {
     'name': 'Težina',
     'unit': 'kg',
     'value': 68.4,
-    'decimalPlaces': 1,
     'sortOrder': 2,
-    'source': 'manual',
     if (latest) 'measuredAt': '2026-10-13T10:30:00Z',
   };
 
-  static Map<String, dynamic> _parameter(
-    int id,
-    String code,
-    String source,
-    String status,
-  ) => {
-    'id': id,
-    'code': code,
-    'name': code,
-    'unit': null,
-    'source': source,
-    'minValue': null,
-    'maxValue': null,
-    'decimalPlaces': 1,
-    'sortOrder': id,
-    'status': status,
-  };
+  static Map<String, dynamic> _parameter(int id, String code, String status) =>
+      {
+        'id': id,
+        'code': code,
+        'name': code,
+        'unit': null,
+        'sortOrder': id,
+        'status': status,
+      };
 
   @override
   void close({bool force = false}) {}

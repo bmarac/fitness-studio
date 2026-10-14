@@ -192,6 +192,22 @@ docker exec "$container_name" psql \
   --username fitness \
   --dbname fitness_studio_migration_verify \
   --file /fitness-studio-db/migrations/013_simplify_booking_cancellations.sql >/dev/null
+docker exec "$container_name" psql \
+  --set ON_ERROR_STOP=1 \
+  --username fitness \
+  --dbname fitness_studio_migration_verify \
+  --command "INSERT INTO members (studio_id, first_name, last_name, email, status) VALUES (1, 'Migration', 'Check', 'measurement-migration@example.test', 'active'); INSERT INTO measurement_parameters (studio_id, code, name, unit, value_type, source, calculation_type, min_value, max_value, decimal_places, sort_order, status) VALUES (1, 'migration_value', 'Migration value', 'kg', 'decimal', 'calculated', 'bmi', 1, 100, 1, 1, 'active'); INSERT INTO member_measurements (studio_id, member_id, measured_at) SELECT 1, id, now() FROM members WHERE email = 'measurement-migration@example.test'; INSERT INTO member_measurement_values (measurement_id, parameter_id, numeric_value) SELECT measurements.id, parameters.id, 42.125 FROM member_measurements AS measurements CROSS JOIN measurement_parameters AS parameters WHERE parameters.code = 'migration_value';" \
+  >/dev/null
+docker exec "$container_name" psql \
+  --set ON_ERROR_STOP=1 \
+  --username fitness \
+  --dbname fitness_studio_migration_verify \
+  --file /fitness-studio-db/migrations/014_manual_measurement_parameters.sql >/dev/null
+docker exec "$container_name" psql \
+  --set ON_ERROR_STOP=1 \
+  --username fitness \
+  --dbname fitness_studio_migration_verify \
+  --file /fitness-studio-db/migrations/015_simplify_measurement_parameters.sql >/dev/null
 migrated_accounts=$(docker exec "$container_name" psql \
   --username fitness \
   --dbname fitness_studio_migration_verify \
@@ -200,6 +216,14 @@ migrated_accounts=$(docker exec "$container_name" psql \
   --command "SELECT COUNT(*) || ':' || (SELECT COUNT(*) FROM app_user_studios) || ':' || (SELECT COUNT(*) FROM app_user_studio_roles) FROM app_users WHERE email = 'shared@example.test';")
 [ "$migrated_accounts" = "1:2:2" ] \
   || fail "global account migration did not preserve both studio memberships and roles: $migrated_accounts"
+measurement_migration=$(docker exec "$container_name" psql \
+  --username fitness \
+  --dbname fitness_studio_migration_verify \
+  --tuples-only \
+  --no-align \
+  --command "SELECT values.numeric_value || ':' || parameters.code || ':' || (SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'measurement_parameters' AND column_name IN ('value_type', 'min_value', 'max_value', 'decimal_places')) FROM member_measurement_values AS values JOIN measurement_parameters AS parameters ON parameters.id = values.parameter_id WHERE parameters.code = 'migration_value';")
+[ "$measurement_migration" = "42.1250:migration_value:0" ] \
+  || fail "measurement parameter migration did not preserve values or remove obsolete columns: $measurement_migration"
 
 docker exec "$container_name" psql \
   --set ON_ERROR_STOP=1 \

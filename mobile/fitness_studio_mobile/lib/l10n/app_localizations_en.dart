@@ -588,16 +588,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get invalidNumber => 'Enter a valid number.';
 
   @override
-  String minimumValue(String value) {
-    return 'The minimum value is $value.';
-  }
-
-  @override
-  String maximumValue(String value) {
-    return 'The maximum value is $value.';
-  }
-
-  @override
   String get enterOneValue => 'Enter at least one value.';
 
   @override
@@ -1262,4 +1252,101 @@ class AppLocalizationsEn extends AppLocalizations {
   String scheduleValidUntil(String date) {
     return 'Until $date';
   }
+
+  @override
+  String get studioAccessEnabledSummary => 'Joining by code is enabled';
+
+  @override
+  String get studioAccessDisabledSummary => 'Joining by code is disabled';
+
+  @override
+  String bookingSettingsSummary(int hours) {
+    return 'Cancellation cutoff: $hours h';
+  }
+
+  @override
+  String paymentSettingsSummary(String recipient, String iban) {
+    return '$recipient · $iban';
+  }
+
+  @override
+  String reminderSettingsSummary(String time) {
+    return 'Sent at $time';
+  }
+
+  @override
+  String get classTypesSettingsTitle => 'Class types';
+
+  @override
+  String classTypesSettingsSummary(int count) {
+    return '$count configured types';
+  }
+
+  @override
+  String get measurementParametersSettingsTitle => 'Anthropometry parameters';
+
+  @override
+  String get addClassType => 'Add class type';
+
+  @override
+  String get addMeasurementParameter => 'Add parameter';
+
+  @override
+  String get reorderMeasurementParametersHint =>
+      'Press and hold an item, then drag it to change the order.';
+
+  @override
+  String get classTypeNameLabel => 'Class type name';
+
+  @override
+  String get descriptionLabel => 'Description';
+
+  @override
+  String get defaultCapacityLabel => 'Default capacity';
+
+  @override
+  String get difficultyLevelLabel => 'Difficulty level';
+
+  @override
+  String get difficultyBeginner => 'Beginner';
+
+  @override
+  String get difficultyIntermediate => 'Intermediate';
+
+  @override
+  String get difficultyAdvanced => 'Advanced';
+
+  @override
+  String get difficultyAllLevels => 'All levels';
+
+  @override
+  String get statusLabel => 'Status';
+
+  @override
+  String get deleteItem => 'Remove';
+
+  @override
+  String get parameterNameLabel => 'Parameter name';
+
+  @override
+  String get unitLabel => 'Unit';
+
+  @override
+  String get invalidInteger => 'Enter a whole number.';
+
+  @override
+  String get discardChangesTitle => 'Discard changes?';
+
+  @override
+  String get discardChangesMessage => 'Unsaved changes will be lost.';
+
+  @override
+  String get discardAction => 'Discard';
+
+  @override
+  String get configurationSaved => 'Configuration saved.';
+
+  @override
+  String get classTypeDeleteConflict =>
+      'A class type in use cannot be removed. Mark it inactive instead.';
 }

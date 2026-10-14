@@ -54,7 +54,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             location == AppRoutes.register ||
             location == AppRoutes.studioSelection ||
             location == AppRoutes.splash) {
-          return isStaff ? AppRoutes.recurringSchedules : AppRoutes.myWorkouts;
+          return AppRoutes.myWorkouts;
         }
 
         if (location == AppRoutes.classSessions && isStaff) {
@@ -106,14 +106,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: AppRoutes.myWorkouts,
-                builder: (context, state) => const MyWorkoutsScreen(),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
                 path: AppRoutes.classSessions,
                 builder: (context, state) => const ClassSessionsScreen(),
                 routes: [
@@ -140,6 +132,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
+                path: AppRoutes.myWorkouts,
+                builder: (context, state) => const MyWorkoutsScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
                 path: AppRoutes.profile,
                 builder: (context, state) => const ProfileScreen(),
                 routes: [
@@ -153,7 +153,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                   ),
                   GoRoute(
                     path: AppRoutes.membersProgress,
-                    builder: (context, state) => const MembersProgressScreen(),
+                    builder: (context, state) {
+                      final authState = ref.read(loginControllerProvider);
+                      final isAdmin =
+                          authState is LoginSuccess &&
+                          authState.session.user.roles.contains('admin');
+                      return MembersProgressScreen(
+                        canConfigureParameters: isAdmin,
+                      );
+                    },
                   ),
                   GoRoute(
                     path: AppRoutes.memberAnthropometry,

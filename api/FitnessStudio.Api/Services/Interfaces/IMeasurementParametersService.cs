@@ -10,4 +10,6 @@ public interface IMeasurementParametersService
         CreateMeasurementParameterRequest request);
     Task<ServiceResult> UpdateParameterAsync(long id, UpdateMeasurementParameterRequest request);
     Task<ServiceResult> DeleteParameterAsync(long id);
+    Task<ServiceResult<List<MeasurementParameterResponse>>> SaveConfigurationAsync(
+        SaveMeasurementParametersConfigurationRequest request);
 }

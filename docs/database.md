@@ -2,6 +2,9 @@
 
 Projekt koristi database-first pristup. SQL datoteke predstavljaju izvor strukture baze, a EF Core entiteti scaffoldaju se iz aktivne PostgreSQL baze.
 
+Potpuni pregled tablica, stupaca, kljuceva i veza nalazi se u
+[ER schemi baze](database-schema.md).
+
 ## Tablice
 
 | Tablica | Svrha |

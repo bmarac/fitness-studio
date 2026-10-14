@@ -15,18 +15,6 @@ public partial class MeasurementParameter
 
     public string? Unit { get; set; }
 
-    public string ValueType { get; set; } = null!;
-
-    public string Source { get; set; } = null!;
-
-    public string? CalculationType { get; set; }
-
-    public decimal? MinValue { get; set; }
-
-    public decimal? MaxValue { get; set; }
-
-    public short DecimalPlaces { get; set; }
-
     public int SortOrder { get; set; }
 
     public string Status { get; set; } = null!;

@@ -3,228 +3,238 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/error/failure_localization.dart';
 import '../../../../core/l10n/localization.dart';
-import '../../../../core/widgets/error_view.dart';
-import '../../../../core/widgets/loading_view.dart';
 import '../../data/studio_settings_remote_data_source.dart';
 import '../state/studio_settings_provider.dart';
+import '../widgets/settings_modals.dart';
 
-class StudioSettingsScreen extends ConsumerStatefulWidget {
+class StudioSettingsScreen extends ConsumerWidget {
   const StudioSettingsScreen({super.key});
 
   @override
-  ConsumerState<StudioSettingsScreen> createState() =>
-      _StudioSettingsScreenState();
-}
-
-class _StudioSettingsScreenState extends ConsumerState<StudioSettingsScreen> {
-  final _form = GlobalKey<FormState>();
-  final _code = TextEditingController();
-  final _recipient = TextEditingController();
-  final _iban = TextEditingController();
-  final _model = TextEditingController();
-  final _reference = TextEditingController();
-  final _description = TextEditingController();
-  final _memberDays = TextEditingController();
-  final _adminDays = TextEditingController();
-  final _time = TextEditingController();
-  final _cancellationCutoffHours = TextEditingController();
-
-  bool _initialized = false;
-  bool _joinByCodeEnabled = false;
-  bool _saving = false;
-
-  @override
-  void dispose() {
-    for (final controller in [
-      _code,
-      _recipient,
-      _iban,
-      _model,
-      _reference,
-      _description,
-      _memberDays,
-      _adminDays,
-      _time,
-      _cancellationCutoffHours,
-    ]) {
-      controller.dispose();
-    }
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final configuration = ref.watch(studioConfigurationProvider);
+    final classTypes = ref.watch(classTypeConfigurationsProvider);
 
     return Scaffold(
       appBar: AppBar(title: Text(context.l10n.studioSettingsTitle)),
-      body: configuration.when(
-        loading: () => const LoadingView(),
-        error: (error, _) => ErrorView(
-          message: localizedError(context, error),
-          onRetry: () => ref.invalidate(studioConfigurationProvider),
-        ),
-        data: (value) {
-          _initialize(value);
-          return Form(
-            key: _form,
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-              children: [
-                _sectionTitle(context.l10n.studioAccessSettingsTitle),
-                const SizedBox(height: 8),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(context.l10n.allowJoinByCode),
-                  subtitle: Text(context.l10n.allowJoinByCodeDescription),
-                  value: _joinByCodeEnabled,
-                  onChanged: _saving
-                      ? null
-                      : (enabled) =>
-                            setState(() => _joinByCodeEnabled = enabled),
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _code,
-                  enabled: _joinByCodeEnabled && !_saving,
-                  textCapitalization: TextCapitalization.characters,
-                  decoration: InputDecoration(
-                    labelText: context.l10n.labelStudioCode,
-                    border: const OutlineInputBorder(),
-                  ),
-                  validator: (code) =>
-                      _joinByCodeEnabled ? _required(code) : null,
-                ),
-                const SizedBox(height: 32),
-                _sectionTitle(context.l10n.bookingSettingsTitle),
-                const SizedBox(height: 12),
-                TextFormField(
-                  key: const ValueKey('cancellation-cutoff-hours'),
-                  controller: _cancellationCutoffHours,
-                  enabled: !_saving,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: context.l10n.cancellationCutoffHoursLabel,
-                    helperText: context.l10n.cancellationCutoffHoursDescription,
-                    border: const OutlineInputBorder(),
-                  ),
-                  validator: _validateCancellationCutoff,
-                ),
-                const SizedBox(height: 32),
-                _sectionTitle(context.l10n.paymentSettingsTitle),
-                const SizedBox(height: 12),
-                _field(_recipient, context.l10n.recipientLabel),
-                _field(_iban, 'IBAN'),
-                _field(_model, context.l10n.paymentModelLabel),
-                _field(_reference, context.l10n.paymentReferenceLabel),
-                _field(_description, context.l10n.paymentDescriptionLabel),
-                const SizedBox(height: 20),
-                _sectionTitle(context.l10n.reminderSettingsTitle),
-                const SizedBox(height: 12),
-                _field(_memberDays, context.l10n.memberReminderDaysLabel),
-                _field(_adminDays, context.l10n.adminReminderDaysLabel),
-                _field(_time, context.l10n.sendTimeLabel),
-                const SizedBox(height: 4),
-                FilledButton.icon(
-                  key: const ValueKey('studio-settings-save'),
-                  onPressed: _saving ? null : () => _save(value),
-                  icon: const Icon(Icons.save),
-                  label: Text(
-                    _saving
-                        ? context.l10n.actionSaving
-                        : context.l10n.actionSave,
-                  ),
-                ),
-              ],
-            ),
-          );
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(studioConfigurationProvider);
+          ref.invalidate(classTypeConfigurationsProvider);
+          await Future.wait([
+            ref.read(studioConfigurationProvider.future),
+            ref.read(classTypeConfigurationsProvider.future),
+          ]);
         },
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+          children: [
+            ..._generalCards(context, ref, configuration),
+            classTypes.when(
+              loading: () => _LoadingSettingsCard(
+                title: context.l10n.classTypesSettingsTitle,
+                icon: Icons.fitness_center_outlined,
+              ),
+              error: (error, _) => _ErrorSettingsCard(
+                title: context.l10n.classTypesSettingsTitle,
+                icon: Icons.fitness_center_outlined,
+                error: localizedError(context, error),
+                onRetry: () => ref.invalidate(classTypeConfigurationsProvider),
+              ),
+              data: (items) => _SettingsCard(
+                key: const ValueKey('class-types-settings-card'),
+                icon: Icons.fitness_center_outlined,
+                title: context.l10n.classTypesSettingsTitle,
+                subtitle: context.l10n.classTypesSettingsSummary(items.length),
+                onTap: () async {
+                  final saved = await showClassTypesModal(context, ref, items);
+                  if (saved && context.mounted) {
+                    ref.invalidate(classTypeConfigurationsProvider);
+                    _saved(context);
+                  }
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  void _initialize(StudioConfiguration value) {
-    if (_initialized) return;
-    _initialized = true;
-    _joinByCodeEnabled = value.joinByCodeEnabled;
-    _code.text = value.joinCode ?? '';
-    _recipient.text = value.recipientName;
-    _iban.text = value.iban;
-    _model.text = value.paymentModel;
-    _reference.text = value.paymentReference;
-    _description.text = value.paymentDescription;
-    _memberDays.text = value.memberReminderDays.join(',');
-    _adminDays.text = value.adminReminderDays.join(',');
-    _time.text = value.notificationTime.substring(0, 5);
-    _cancellationCutoffHours.text = value.cancellationCutoffHours.toString();
-  }
-
-  Widget _sectionTitle(String title) =>
-      Text(title, style: Theme.of(context).textTheme.titleMedium);
-
-  Widget _field(TextEditingController controller, String label) => Padding(
-    padding: const EdgeInsets.only(bottom: 12),
-    child: TextFormField(
-      controller: controller,
-      enabled: !_saving,
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
+  List<Widget> _generalCards(
+    BuildContext context,
+    WidgetRef ref,
+    AsyncValue<StudioConfiguration> configuration,
+  ) => configuration.when(
+    loading: () => [
+      _LoadingSettingsCard(
+        title: context.l10n.studioAccessSettingsTitle,
+        icon: Icons.key_outlined,
       ),
-      validator: _required,
-    ),
+      _LoadingSettingsCard(
+        title: context.l10n.bookingSettingsTitle,
+        icon: Icons.event_busy_outlined,
+      ),
+      _LoadingSettingsCard(
+        title: context.l10n.paymentSettingsTitle,
+        icon: Icons.payments_outlined,
+      ),
+      _LoadingSettingsCard(
+        title: context.l10n.reminderSettingsTitle,
+        icon: Icons.notifications_active_outlined,
+      ),
+    ],
+    error: (error, _) => [
+      for (final (title, icon) in [
+        (context.l10n.studioAccessSettingsTitle, Icons.key_outlined),
+        (context.l10n.bookingSettingsTitle, Icons.event_busy_outlined),
+        (context.l10n.paymentSettingsTitle, Icons.payments_outlined),
+        (
+          context.l10n.reminderSettingsTitle,
+          Icons.notifications_active_outlined,
+        ),
+      ])
+        _ErrorSettingsCard(
+          title: title,
+          icon: icon,
+          error: localizedError(context, error),
+          onRetry: () => ref.invalidate(studioConfigurationProvider),
+        ),
+    ],
+    data: (value) => [
+      _SettingsCard(
+        key: const ValueKey('studio-access-card'),
+        icon: Icons.key_outlined,
+        title: context.l10n.studioAccessSettingsTitle,
+        subtitle: value.joinByCodeEnabled
+            ? context.l10n.studioAccessEnabledSummary
+            : context.l10n.studioAccessDisabledSummary,
+        onTap: () =>
+            _openGeneral(context, ref, StudioSettingsSection.access, value),
+      ),
+      _SettingsCard(
+        key: const ValueKey('booking-settings-card'),
+        icon: Icons.event_busy_outlined,
+        title: context.l10n.bookingSettingsTitle,
+        subtitle: context.l10n.bookingSettingsSummary(
+          value.cancellationCutoffHours,
+        ),
+        onTap: () =>
+            _openGeneral(context, ref, StudioSettingsSection.booking, value),
+      ),
+      _SettingsCard(
+        key: const ValueKey('payment-settings-card'),
+        icon: Icons.payments_outlined,
+        title: context.l10n.paymentSettingsTitle,
+        subtitle: context.l10n.paymentSettingsSummary(
+          value.recipientName,
+          value.iban,
+        ),
+        onTap: () =>
+            _openGeneral(context, ref, StudioSettingsSection.payment, value),
+      ),
+      _SettingsCard(
+        key: const ValueKey('reminder-settings-card'),
+        icon: Icons.notifications_active_outlined,
+        title: context.l10n.reminderSettingsTitle,
+        subtitle: context.l10n.reminderSettingsSummary(
+          value.notificationTime.substring(0, 5),
+        ),
+        onTap: () =>
+            _openGeneral(context, ref, StudioSettingsSection.reminders, value),
+      ),
+    ],
   );
 
-  String? _required(String? value) =>
-      value == null || value.trim().isEmpty ? context.l10n.requiredField : null;
-
-  String? _validateCancellationCutoff(String? value) {
-    final hours = int.tryParse(value?.trim() ?? '');
-    return hours != null && hours >= 0 && hours <= 168
-        ? null
-        : context.l10n.cancellationCutoffHoursValidation;
-  }
-
-  Future<void> _save(StudioConfiguration old) async {
-    if (!_form.currentState!.validate()) return;
-    setState(() => _saving = true);
-    try {
-      List<int> days(String value) =>
-          value.split(',').map((item) => int.parse(item.trim())).toList();
-
-      await ref
-          .read(studioSettingsRemoteProvider)
-          .updateConfiguration(
-            StudioConfiguration(
-              joinByCodeEnabled: _joinByCodeEnabled,
-              joinCode: _code.text.trim(),
-              recipientName: _recipient.text.trim(),
-              iban: _iban.text.trim(),
-              paymentModel: _model.text.trim(),
-              paymentReference: _reference.text.trim(),
-              paymentDescription: _description.text.trim(),
-              memberReminderDays: days(_memberDays.text),
-              adminReminderDays: days(_adminDays.text),
-              notificationTime: _time.text.trim(),
-              cancellationCutoffHours: int.parse(
-                _cancellationCutoffHours.text.trim(),
-              ),
-              isPaymentComplete: old.isPaymentComplete,
-            ),
-          );
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(context.l10n.settingsSaved)));
-      }
-    } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(localizedError(context, error))));
-      }
-    } finally {
-      if (mounted) setState(() => _saving = false);
+  Future<void> _openGeneral(
+    BuildContext context,
+    WidgetRef ref,
+    StudioSettingsSection section,
+    StudioConfiguration configuration,
+  ) async {
+    final saved = await showGeneralSettingsModal(
+      context,
+      ref,
+      section,
+      configuration,
+    );
+    if (saved && context.mounted) {
+      ref.invalidate(studioConfigurationProvider);
+      _saved(context);
     }
   }
+
+  void _saved(BuildContext context) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(context.l10n.configurationSaved)));
+  }
+}
+
+class _SettingsCard extends StatelessWidget {
+  const _SettingsCard({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Card(
+    margin: const EdgeInsets.only(bottom: 12),
+    child: ListTile(
+      leading: Icon(icon),
+      title: Text(title),
+      subtitle: Text(subtitle),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: onTap,
+    ),
+  );
+}
+
+class _LoadingSettingsCard extends StatelessWidget {
+  const _LoadingSettingsCard({required this.title, required this.icon});
+  final String title;
+  final IconData icon;
+  @override
+  Widget build(BuildContext context) => Card(
+    margin: const EdgeInsets.only(bottom: 12),
+    child: ListTile(
+      leading: Icon(icon),
+      title: Text(title),
+      trailing: const SizedBox.square(
+        dimension: 20,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      ),
+    ),
+  );
+}
+
+class _ErrorSettingsCard extends StatelessWidget {
+  const _ErrorSettingsCard({
+    required this.title,
+    required this.icon,
+    required this.error,
+    required this.onRetry,
+  });
+  final String title;
+  final IconData icon;
+  final String error;
+  final VoidCallback onRetry;
+  @override
+  Widget build(BuildContext context) => Card(
+    margin: const EdgeInsets.only(bottom: 12),
+    child: ListTile(
+      leading: Icon(icon),
+      title: Text(title),
+      subtitle: Text(error),
+      trailing: IconButton(onPressed: onRetry, icon: const Icon(Icons.refresh)),
+    ),
+  );
 }

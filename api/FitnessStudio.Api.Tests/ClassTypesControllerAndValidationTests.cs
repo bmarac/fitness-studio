@@ -79,6 +79,8 @@ public class ClassTypesControllerAndValidationTests
             typeof(ClassTypesController), nameof(ClassTypesController.UpdateClassType), AuthRoles.Admin);
         SchedulingControllerTestAssertions.MethodRequiresRole(
             typeof(ClassTypesController), nameof(ClassTypesController.DeleteClassType), AuthRoles.Admin);
+        SchedulingControllerTestAssertions.MethodRequiresRole(
+            typeof(ClassTypesController), nameof(ClassTypesController.SaveConfiguration), AuthRoles.Admin);
     }
 
     [Theory]
@@ -178,5 +180,9 @@ public class ClassTypesControllerAndValidationTests
             Ids.Add(id);
             return Task.FromResult(DeleteResult);
         }
+
+        public Task<ServiceResult<List<ClassTypeResponse>>> SaveConfigurationAsync(
+            SaveClassTypesConfigurationRequest request) =>
+            Task.FromResult(ServiceResult<List<ClassTypeResponse>>.Success(ListResult));
     }
 }

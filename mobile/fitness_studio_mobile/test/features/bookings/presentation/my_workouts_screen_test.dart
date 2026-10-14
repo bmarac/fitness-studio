@@ -1,13 +1,19 @@
+import 'dart:async';
+
+import 'package:fitness_studio_mobile/core/error/result.dart';
 import 'package:fitness_studio_mobile/features/auth/domain/entities/auth_session.dart';
 import 'package:fitness_studio_mobile/features/auth/domain/entities/authenticated_user.dart';
 import 'package:fitness_studio_mobile/features/auth/presentation/state/login_controller.dart';
 import 'package:fitness_studio_mobile/features/auth/presentation/state/login_state.dart';
 import 'package:fitness_studio_mobile/features/bookings/domain/entities/booking.dart';
+import 'package:fitness_studio_mobile/features/bookings/domain/repositories/bookings_repository.dart';
+import 'package:fitness_studio_mobile/features/bookings/domain/usecases/cancel_booking.dart';
 import 'package:fitness_studio_mobile/features/bookings/presentation/screens/my_workouts_screen.dart';
 import 'package:fitness_studio_mobile/features/bookings/presentation/state/member_bookings_provider.dart';
 import 'package:fitness_studio_mobile/features/class_sessions/domain/entities/class_session.dart';
 import 'package:fitness_studio_mobile/features/class_sessions/presentation/state/my_class_sessions_provider.dart';
 import 'package:fitness_studio_mobile/features/recurring_schedules/domain/entities/trainer_option.dart';
+import 'package:fitness_studio_mobile/injection/service_locator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -15,6 +21,9 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../../helpers/localized_test_app.dart';
 
 void main() {
+  setUp(() async => serviceLocator.reset());
+  tearDown(() async => serviceLocator.reset());
+
   testWidgets('member defaults to active bookings and can filter history', (
     tester,
   ) async {
@@ -118,6 +127,51 @@ void main() {
     expect(find.text('Nema rezerviranih treninga.'), findsOneWidget);
   });
 
+  testWidgets('cancellation does not use ref after its card is unmounted', (
+    tester,
+  ) async {
+    final refreshCompleter = Completer<void>();
+    final controller = _FakeMemberBookingsController({
+      WorkoutFilter.active: [
+        _booking(
+          id: 2,
+          startsAt: DateTime(2030, 10, 12, 19),
+          status: 'booked',
+          classTypeName: 'Budući trening',
+        ),
+      ],
+    }, refreshCompleter: refreshCompleter);
+    serviceLocator.registerSingleton<CancelBooking>(
+      CancelBooking(_FakeBookingsRepository()),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          loginControllerProvider.overrideWith(
+            () => _FakeLoginController(['member']),
+          ),
+          memberBookingsProvider.overrideWith(() => controller),
+        ],
+        child: localizedTestApp(home: const MyWorkoutsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Otkaži termin'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Otkaži termin').last);
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('Budući trening'), findsNothing);
+
+    refreshCompleter.complete();
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('trainer keeps assigned workout view', (tester) async {
     final session = _session(id: 1, trainerId: 7, classTypeName: 'Pilates');
     await tester.pumpWidget(
@@ -193,9 +247,10 @@ void main() {
 }
 
 class _FakeMemberBookingsController extends MemberBookingsController {
-  _FakeMemberBookingsController(this.itemsByFilter);
+  _FakeMemberBookingsController(this.itemsByFilter, {this.refreshCompleter});
 
   final Map<WorkoutFilter, List<Booking>> itemsByFilter;
+  final Completer<void>? refreshCompleter;
 
   @override
   MemberBookingsState build() => MemberBookingsState(
@@ -213,7 +268,20 @@ class _FakeMemberBookingsController extends MemberBookingsController {
   }
 
   @override
-  Future<void> refresh() async {}
+  Future<void> refresh() {
+    final completer = refreshCompleter;
+    if (completer == null) return Future.value();
+    state = MemberBookingsState(filter: state.filter, isInitialLoading: false);
+    return completer.future;
+  }
+}
+
+class _FakeBookingsRepository implements BookingsRepository {
+  @override
+  Future<Result<void>> cancelBooking(int id) async => const Success(null);
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 class _FakeLoginController extends LoginController {

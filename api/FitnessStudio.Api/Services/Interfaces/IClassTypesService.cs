@@ -13,4 +13,7 @@ public interface IClassTypesService
     Task<ServiceResult> UpdateClassTypeAsync(long id, UpdateClassTypeRequest request);
 
     Task<ServiceResult> DeleteClassTypeAsync(long id);
+
+    Task<ServiceResult<List<ClassTypeResponse>>> SaveConfigurationAsync(
+        SaveClassTypesConfigurationRequest request);
 }

@@ -78,6 +78,8 @@ void main() {
           children: [
             Text(context.formatDate(DateTime(2026, 10, 11))),
             Text(context.formatNumber(1234.5, decimalDigits: 1)),
+            Text(context.formatMeasurementNumber(20.1234)),
+            Text(context.formatMeasurementNumber(68.0)),
             Text(context.formatCurrency(70, 'EUR')),
             Text(context.l10n.sessionsCount(2)),
           ],
@@ -88,12 +90,16 @@ void main() {
     await tester.pumpWidget(sample(const Locale('hr')));
     expect(find.text('11. 10. 2026.'), findsOneWidget);
     expect(find.text('1.234,5'), findsOneWidget);
+    expect(find.text('20,1234'), findsOneWidget);
+    expect(find.text('68'), findsOneWidget);
     expect(find.text('70,00 €'), findsOneWidget);
     expect(find.text('2 termina'), findsOneWidget);
 
     await tester.pumpWidget(sample(const Locale('en')));
     expect(find.text('10/11/2026'), findsOneWidget);
     expect(find.text('1,234.5'), findsOneWidget);
+    expect(find.text('20.1234'), findsOneWidget);
+    expect(find.text('68'), findsOneWidget);
     expect(find.text('€70.00'), findsOneWidget);
     expect(find.text('2 classes'), findsOneWidget);
   });

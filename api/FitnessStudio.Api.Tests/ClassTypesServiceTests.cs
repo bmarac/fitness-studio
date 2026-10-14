@@ -131,6 +131,64 @@ public class ClassTypesServiceTests
         Assert.Equal(ServiceResultStatus.Conflict, result.Status);
     }
 
+    [Fact]
+    public async Task BulkConfigurationUpdatesAddsAndDeletesInOneSave()
+    {
+        await using var db = Database();
+        db.ClassTypes.AddRange(ClassType(1, 1, "Pilates"), ClassType(2, 1, "Yoga"));
+        await db.SaveChangesAsync();
+
+        var result = await Service(db).SaveConfigurationAsync(new SaveClassTypesConfigurationRequest
+        {
+            Items =
+            [
+                new ClassTypeConfigurationItemRequest
+                {
+                    Id = 1,
+                    Name = "Power Pilates",
+                    DefaultDurationMinutes = 75,
+                    DefaultCapacity = 12,
+                    DifficultyLevel = "advanced",
+                    Status = "inactive"
+                },
+                new ClassTypeConfigurationItemRequest
+                {
+                    Name = "Mobility",
+                    DefaultDurationMinutes = 45,
+                    DefaultCapacity = 8,
+                    DifficultyLevel = "all_levels",
+                    Status = "active"
+                }
+            ],
+            DeletedIds = [2]
+        });
+
+        Assert.Equal(ServiceResultStatus.Success, result.Status);
+        Assert.Equal(["Mobility", "Power Pilates"], result.Value!.Select(item => item.Name));
+        Assert.DoesNotContain(db.ClassTypes, item => item.Id == 2);
+        Assert.Equal("inactive", db.ClassTypes.Single(item => item.Name == "Power Pilates").Status);
+    }
+
+    [Fact]
+    public async Task BulkConfigurationRejectsDuplicatesWithoutChangingStoredData()
+    {
+        await using var db = Database();
+        db.ClassTypes.Add(ClassType(1, 1, "Pilates"));
+        await db.SaveChangesAsync();
+
+        var result = await Service(db).SaveConfigurationAsync(new SaveClassTypesConfigurationRequest
+        {
+            Items =
+            [
+                ConfigurationItem(1, "Duplicate"),
+                ConfigurationItem(null, "duplicate")
+            ]
+        });
+
+        Assert.Equal(ServiceResultStatus.Conflict, result.Status);
+        Assert.Equal("Pilates", db.ClassTypes.Single().Name);
+    }
+
     private static FitnessStudioDbContext Database() => new(
         new DbContextOptionsBuilder<FitnessStudioDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
@@ -182,6 +240,16 @@ public class ClassTypesServiceTests
             DifficultyLevel = difficulty,
             Status = status
         };
+
+    private static ClassTypeConfigurationItemRequest ConfigurationItem(long? id, string name) => new()
+    {
+        Id = id,
+        Name = name,
+        DefaultDurationMinutes = 60,
+        DefaultCapacity = 10,
+        DifficultyLevel = "all_levels",
+        Status = "active"
+    };
 
     private sealed class Context : ICurrentUserContext
     {

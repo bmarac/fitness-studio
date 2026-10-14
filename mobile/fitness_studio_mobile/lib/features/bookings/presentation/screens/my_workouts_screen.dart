@@ -383,8 +383,8 @@ class _MemberWorkoutCardState extends ConsumerState<_MemberWorkoutCard> {
     switch (result) {
       case Success():
         await ref.read(memberBookingsProvider.notifier).refresh();
-        ref.invalidate(profileProvider);
         if (!mounted) return;
+        ref.invalidate(profileProvider);
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(context.l10n.sessionCancelled)));

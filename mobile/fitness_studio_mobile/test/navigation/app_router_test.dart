@@ -5,6 +5,7 @@ import 'package:fitness_studio_mobile/features/auth/presentation/state/login_sta
 import 'package:fitness_studio_mobile/features/bookings/presentation/state/member_bookings_provider.dart';
 import 'package:fitness_studio_mobile/features/class_sessions/presentation/state/class_sessions_controller.dart';
 import 'package:fitness_studio_mobile/features/class_sessions/presentation/state/class_sessions_state.dart';
+import 'package:fitness_studio_mobile/features/class_sessions/presentation/state/my_class_sessions_provider.dart';
 import 'package:fitness_studio_mobile/features/membership_plans/presentation/state/membership_plans_providers.dart';
 import 'package:fitness_studio_mobile/features/member_packages/domain/entities/member_package.dart';
 import 'package:fitness_studio_mobile/features/member_packages/presentation/state/member_packages_providers.dart';
@@ -60,9 +61,20 @@ void main() {
     );
     expect(find.text('Moji treninzi'), findsWidgets);
     expect(find.text('Termini'), findsOneWidget);
+
+    final navigationBar = tester.widget<NavigationBar>(
+      find.byType(NavigationBar),
+    );
+    expect(navigationBar.selectedIndex, 1);
+    expect(
+      (navigationBar.destinations[1] as NavigationDestination).label,
+      'Moji treninzi',
+    );
   });
 
-  testWidgets('admin starts on the centered schedules tab', (tester) async {
+  testWidgets('admin also starts on the centered My Workouts tab', (
+    tester,
+  ) async {
     final repository = _EmptyRecurringSchedulesRepository();
     serviceLocator.registerSingleton<GetRecurringSchedules>(
       GetRecurringSchedules(repository),
@@ -71,6 +83,8 @@ void main() {
       overrides: [
         loginControllerProvider.overrideWith(_LoggedInAdminController.new),
         memberBookingsProvider.overrideWith(_EmptyMemberBookingsController.new),
+        allClassSessionsProvider.overrideWith((ref) async => []),
+        trainerOptionsProvider.overrideWith((ref) async => []),
       ],
     );
     addTearDown(container.dispose);
@@ -86,9 +100,9 @@ void main() {
 
     expect(
       router.routeInformationProvider.value.uri.path,
-      AppRoutes.recurringSchedules,
+      AppRoutes.myWorkouts,
     );
-    expect(find.text('Rasporedi'), findsWidgets);
+    expect(find.text('Moji treninzi'), findsWidgets);
 
     final navigationBar = tester.widget<NavigationBar>(
       find.byType(NavigationBar),
@@ -97,7 +111,7 @@ void main() {
     expect(navigationBar.destinations[1], isA<NavigationDestination>());
     expect(
       (navigationBar.destinations[1] as NavigationDestination).label,
-      'Rasporedi',
+      'Moji treninzi',
     );
 
     router.go(AppRoutes.classSessions);
@@ -108,6 +122,11 @@ void main() {
       AppRoutes.recurringSchedules,
     );
     expect(find.text('Rasporedi'), findsWidgets);
+
+    final schedulesNavigationBar = tester.widget<NavigationBar>(
+      find.byType(NavigationBar),
+    );
+    expect(schedulesNavigationBar.selectedIndex, 0);
   });
 
   testWidgets('member schedules root redirects to termini', (tester) async {

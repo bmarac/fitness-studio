@@ -31,7 +31,7 @@ public class MemberMeasurementsServiceTests
     }
 
     [Fact]
-    public async Task StaffCreatesHeightAndWeightAndGetsCalculatedBmi()
+    public async Task StaffCreatesManualValuesIncludingBmi()
     {
         await using var db = Database();
         SeedMemberAndParameters(db);
@@ -39,20 +39,20 @@ public class MemberMeasurementsServiceTests
         var service = Service(db, AuthRoles.Trainer);
 
         var result = await service.CreateMeasurementAsync(1, Request(
-            (1, 170m), (2, 68m), note: "  baseline  "));
+            (1, 170m), (3, 23.5m), note: "  baseline  "));
         var latest = await service.GetLatestMeasurementsAsync(1);
 
         Assert.Equal(ServiceResultStatus.Success, result.Status);
         Assert.Equal("baseline", result.Value!.Note);
         Assert.Equal(23.5m, result.Value.Values.Single(value => value.Code == "bmi").Value);
-        Assert.Equal(3, latest.Value!.Values.Count);
+        Assert.Equal(2, latest.Value!.Values.Count);
         Assert.Equal(23.5m, latest.Value.Values.Single(value => value.Code == "bmi").Value);
         Assert.Equal(10, result.Value.RecordedByUserId);
         Assert.Single(db.MemberMeasurements);
     }
 
     [Fact]
-    public async Task HistoryUsesMostRecentKnownHeightAndWeightAndIsNewestFirst()
+    public async Task HistoryContainsOnlyStoredValuesAndIsNewestFirst()
     {
         await using var db = Database();
         SeedMemberAndParameters(db);
@@ -67,7 +67,7 @@ public class MemberMeasurementsServiceTests
         var measurements = Assert.IsType<List<MemberMeasurementResponse>>(history.Value);
 
         Assert.Equal([newer, older], measurements.Select(item => item.MeasuredAt));
-        Assert.Contains(measurements[0].Values, value => value.Code == "bmi" && value.Value == 23.5m);
+        Assert.DoesNotContain(measurements[0].Values, value => value.Code == "bmi");
         Assert.DoesNotContain(measurements[1].Values, value => value.Code == "bmi");
     }
 
@@ -110,28 +110,37 @@ public class MemberMeasurementsServiceTests
     }
 
     [Theory]
-    [InlineData(4, 10)]
-    [InlineData(5, 10)]
-    [InlineData(6, 1.5)]
-    [InlineData(7, 10.12)]
-    [InlineData(2, 501)]
-    [InlineData(99, 10)]
-    public async Task CreateRejectsInvalidParametersOrValues(long parameterId, double value)
+    [InlineData(4)]
+    [InlineData(99)]
+    public async Task CreateRejectsInactiveOrUnknownParameters(long parameterId)
     {
         await using var db = Database();
         SeedMemberAndParameters(db);
         db.MeasurementParameters.AddRange(
-            Parameter(4, "inactive", "manual", status: "inactive"),
-            Parameter(5, "calculated", "calculated", calculation: "bmi"),
-            Parameter(6, "integer", "manual", valueType: "integer", decimals: 0),
-            Parameter(7, "precision", "manual", decimals: 1));
+            Parameter(4, "inactive", status: "inactive"));
         await db.SaveChangesAsync();
 
         var result = await Service(db, AuthRoles.Trainer).CreateMeasurementAsync(
-            1, Request((parameterId, Convert.ToDecimal(value))));
+            1, Request((parameterId, 10.1234m)));
 
         Assert.Equal(ServiceResultStatus.Conflict, result.Status);
         Assert.Empty(db.MemberMeasurements);
+    }
+
+    [Theory]
+    [InlineData(42)]
+    [InlineData(42.1234)]
+    [InlineData(501.5)]
+    public async Task CreateAcceptsWholeAndDecimalValuesWithoutParameterRanges(double value)
+    {
+        await using var db = Database();
+        SeedMemberAndParameters(db);
+        await db.SaveChangesAsync();
+
+        var result = await Service(db, AuthRoles.Trainer).CreateMeasurementAsync(
+            1, Request((1, Convert.ToDecimal(value))));
+
+        Assert.Equal(ServiceResultStatus.Success, result.Status);
     }
 
     private static MemberMeasurementsService Service(
@@ -146,9 +155,9 @@ public class MemberMeasurementsServiceTests
     {
         db.Members.Add(Member(1, 1));
         db.MeasurementParameters.AddRange(
-            Parameter(1, "height_cm", "manual", min: 50, max: 250, decimals: 1, sort: 1),
-            Parameter(2, "weight_kg", "manual", min: 20, max: 500, decimals: 1, sort: 2),
-            Parameter(3, "bmi", "calculated", calculation: "bmi", decimals: 1, sort: 3));
+            Parameter(1, "height_cm", sort: 1),
+            Parameter(2, "weight_kg", sort: 2),
+            Parameter(3, "bmi", sort: 3));
     }
 
     private static Member Member(long id, long studioId) => new()
@@ -164,21 +173,13 @@ public class MemberMeasurementsServiceTests
     };
 
     private static MeasurementParameter Parameter(
-        long id, string code, string source, string valueType = "decimal", string? calculation = null,
-        string status = "active", decimal? min = null, decimal? max = null,
-        short decimals = 1, int sort = 0) => new()
+        long id, string code, string status = "active", int sort = 0) => new()
         {
             Id = id,
             StudioId = 1,
             Code = code,
             Name = code,
             Unit = null,
-            ValueType = valueType,
-            Source = source,
-            CalculationType = calculation,
-            MinValue = min,
-            MaxValue = max,
-            DecimalPlaces = decimals,
             SortOrder = sort,
             Status = status,
             CreatedAt = DateTime.UtcNow,

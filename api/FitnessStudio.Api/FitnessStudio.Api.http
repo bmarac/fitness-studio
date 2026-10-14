@@ -17,15 +17,8 @@ Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {
-  "code": "hip_cm",
   "name": "Opseg bokova",
   "unit": "cm",
-  "valueType": "decimal",
-  "source": "manual",
-  "calculationType": null,
-  "minValue": 20,
-  "maxValue": 300,
-  "decimalPlaces": 1,
   "sortOrder": 80,
   "status": "active"
 }
@@ -39,12 +32,6 @@ Content-Type: application/json
 {
   "name": "Visina",
   "unit": "cm",
-  "valueType": "decimal",
-  "source": "manual",
-  "calculationType": null,
-  "minValue": 50,
-  "maxValue": 250,
-  "decimalPlaces": 1,
   "sortOrder": 10,
   "status": "active"
 }

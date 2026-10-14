@@ -58,9 +58,7 @@ class ProgressValue {
     required this.name,
     required this.unit,
     required this.value,
-    required this.decimalPlaces,
     required this.sortOrder,
-    required this.source,
     this.measuredAt,
   });
 
@@ -69,13 +67,13 @@ class ProgressValue {
   final String name;
   final String? unit;
   final double value;
-  final int decimalPlaces;
   final int sortOrder;
-  final String source;
   final DateTime? measuredAt;
 
   String get formattedValue {
-    final number = value.toStringAsFixed(decimalPlaces);
+    final number = value == value.truncateToDouble()
+        ? value.toInt().toString()
+        : value.toString();
     return unit == null || unit!.isEmpty ? number : '$number $unit';
   }
 }

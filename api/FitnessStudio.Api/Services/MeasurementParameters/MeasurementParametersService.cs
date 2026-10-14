@@ -4,14 +4,13 @@ using FitnessStudio.Api.Dtos.MeasurementParameters;
 using FitnessStudio.Api.Entities;
 using FitnessStudio.Api.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
+using System.Text;
 
 namespace FitnessStudio.Api.Services.MeasurementParameters;
 
 public class MeasurementParametersService : IMeasurementParametersService
 {
-    private static readonly HashSet<string> AllowedValueTypes = ["decimal", "integer"];
-    private static readonly HashSet<string> AllowedSources = ["manual", "calculated"];
-    private static readonly HashSet<string> AllowedCalculationTypes = ["bmi"];
     private static readonly HashSet<string> AllowedStatuses = ["active", "inactive"];
 
     private readonly ICurrentUserContext _currentUser;
@@ -61,26 +60,14 @@ public class MeasurementParametersService : IMeasurementParametersService
     public async Task<ServiceResult<MeasurementParameterResponse>> CreateParameterAsync(
         CreateMeasurementParameterRequest request)
     {
-        var validationResult = ValidateDefinition(
-            request.ValueType,
-            request.Source,
-            request.CalculationType,
-            request.MinValue,
-            request.MaxValue,
-            request.DecimalPlaces,
-            request.Status);
+        var validationResult = ValidateStatus(request.Status);
         if (validationResult is not null)
         {
             return ToTypedFailure(validationResult);
         }
 
-        var code = Normalize(request.Code);
-        if (await QueryParameters().AnyAsync(parameter => parameter.Code == code))
-        {
-            return ServiceResult<MeasurementParameterResponse>.Conflict(
-                "Measurement parameter code already exists.",
-                "A parameter with this code already exists in the current studio.");
-        }
+        var usedCodes = await QueryParameters().Select(parameter => parameter.Code).ToListAsync();
+        var code = GenerateUniqueCode(request.Name, usedCodes);
 
         var now = DateTime.UtcNow;
         var parameter = new MeasurementParameter
@@ -89,12 +76,6 @@ public class MeasurementParametersService : IMeasurementParametersService
             Code = code,
             Name = request.Name.Trim(),
             Unit = NormalizeOptionalText(request.Unit),
-            ValueType = Normalize(request.ValueType),
-            Source = Normalize(request.Source),
-            CalculationType = NormalizeOptional(request.CalculationType),
-            MinValue = request.MinValue,
-            MaxValue = request.MaxValue,
-            DecimalPlaces = request.DecimalPlaces,
             SortOrder = request.SortOrder,
             Status = Normalize(request.Status),
             CreatedAt = now,
@@ -119,48 +100,87 @@ public class MeasurementParametersService : IMeasurementParametersService
                 "A measurement parameter with this id does not exist.");
         }
 
-        var validationResult = ValidateDefinition(
-            request.ValueType,
-            request.Source,
-            request.CalculationType,
-            request.MinValue,
-            request.MaxValue,
-            request.DecimalPlaces,
-            request.Status);
+        var validationResult = ValidateStatus(request.Status);
         if (validationResult is not null)
         {
             return validationResult;
         }
 
-        var valueType = Normalize(request.ValueType);
-        var source = Normalize(request.Source);
-        var calculationType = NormalizeOptional(request.CalculationType);
-        var definitionChanged = parameter.ValueType != valueType
-            || parameter.Source != source
-            || parameter.CalculationType != calculationType;
-
-        if (definitionChanged && await _dbContext.MemberMeasurementValues
-                .AnyAsync(value => value.ParameterId == parameter.Id))
-        {
-            return ServiceResult.Conflict(
-                "Measurement parameter definition cannot be changed.",
-                "Value type, source and calculation type cannot change after values have been recorded.");
-        }
-
         parameter.Name = request.Name.Trim();
         parameter.Unit = NormalizeOptionalText(request.Unit);
-        parameter.ValueType = valueType;
-        parameter.Source = source;
-        parameter.CalculationType = calculationType;
-        parameter.MinValue = request.MinValue;
-        parameter.MaxValue = request.MaxValue;
-        parameter.DecimalPlaces = request.DecimalPlaces;
         parameter.SortOrder = request.SortOrder;
         parameter.Status = Normalize(request.Status);
         parameter.UpdatedAt = DateTime.UtcNow;
 
         await _dbContext.SaveChangesAsync();
         return ServiceResult.Success();
+    }
+
+    public async Task<ServiceResult<List<MeasurementParameterResponse>>> SaveConfigurationAsync(
+        SaveMeasurementParametersConfigurationRequest request)
+    {
+        var ids = request.Items.Where(item => item.Id.HasValue)
+            .Select(item => item.Id!.Value).ToList();
+        if (ids.Count != ids.Distinct().Count())
+        {
+            return ServiceResult<List<MeasurementParameterResponse>>.Conflict(
+                "Invalid measurement parameter configuration.",
+                "A parameter can appear only once in the configuration.");
+        }
+
+        foreach (var item in request.Items)
+        {
+            var validation = ValidateStatus(item.Status);
+            if (validation is not null)
+            {
+                return new ServiceResult<List<MeasurementParameterResponse>>(
+                    validation.Status,
+                    default,
+                    validation.Error);
+            }
+        }
+
+        var existing = await QueryParameters().Where(item => ids.Contains(item.Id))
+            .ToDictionaryAsync(item => item.Id);
+        if (existing.Count != ids.Count)
+        {
+            return ServiceResult<List<MeasurementParameterResponse>>.NotFound(
+                "Measurement parameter not found.",
+                "Every parameter must belong to the current studio.");
+        }
+
+        var now = DateTime.UtcNow;
+        var usedCodes = (await QueryParameters().Select(parameter => parameter.Code).ToListAsync())
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var item in request.Items)
+        {
+            var parameter = item.Id.HasValue ? existing[item.Id.Value] : new MeasurementParameter
+            {
+                StudioId = _currentUser.StudioId,
+                Code = GenerateUniqueCode(item.Name, usedCodes),
+                CreatedAt = now
+            };
+            parameter.Name = item.Name.Trim();
+            parameter.Unit = NormalizeOptionalText(item.Unit);
+            parameter.SortOrder = item.SortOrder;
+            parameter.Status = Normalize(item.Status);
+            parameter.UpdatedAt = now;
+            if (!item.Id.HasValue) _dbContext.MeasurementParameters.Add(parameter);
+        }
+
+        try
+        {
+            await _dbContext.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            return ServiceResult<List<MeasurementParameterResponse>>.Conflict(
+                "Measurement parameter configuration cannot be saved.",
+                "Parameter codes must be unique in the current studio.");
+        }
+
+        return ServiceResult<List<MeasurementParameterResponse>>.Success(
+            await GetParametersAsync());
     }
 
     public async Task<ServiceResult> DeleteParameterAsync(long id)
@@ -194,52 +214,13 @@ public class MeasurementParametersService : IMeasurementParametersService
             parameter.Code,
             parameter.Name,
             parameter.Unit,
-            parameter.ValueType,
-            parameter.Source,
-            parameter.CalculationType,
-            parameter.MinValue,
-            parameter.MaxValue,
-            parameter.DecimalPlaces,
             parameter.SortOrder,
             parameter.Status));
     }
 
-    private static ServiceResult? ValidateDefinition(
-        string requestedValueType,
-        string requestedSource,
-        string? requestedCalculationType,
-        decimal? minValue,
-        decimal? maxValue,
-        short decimalPlaces,
-        string requestedStatus)
+    private static ServiceResult? ValidateStatus(string requestedStatus)
     {
-        var valueType = Normalize(requestedValueType);
-        var source = Normalize(requestedSource);
-        var calculationType = NormalizeOptional(requestedCalculationType);
         var status = Normalize(requestedStatus);
-
-        if (!AllowedValueTypes.Contains(valueType))
-        {
-            return ServiceResult.Conflict(
-                "Invalid measurement value type.",
-                "Value type must be decimal or integer.");
-        }
-
-        if (!AllowedSources.Contains(source))
-        {
-            return ServiceResult.Conflict(
-                "Invalid measurement source.",
-                "Source must be manual or calculated.");
-        }
-
-        if ((source == "manual" && calculationType is not null)
-            || (source == "calculated"
-                && (calculationType is null || !AllowedCalculationTypes.Contains(calculationType))))
-        {
-            return ServiceResult.Conflict(
-                "Invalid measurement calculation.",
-                "Manual parameters cannot have a calculation; calculated parameters currently support only bmi.");
-        }
 
         if (!AllowedStatuses.Contains(status))
         {
@@ -248,29 +229,56 @@ public class MeasurementParametersService : IMeasurementParametersService
                 "Status must be active or inactive.");
         }
 
-        if (minValue.HasValue
-            && maxValue.HasValue
-            && minValue.Value > maxValue.Value)
-        {
-            return ServiceResult.Conflict(
-                "Invalid measurement range.",
-                "Minimum value cannot be greater than maximum value.");
-        }
-
-        if (valueType == "integer" && decimalPlaces != 0)
-        {
-            return ServiceResult.Conflict(
-                "Invalid decimal places.",
-                "Integer parameters must use zero decimal places.");
-        }
-
         return null;
     }
 
-    private static string Normalize(string value) => value.Trim().ToLowerInvariant();
+    private static string GenerateUniqueCode(string name, IEnumerable<string> existingCodes)
+    {
+        var usedCodes = existingCodes as ISet<string>
+            ?? existingCodes.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var baseCode = Slugify(name);
+        var code = baseCode;
+        for (var suffix = 2; usedCodes.Contains(code); suffix++)
+        {
+            var suffixText = $"_{suffix}";
+            code = $"{baseCode[..Math.Min(baseCode.Length, 80 - suffixText.Length)]}{suffixText}";
+        }
 
-    private static string? NormalizeOptional(string? value)
-        => string.IsNullOrWhiteSpace(value) ? null : Normalize(value);
+        usedCodes.Add(code);
+        return code;
+    }
+
+    private static string Slugify(string value)
+    {
+        var normalized = value.Trim().Normalize(NormalizationForm.FormD);
+        var builder = new StringBuilder();
+        var separatorPending = false;
+        foreach (var character in normalized)
+        {
+            if (CharUnicodeInfo.GetUnicodeCategory(character) == UnicodeCategory.NonSpacingMark)
+            {
+                continue;
+            }
+
+            if (character <= 127 && char.IsLetterOrDigit(character))
+            {
+                if (separatorPending && builder.Length > 0) builder.Append('_');
+                builder.Append(char.ToLowerInvariant(character));
+                separatorPending = false;
+            }
+            else
+            {
+                separatorPending = builder.Length > 0;
+            }
+        }
+
+        var code = builder.ToString();
+        if (code.Length == 0) code = "parametar";
+        if (!char.IsLetter(code[0])) code = $"parametar_{code}";
+        return code[..Math.Min(code.Length, 80)];
+    }
+
+    private static string Normalize(string value) => value.Trim().ToLowerInvariant();
 
     private static string? NormalizeOptionalText(string? value)
         => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
@@ -282,12 +290,6 @@ public class MeasurementParametersService : IMeasurementParametersService
             parameter.Code,
             parameter.Name,
             parameter.Unit,
-            parameter.ValueType,
-            parameter.Source,
-            parameter.CalculationType,
-            parameter.MinValue,
-            parameter.MaxValue,
-            parameter.DecimalPlaces,
             parameter.SortOrder,
             parameter.Status);
     }

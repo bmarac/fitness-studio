@@ -9,9 +9,15 @@ import '../../../../core/widgets/loading_view.dart';
 import '../../../../navigation/app_routes.dart';
 import '../../domain/entities/progress_management.dart';
 import '../state/progress_management_providers.dart';
+import '../widgets/measurement_parameters_modal.dart';
 
 class MembersProgressScreen extends ConsumerStatefulWidget {
-  const MembersProgressScreen({super.key});
+  const MembersProgressScreen({
+    required this.canConfigureParameters,
+    super.key,
+  });
+
+  final bool canConfigureParameters;
 
   @override
   ConsumerState<MembersProgressScreen> createState() =>
@@ -26,7 +32,28 @@ class _MembersProgressScreenState extends ConsumerState<MembersProgressScreen> {
     final members = ref.watch(progressMembersProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text(context.l10n.membersProgressTitle)),
+      appBar: AppBar(
+        title: Text(context.l10n.membersProgressTitle),
+        actions: [
+          if (widget.canConfigureParameters)
+            IconButton(
+              key: const ValueKey('measurement-parameters-settings'),
+              tooltip: context.l10n.measurementParametersSettingsTitle,
+              onPressed: () async {
+                final saved = await showMeasurementParametersModal(
+                  context,
+                  ref,
+                );
+                if (saved && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(context.l10n.configurationSaved)),
+                  );
+                }
+              },
+              icon: const Icon(Icons.settings_outlined),
+            ),
+        ],
+      ),
       body: members.when(
         loading: () => const LoadingView(),
         error: (error, stackTrace) => ErrorView(
