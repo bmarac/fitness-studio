@@ -1,23 +1,15 @@
-using System.ComponentModel.DataAnnotations;
 using FitnessStudio.Api.Domain.ClassTypes;
 
 namespace FitnessStudio.Api.Validation;
 
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Parameter)]
-public sealed class AllowedClassTypeDifficultyLevelAttribute : ValidationAttribute
+public sealed class AllowedClassTypeDifficultyLevelAttribute : AllowedStringValuesAttribute
 {
-    protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
+    public AllowedClassTypeDifficultyLevelAttribute()
+        : base(
+            "Difficulty level",
+            ClassTypeDifficultyLevels.All,
+            ClassTypeDifficultyLevels.IsValid)
     {
-        if (value is null)
-        {
-            return ValidationResult.Success;
-        }
-
-        if (value is string difficultyLevel && ClassTypeDifficultyLevels.IsValid(difficultyLevel))
-        {
-            return ValidationResult.Success;
-        }
-
-        return new ValidationResult($"Difficulty level must be one of: {string.Join(", ", ClassTypeDifficultyLevels.All)}.");
     }
 }

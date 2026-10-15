@@ -1,23 +1,12 @@
-using System.ComponentModel.DataAnnotations;
 using FitnessStudio.Api.Domain.Trainers;
 
 namespace FitnessStudio.Api.Validation;
 
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Parameter)]
-public sealed class AllowedTrainerStatusAttribute : ValidationAttribute
+public sealed class AllowedTrainerStatusAttribute : AllowedStringValuesAttribute
 {
-    protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
+    public AllowedTrainerStatusAttribute()
+        : base("Status", TrainerStatuses.All, TrainerStatuses.IsValid)
     {
-        if (value is null)
-        {
-            return ValidationResult.Success;
-        }
-
-        if (value is string status && TrainerStatuses.IsValid(status))
-        {
-            return ValidationResult.Success;
-        }
-
-        return new ValidationResult($"Status must be one of: {string.Join(", ", TrainerStatuses.All)}.");
     }
 }

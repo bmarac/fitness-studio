@@ -7,7 +7,6 @@ class AppRoutes {
   static const register = '/registracija';
   static const registerPath = register;
   static const studioSelection = '/odabir-studija';
-  static const studioSelectionPath = studioSelection;
 
   static const classSessions = '/termini';
 

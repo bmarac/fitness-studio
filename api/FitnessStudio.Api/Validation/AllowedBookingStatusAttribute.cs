@@ -1,23 +1,15 @@
-using System.ComponentModel.DataAnnotations;
 using FitnessStudio.Api.Domain.Bookings;
 
 namespace FitnessStudio.Api.Validation;
 
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Parameter)]
-public sealed class AllowedBookingStatusAttribute : ValidationAttribute
+public sealed class AllowedBookingStatusAttribute : AllowedStringValuesAttribute
 {
-    protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
+    public AllowedBookingStatusAttribute()
+        : base(
+            "Status",
+            BookingStatuses.ManuallyAssignable,
+            BookingStatuses.IsManuallyAssignable)
     {
-        if (value is null)
-        {
-            return ValidationResult.Success;
-        }
-
-        if (value is string status && BookingStatuses.IsManuallyAssignable(status))
-        {
-            return ValidationResult.Success;
-        }
-
-        return new ValidationResult($"Status must be one of: {string.Join(", ", BookingStatuses.ManuallyAssignable)}.");
     }
 }
