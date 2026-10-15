@@ -69,6 +69,80 @@ public class ClassSessionsService : IClassSessionsService
             .ToListAsync();
     }
 
+    public async Task<ClassSessionWorkoutsPageResponse> GetWorkoutsAsync(
+        ClassSessionWorkoutsQuery query)
+    {
+        var workouts = _dbContext.ClassSessions
+            .AsNoTracking()
+            .Where(classSession => classSession.StudioId == _currentUser.StudioId);
+
+        if (_currentUser.IsInRole(AuthRoles.Admin))
+        {
+            if (query.TrainerId.HasValue)
+            {
+                workouts = workouts.Where(classSession =>
+                    classSession.TrainerId == query.TrainerId.Value);
+            }
+        }
+        else
+        {
+            var trainerId = _currentUser.TrainerId
+                ?? throw new InvalidOperationException(
+                    "Authenticated trainer is missing the trainer_id claim.");
+            workouts = workouts.Where(classSession => classSession.TrainerId == trainerId);
+        }
+
+        var ordered = FilterAndOrderWorkouts(workouts, query.Filter, DateTime.UtcNow);
+        var pageItems = await ordered
+            .Skip((query.Page - 1) * query.PageSize)
+            .Take(query.PageSize + 1)
+            .ProjectTo<ClassSessionResponse>(_configurationProvider)
+            .ToListAsync();
+        var hasNextPage = pageItems.Count > query.PageSize;
+
+        if (hasNextPage)
+        {
+            pageItems.RemoveAt(pageItems.Count - 1);
+        }
+
+        return new ClassSessionWorkoutsPageResponse
+        {
+            Items = pageItems,
+            Page = query.Page,
+            PageSize = query.PageSize,
+            HasNextPage = hasNextPage
+        };
+    }
+
+    internal static IOrderedQueryable<ClassSession> FilterAndOrderWorkouts(
+        IQueryable<ClassSession> workouts,
+        string filter,
+        DateTime now)
+    {
+        var filtered = filter switch
+        {
+            "active" => workouts.Where(classSession =>
+                classSession.Status == ClassSessionStatuses.Scheduled
+                && classSession.EndsAt > now),
+            "completed" => workouts.Where(classSession =>
+                classSession.Status == ClassSessionStatuses.Completed
+                || (classSession.Status == ClassSessionStatuses.Scheduled
+                    && classSession.EndsAt <= now)),
+            "cancelled" => workouts.Where(classSession =>
+                classSession.Status == ClassSessionStatuses.Cancelled),
+            "all" => workouts,
+            _ => throw new ArgumentOutOfRangeException(nameof(filter), filter, null)
+        };
+
+        return filter == "active"
+            ? filtered
+                .OrderBy(classSession => classSession.StartsAt)
+                .ThenBy(classSession => classSession.Id)
+            : filtered
+                .OrderByDescending(classSession => classSession.StartsAt)
+                .ThenByDescending(classSession => classSession.Id);
+    }
+
     public async Task<ServiceResult<ClassSessionResponse>> GetClassSessionAsync(long id)
     {
         var classSession = await _dbContext.ClassSessions

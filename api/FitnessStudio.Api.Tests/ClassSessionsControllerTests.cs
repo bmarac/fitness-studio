@@ -53,6 +53,33 @@ public class ClassSessionsControllerTests
     }
 
     [Fact]
+    public async Task GetWorkoutsReturnsPageAndForwardsQuery()
+    {
+        var query = new ClassSessionWorkoutsQuery
+        {
+            Filter = "completed",
+            Page = 2,
+            PageSize = 20,
+            TrainerId = 8
+        };
+        var page = new ClassSessionWorkoutsPageResponse
+        {
+            Items = [Session()],
+            Page = 2,
+            PageSize = 20,
+            HasNextPage = true
+        };
+        var service = new FakeClassSessionsService { GetWorkoutsResult = page };
+        var controller = new ClassSessionsController(service);
+
+        var action = await controller.GetWorkouts(query);
+
+        var ok = Assert.IsType<OkObjectResult>(action.Result);
+        Assert.Same(page, ok.Value);
+        Assert.Same(query, service.LastWorkoutsQuery);
+    }
+
+    [Fact]
     public async Task GetClassSessionReturnsItemAndForwardsId()
     {
         var session = Session();
@@ -226,6 +253,10 @@ public class ClassSessionsControllerTests
             AuthRoles.Trainer);
         SchedulingControllerTestAssertions.MethodRequiresRole(
             typeof(ClassSessionsController),
+            nameof(ClassSessionsController.GetWorkouts),
+            AuthRoles.Staff);
+        SchedulingControllerTestAssertions.MethodRequiresRole(
+            typeof(ClassSessionsController),
             nameof(ClassSessionsController.CancelClassSession),
             AuthRoles.Staff);
     }
@@ -272,6 +303,7 @@ public class ClassSessionsControllerTests
     {
         public List<ClassSessionResponse> GetSessionsResult { get; init; } = [];
         public List<ClassSessionResponse> GetMySessionsResult { get; init; } = [];
+        public ClassSessionWorkoutsPageResponse GetWorkoutsResult { get; init; } = new();
         public ServiceResult<ClassSessionResponse> GetSessionResult { get; init; } = null!;
         public ServiceResult<ClassSessionResponse> CreateSessionResult { get; init; } = null!;
         public ServiceResult UpdateSessionResult { get; init; } = null!;
@@ -280,6 +312,7 @@ public class ClassSessionsControllerTests
         public long? LastGetSessionId { get; private set; }
         public DateTime? LastFrom { get; private set; }
         public DateTime? LastTo { get; private set; }
+        public ClassSessionWorkoutsQuery? LastWorkoutsQuery { get; private set; }
         public CreateClassSessionRequest? LastCreateRequest { get; private set; }
         public long? LastUpdateSessionId { get; private set; }
         public UpdateClassSessionRequest? LastUpdateRequest { get; private set; }
@@ -297,6 +330,13 @@ public class ClassSessionsControllerTests
 
         public Task<List<ClassSessionResponse>> GetMyClassSessionsAsync()
             => Task.FromResult(GetMySessionsResult);
+
+        public Task<ClassSessionWorkoutsPageResponse> GetWorkoutsAsync(
+            ClassSessionWorkoutsQuery query)
+        {
+            LastWorkoutsQuery = query;
+            return Task.FromResult(GetWorkoutsResult);
+        }
 
         public Task<ServiceResult<ClassSessionResponse>> GetClassSessionAsync(long id)
         {

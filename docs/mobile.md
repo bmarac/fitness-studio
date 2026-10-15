@@ -63,6 +63,8 @@ Dodatne rute:
 - **Ukloni s ovog termina** otkazuje samo odabranu rezervaciju
 - **Ukloni iz fiksne grupe** otkazuje odabrani i buduce termine iste fiksne dodjele
 - trenerski pregled **Moji treninzi** s današnjim, nadolazećim i završenim terminima
+  koristi server-side filtre i ucitava povijest u stranicama od 20 termina;
+  isto vrijedi za administratorski pregled svih ili odabranog trenera
 - admin na popisu clanova fiksnog rasporeda moze pretragom dodati aktivnog clana
   od odabranog datuma; buduci termini popunjavaju se odmah
 - **Rasporedi** je početni i srednji tab za trenera/admina, dok član nakon prijave

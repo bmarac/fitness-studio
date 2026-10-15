@@ -39,6 +39,14 @@ public class ClassSessionsController : ControllerBase
         return Ok(await _classSessionsService.GetMyClassSessionsAsync());
     }
 
+    [Authorize(Roles = AuthRoles.Staff)]
+    [HttpGet("workouts")]
+    public async Task<ActionResult<ClassSessionWorkoutsPageResponse>> GetWorkouts(
+        [FromQuery] ClassSessionWorkoutsQuery query)
+    {
+        return Ok(await _classSessionsService.GetWorkoutsAsync(query));
+    }
+
     [HttpGet("{id:long}")]
     public async Task<ActionResult<ClassSessionResponse>> GetClassSession(long id)
     {

@@ -27,9 +27,6 @@ class MyWorkoutsScreen extends ConsumerStatefulWidget {
 }
 
 class _MyWorkoutsScreenState extends ConsumerState<MyWorkoutsScreen> {
-  WorkoutFilter _filter = WorkoutFilter.active;
-  int? _selectedTrainerId;
-
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(loginControllerProvider);
@@ -40,7 +37,7 @@ class _MyWorkoutsScreenState extends ConsumerState<MyWorkoutsScreen> {
     final isMember = !isAdmin && !isTrainer;
     final selectedFilter = isMember
         ? ref.watch(memberBookingsProvider).filter
-        : _filter;
+        : ref.watch(classSessionWorkoutsProvider).filter;
 
     return Scaffold(
       appBar: AppBar(
@@ -53,7 +50,9 @@ class _MyWorkoutsScreenState extends ConsumerState<MyWorkoutsScreen> {
               if (isMember) {
                 ref.read(memberBookingsProvider.notifier).selectFilter(value);
               } else {
-                setState(() => _filter = value);
+                ref
+                    .read(classSessionWorkoutsProvider.notifier)
+                    .selectFilter(value);
               }
             },
             icon: Badge(
@@ -83,17 +82,12 @@ class _MyWorkoutsScreenState extends ConsumerState<MyWorkoutsScreen> {
       ),
       body: isAdmin
           ? _AdminWorkoutsView(
-              classSessions: ref.watch(allClassSessionsProvider),
+              state: ref.watch(classSessionWorkoutsProvider),
               trainers: ref.watch(trainerOptionsProvider),
-              filter: _filter,
-              selectedTrainerId: _selectedTrainerId,
-              onTrainerSelected: (value) =>
-                  setState(() => _selectedTrainerId = value),
             )
           : isTrainer
-          ? _TrainerWorkoutsView(
-              classSessions: ref.watch(myClassSessionsProvider),
-              filter: _filter,
+          ? _StaffWorkoutsContent(
+              state: ref.watch(classSessionWorkoutsProvider),
             )
           : const _MemberWorkoutsView(),
     );
@@ -101,71 +95,45 @@ class _MyWorkoutsScreenState extends ConsumerState<MyWorkoutsScreen> {
 }
 
 class _AdminWorkoutsView extends ConsumerWidget {
-  const _AdminWorkoutsView({
-    required this.classSessions,
-    required this.trainers,
-    required this.filter,
-    required this.selectedTrainerId,
-    required this.onTrainerSelected,
-  });
+  const _AdminWorkoutsView({required this.state, required this.trainers});
 
-  final AsyncValue<List<ClassSession>> classSessions;
+  final ClassSessionWorkoutsState state;
   final AsyncValue<List<TrainerOption>> trainers;
-  final WorkoutFilter filter;
-  final int? selectedTrainerId;
-  final ValueChanged<int?> onTrainerSelected;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return trainers.when(
       loading: () => const LoadingView(),
       error: (error, _) => ErrorView(message: localizedError(context, error)),
-      data: (trainerItems) => classSessions.when(
-        loading: () => const LoadingView(),
-        error: (error, _) => ErrorView(message: localizedError(context, error)),
-        data: (sessionItems) {
-          final visibleSessions = selectedTrainerId == null
-              ? sessionItems
-              : sessionItems
-                    .where((item) => item.trainerId == selectedTrainerId)
-                    .toList();
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                child: DropdownButtonFormField<int?>(
-                  initialValue: selectedTrainerId,
-                  decoration: InputDecoration(
-                    labelText: context.l10n.labelTrainer,
-                    border: const OutlineInputBorder(),
+      data: (trainerItems) => Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: DropdownButtonFormField<int?>(
+              key: ValueKey(state.trainerId),
+              initialValue: state.trainerId,
+              decoration: InputDecoration(
+                labelText: context.l10n.labelTrainer,
+                border: const OutlineInputBorder(),
+              ),
+              items: [
+                DropdownMenuItem<int?>(
+                  value: null,
+                  child: Text(context.l10n.allTrainers),
+                ),
+                for (final trainer in trainerItems)
+                  DropdownMenuItem<int?>(
+                    value: trainer.id,
+                    child: Text(trainer.fullName),
                   ),
-                  items: [
-                    DropdownMenuItem<int?>(
-                      value: null,
-                      child: Text(context.l10n.allTrainers),
-                    ),
-                    for (final trainer in trainerItems)
-                      DropdownMenuItem<int?>(
-                        value: trainer.id,
-                        child: Text(trainer.fullName),
-                      ),
-                  ],
-                  onChanged: onTrainerSelected,
-                ),
-              ),
-              Expanded(
-                child: _TrainerWorkoutsContent(
-                  classSessions: visibleSessions,
-                  filter: filter,
-                  onRefresh: () async {
-                    ref.invalidate(allClassSessionsProvider);
-                    ref.invalidate(trainerOptionsProvider);
-                  },
-                ),
-              ),
-            ],
-          );
-        },
+              ],
+              onChanged: (value) => ref
+                  .read(classSessionWorkoutsProvider.notifier)
+                  .selectTrainer(value),
+            ),
+          ),
+          Expanded(child: _StaffWorkoutsContent(state: state)),
+        ],
       ),
     );
   }
@@ -425,93 +393,110 @@ class _BookingStatusBadge extends StatelessWidget {
   }
 }
 
-class _TrainerWorkoutsView extends ConsumerWidget {
-  const _TrainerWorkoutsView({
-    required this.classSessions,
-    required this.filter,
-  });
+class _StaffWorkoutsContent extends ConsumerStatefulWidget {
+  const _StaffWorkoutsContent({required this.state});
 
-  final AsyncValue<List<ClassSession>> classSessions;
-  final WorkoutFilter filter;
+  final ClassSessionWorkoutsState state;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return classSessions.when(
-      loading: () => const LoadingView(),
-      error: (error, stackTrace) => ErrorView(
-        message: localizedError(context, error),
-        onRetry: () => ref.invalidate(myClassSessionsProvider),
-      ),
-      data: (items) => _TrainerWorkoutsContent(
-        classSessions: items,
-        filter: filter,
-        onRefresh: () async {
-          ref.invalidate(myClassSessionsProvider);
+  ConsumerState<_StaffWorkoutsContent> createState() =>
+      _StaffWorkoutsContentState();
+}
+
+class _StaffWorkoutsContentState extends ConsumerState<_StaffWorkoutsContent> {
+  late final ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController()..addListener(_loadMoreIfNeeded);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _loadMoreIfNeeded() {
+    if (_scrollController.position.extentAfter < 300) {
+      ref.read(classSessionWorkoutsProvider.notifier).loadNextPage();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = widget.state;
+    final controller = ref.read(classSessionWorkoutsProvider.notifier);
+
+    if (state.isInitialLoading) {
+      return const LoadingView();
+    }
+    if (state.initialFailure case final failure?) {
+      return ErrorView(
+        message: localizedError(context, failure),
+        onRetry: controller.refresh,
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: controller.refresh,
+      child: ListView.builder(
+        controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        itemCount: state.items.isEmpty ? 2 : state.items.length + 2,
+        itemBuilder: (context, index) {
+          if (index == 0) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Text(
+                _filterLabel(context, state.filter),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+              ),
+            );
+          }
+          if (state.items.isEmpty) {
+            return Text(
+              context.l10n.noSessions,
+              style: Theme.of(context).textTheme.bodyMedium,
+            );
+          }
+          if (index <= state.items.length) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _TrainerWorkoutCard(classSession: state.items[index - 1]),
+            );
+          }
+          if (state.isLoadingMore) {
+            return const Padding(
+              padding: EdgeInsets.all(16),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+          if (state.loadMoreFailure case final failure?) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Column(
+                children: [
+                  Text(
+                    localizedError(context, failure),
+                    textAlign: TextAlign.center,
+                  ),
+                  TextButton(
+                    onPressed: controller.retryLoadMore,
+                    child: Text(context.l10n.actionRetry),
+                  ),
+                ],
+              ),
+            );
+          }
+          return const SizedBox.shrink();
         },
       ),
     );
-  }
-}
-
-class _TrainerWorkoutsContent extends ConsumerWidget {
-  const _TrainerWorkoutsContent({
-    required this.classSessions,
-    required this.filter,
-    required this.onRefresh,
-  });
-
-  final List<ClassSession> classSessions;
-  final WorkoutFilter filter;
-  final Future<void> Function() onRefresh;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final now = DateTime.now();
-    final visibleItems = _filterItems(classSessions, filter, now);
-
-    return RefreshIndicator(
-      onRefresh: onRefresh,
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-        children: [
-          _WorkoutList(
-            title: _filterLabel(context, filter),
-            items: visibleItems,
-          ),
-        ],
-      ),
-    );
-  }
-
-  static List<ClassSession> _filterItems(
-    List<ClassSession> items,
-    WorkoutFilter filter,
-    DateTime now,
-  ) {
-    final filtered = switch (filter) {
-      WorkoutFilter.active => items.where(
-        (item) => item.status == 'scheduled' && item.endsAt.isAfter(now),
-      ),
-      WorkoutFilter.completed => items.where(
-        (item) =>
-            item.status == 'completed' ||
-            (item.status == 'scheduled' && !item.endsAt.isAfter(now)),
-      ),
-      WorkoutFilter.cancelled => items.where(
-        (item) => item.status == 'cancelled',
-      ),
-      WorkoutFilter.all => items,
-    };
-    final result = filtered.toList();
-
-    if (filter == WorkoutFilter.active) {
-      result.sort((a, b) => a.startsAt.compareTo(b.startsAt));
-    } else {
-      result.sort((a, b) => b.startsAt.compareTo(a.startsAt));
-    }
-
-    return result;
   }
 
   static String _filterLabel(BuildContext context, WorkoutFilter filter) {
@@ -521,38 +506,6 @@ class _TrainerWorkoutsContent extends ConsumerWidget {
       WorkoutFilter.cancelled => context.l10n.cancelledWorkouts,
       WorkoutFilter.all => context.l10n.allWorkouts,
     };
-  }
-}
-
-class _WorkoutList extends StatelessWidget {
-  const _WorkoutList({required this.title, required this.items});
-
-  final String title;
-  final List<ClassSession> items;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        const SizedBox(height: 10),
-        if (items.isEmpty)
-          Text(context.l10n.noSessions, style: theme.textTheme.bodyMedium)
-        else
-          for (final item in items) ...[
-            _TrainerWorkoutCard(classSession: item),
-            const SizedBox(height: 8),
-          ],
-      ],
-    );
   }
 }
 

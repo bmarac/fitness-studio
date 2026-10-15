@@ -82,7 +82,9 @@ void main() {
       overrides: [
         loginControllerProvider.overrideWith(_LoggedInAdminController.new),
         memberBookingsProvider.overrideWith(_EmptyMemberBookingsController.new),
-        allClassSessionsProvider.overrideWith((ref) async => []),
+        classSessionWorkoutsProvider.overrideWith(
+          _EmptyClassSessionWorkoutsController.new,
+        ),
         trainerOptionsProvider.overrideWith((ref) async => []),
       ],
     );
@@ -146,7 +148,9 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         loginControllerProvider.overrideWith(_LoggedInTrainerController.new),
-        allClassSessionsProvider.overrideWith((ref) async => []),
+        classSessionWorkoutsProvider.overrideWith(
+          _EmptyClassSessionWorkoutsController.new,
+        ),
         trainerOptionsProvider.overrideWith((ref) async => []),
       ],
     );
@@ -504,6 +508,16 @@ class _EmptyClassSessionsController extends ClassSessionsController {
 
   @override
   Future<void> loadClassSessions({DateTime? from, DateTime? to}) async {}
+}
+
+class _EmptyClassSessionWorkoutsController
+    extends ClassSessionWorkoutsController {
+  @override
+  ClassSessionWorkoutsState build() =>
+      const ClassSessionWorkoutsState(isInitialLoading: false);
+
+  @override
+  Future<void> refresh() async {}
 }
 
 class _EmptyRecurringSchedulesRepository

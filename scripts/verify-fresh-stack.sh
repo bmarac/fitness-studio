@@ -208,6 +208,11 @@ docker exec "$container_name" psql \
   --username fitness \
   --dbname fitness_studio_migration_verify \
   --file /fitness-studio-db/migrations/015_simplify_measurement_parameters.sql >/dev/null
+docker exec "$container_name" psql \
+  --set ON_ERROR_STOP=1 \
+  --username fitness \
+  --dbname fitness_studio_migration_verify \
+  --file /fitness-studio-db/migrations/016_class_session_workout_indexes.sql >/dev/null
 migrated_accounts=$(docker exec "$container_name" psql \
   --username fitness \
   --dbname fitness_studio_migration_verify \

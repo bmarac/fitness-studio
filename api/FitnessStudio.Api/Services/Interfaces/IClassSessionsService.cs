@@ -10,6 +10,8 @@ public interface IClassSessionsService
 
     Task<List<ClassSessionResponse>> GetMyClassSessionsAsync();
 
+    Task<ClassSessionWorkoutsPageResponse> GetWorkoutsAsync(ClassSessionWorkoutsQuery query);
+
     Task<ServiceResult<ClassSessionResponse>> GetClassSessionAsync(long id);
 
     Task<ServiceResult<ClassSessionResponse>> CreateClassSessionAsync(CreateClassSessionRequest request);

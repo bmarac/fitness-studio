@@ -180,7 +180,9 @@ void main() {
           loginControllerProvider.overrideWith(
             () => _FakeLoginController(['trainer'], trainerId: 7),
           ),
-          myClassSessionsProvider.overrideWith((ref) async => [session]),
+          classSessionWorkoutsProvider.overrideWith(
+            () => _FakeClassSessionWorkoutsController([session]),
+          ),
         ],
         child: localizedTestApp(home: const MyWorkoutsScreen()),
       ),
@@ -224,7 +226,9 @@ void main() {
           loginControllerProvider.overrideWith(
             () => _FakeLoginController(['admin']),
           ),
-          allClassSessionsProvider.overrideWith((ref) async => sessions),
+          classSessionWorkoutsProvider.overrideWith(
+            () => _FakeClassSessionWorkoutsController(sessions),
+          ),
           trainerOptionsProvider.overrideWith((ref) async => trainers),
         ],
         child: localizedTestApp(home: const MyWorkoutsScreen()),
@@ -274,6 +278,42 @@ class _FakeMemberBookingsController extends MemberBookingsController {
     state = MemberBookingsState(filter: state.filter, isInitialLoading: false);
     return completer.future;
   }
+}
+
+class _FakeClassSessionWorkoutsController
+    extends ClassSessionWorkoutsController {
+  _FakeClassSessionWorkoutsController(this.allItems);
+
+  final List<ClassSession> allItems;
+
+  @override
+  ClassSessionWorkoutsState build() =>
+      ClassSessionWorkoutsState(items: allItems, isInitialLoading: false);
+
+  @override
+  Future<void> selectTrainer(int? trainerId) async {
+    state = ClassSessionWorkoutsState(
+      filter: state.filter,
+      trainerId: trainerId,
+      items: trainerId == null
+          ? allItems
+          : allItems.where((item) => item.trainerId == trainerId).toList(),
+      isInitialLoading: false,
+    );
+  }
+
+  @override
+  Future<void> selectFilter(WorkoutFilter filter) async {
+    state = ClassSessionWorkoutsState(
+      filter: filter,
+      trainerId: state.trainerId,
+      items: state.items,
+      isInitialLoading: false,
+    );
+  }
+
+  @override
+  Future<void> refresh() async {}
 }
 
 class _FakeBookingsRepository implements BookingsRepository {

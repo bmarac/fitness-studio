@@ -29,6 +29,7 @@ import '../features/class_sessions/domain/repositories/class_sessions_repository
 import '../features/class_sessions/domain/usecases/cancel_class_session.dart';
 import '../features/class_sessions/domain/usecases/get_class_session.dart';
 import '../features/class_sessions/domain/usecases/get_class_sessions.dart';
+import '../features/class_sessions/domain/usecases/get_class_session_workouts_page.dart';
 import '../features/class_sessions/domain/usecases/get_my_class_sessions.dart';
 import '../features/class_types/data/class_types_remote_data_source.dart';
 import '../features/class_types/data/class_types_repository_impl.dart';
@@ -124,6 +125,11 @@ Future<void> configureDependencies() async {
     )
     ..registerLazySingleton<GetMyClassSessions>(
       () => GetMyClassSessions(serviceLocator<ClassSessionsRepository>()),
+    )
+    ..registerLazySingleton<GetClassSessionWorkoutsPage>(
+      () => GetClassSessionWorkoutsPage(
+        serviceLocator<ClassSessionsRepository>(),
+      ),
     )
     ..registerLazySingleton<CancelClassSession>(
       () => CancelClassSession(serviceLocator<ClassSessionsRepository>()),

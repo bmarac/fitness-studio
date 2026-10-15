@@ -2,6 +2,7 @@ import '../../../../core/error/failure.dart';
 import '../../../../core/error/result.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../domain/entities/class_session.dart';
+import '../../domain/entities/class_session_workouts_page.dart';
 import '../../domain/repositories/class_sessions_repository.dart';
 import '../datasources/class_sessions_remote_data_source.dart';
 
@@ -34,6 +35,28 @@ class ClassSessionsRepositoryImpl implements ClassSessionsRepository {
     try {
       final classSessions = await _remoteDataSource.getMyClassSessions();
       return Success(classSessions);
+    } on ApiException catch (error) {
+      return FailureResult(error.toFailure());
+    } on FormatException {
+      return const FailureResult(Failure(FailureKind.readApi));
+    }
+  }
+
+  @override
+  Future<Result<ClassSessionWorkoutsPage>> getWorkoutClassSessions({
+    required String filter,
+    required int page,
+    required int pageSize,
+    int? trainerId,
+  }) async {
+    try {
+      final workouts = await _remoteDataSource.getWorkoutClassSessions(
+        filter: filter,
+        page: page,
+        pageSize: pageSize,
+        trainerId: trainerId,
+      );
+      return Success(workouts);
     } on ApiException catch (error) {
       return FailureResult(error.toFailure());
     } on FormatException {

@@ -26,7 +26,7 @@ poslovni endpointi studio-scoped JWT. Podaci se ogranicavaju na studio iz JWT-a.
 | Clanarine | CRUD na `/api/member-memberships` |
 | Rasporedi | CRUD na `/api/recurring-class-schedules` |
 | Fiksne dodjele | CRUD i prekid dodjele na `/api/member-fixed-schedules` |
-| Termini | CRUD na `/api/class-sessions` |
+| Termini | CRUD na `/api/class-sessions`; paginirani pregled Moji treninzi na `GET /api/class-sessions/workouts` |
 | Rezervacije | CRUD i statusi na `/api/bookings` |
 
 `PUT /api/member-memberships/{id}/billing` prima `firstBillingOn`. Odabrani datum
@@ -98,6 +98,17 @@ Isto pravilo vrijedi kada admin rezervira za clana i kada se rezervacija iz
 Dosegnuti limit ili nepostojece clanstvo vracaju `409 Problem Details` s posebnim
 razlogom. Paket bez `sessionLimit` je neogranicen. Automatske fiksne rezervacije
 koje ne zadovoljavaju ova pravila preskacu se.
+
+### Paginirani pregled treninga osoblja
+
+```http
+GET /api/class-sessions/workouts?filter=active&page=1&pageSize=20&trainerId=7
+```
+
+Admin i trener dobivaju stranice s `items`, `page`, `pageSize` i
+`hasNextPage`. Trener je uvijek ogranicen na `trainer_id` iz JWT-a, dok admin
+moze izostaviti `trainerId` za sve trenere studija. Podrzani filtri su
+`active`, `completed`, `cancelled` i `all`; `pageSize` je ogranicen na 100.
 
 ### Otkazivanje jednog termina
 

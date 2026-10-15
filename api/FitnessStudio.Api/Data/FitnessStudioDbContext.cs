@@ -234,6 +234,10 @@ public partial class FitnessStudioDbContext : DbContext
 
             entity.HasIndex(e => e.StudioId, "class_sessions_studio_id_idx");
 
+            entity.HasIndex(e => new { e.StudioId, e.StartsAt, e.Id }, "class_sessions_studio_starts_at_idx");
+
+            entity.HasIndex(e => new { e.StudioId, e.TrainerId, e.StartsAt, e.Id }, "class_sessions_studio_trainer_starts_at_idx");
+
             entity.Property(e => e.Id)
                 .UseIdentityAlwaysColumn()
                 .HasColumnName("id");

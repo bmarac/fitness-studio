@@ -1,5 +1,6 @@
 import '../../../../core/network/api_client.dart';
 import '../models/class_session_model.dart';
+import '../models/class_session_workouts_page_model.dart';
 
 class ClassSessionsRemoteDataSource {
   const ClassSessionsRemoteDataSource(this._apiClient);
@@ -33,6 +34,30 @@ class ClassSessionsRemoteDataSource {
     return data
         .map((item) => ClassSessionModel.fromJson(item as Map<String, dynamic>))
         .toList();
+  }
+
+  Future<ClassSessionWorkoutsPageModel> getWorkoutClassSessions({
+    required String filter,
+    required int page,
+    required int pageSize,
+    int? trainerId,
+  }) async {
+    final response = await _apiClient.get<Map<String, dynamic>>(
+      '/api/class-sessions/workouts',
+      queryParameters: {
+        'filter': filter,
+        'page': page,
+        'pageSize': pageSize,
+        'trainerId': ?trainerId,
+      },
+    );
+    final data = response.data;
+
+    if (data == null) {
+      throw const FormatException('Class session workouts response is empty.');
+    }
+
+    return ClassSessionWorkoutsPageModel.fromJson(data);
   }
 
   Future<ClassSessionModel> getClassSession(int id) async {

@@ -30,6 +30,41 @@ void main() {
       'to': '2026-10-19T00:00:00.000Z',
     });
   });
+
+  test(
+    'sends workout paging, filter, and optional trainer to the API',
+    () async {
+      final dio = Dio(BaseOptions(baseUrl: 'http://example.test'));
+      final adapter = _CapturingAdapter(
+        body: '{"items":[],"page":2,"pageSize":20,"hasNextPage":false}',
+      );
+      dio.httpClientAdapter = adapter;
+      final dataSource = ClassSessionsRemoteDataSource(
+        ApiClient(
+          config: const AppConfig(apiBaseUrl: 'http://example.test'),
+          accessTokenProvider: const _NoTokenProvider(),
+          dio: dio,
+        ),
+      );
+
+      final page = await dataSource.getWorkoutClassSessions(
+        filter: 'completed',
+        page: 2,
+        pageSize: 20,
+        trainerId: 7,
+      );
+
+      expect(adapter.request?.path, '/api/class-sessions/workouts');
+      expect(adapter.request?.queryParameters, {
+        'filter': 'completed',
+        'page': 2,
+        'pageSize': 20,
+        'trainerId': 7,
+      });
+      expect(page.items, isEmpty);
+      expect(page.page, 2);
+    },
+  );
 }
 
 class _NoTokenProvider implements AccessTokenProvider {
@@ -40,6 +75,9 @@ class _NoTokenProvider implements AccessTokenProvider {
 }
 
 class _CapturingAdapter implements HttpClientAdapter {
+  _CapturingAdapter({this.body = '[]'});
+
+  final String body;
   RequestOptions? request;
 
   @override
@@ -50,7 +88,7 @@ class _CapturingAdapter implements HttpClientAdapter {
   ) async {
     request = options;
     return ResponseBody.fromString(
-      '[]',
+      body,
       200,
       headers: {
         Headers.contentTypeHeader: [Headers.jsonContentType],
