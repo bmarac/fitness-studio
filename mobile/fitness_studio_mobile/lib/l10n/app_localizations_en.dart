@@ -1278,6 +1278,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get classTypesSettingsTitle => 'Class types';
 
   @override
+  String get classTypesProfileSubtitle => 'Add and edit class types';
+
+  @override
   String classTypesSettingsSummary(int count) {
     return '$count configured types';
   }
@@ -1287,6 +1290,40 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addClassType => 'Add class type';
+
+  @override
+  String get editClassType => 'Edit class type';
+
+  @override
+  String get noClassTypes => 'There are no class types yet.';
+
+  @override
+  String classTypeDefaults(int duration, int capacity) {
+    return '$duration min · capacity $capacity';
+  }
+
+  @override
+  String get classTypeCreated => 'Class type added.';
+
+  @override
+  String get classTypeUpdated => 'Class type updated.';
+
+  @override
+  String get classTypeDeleted => 'Class type deleted.';
+
+  @override
+  String get classTypeDeactivated => 'Class type marked inactive.';
+
+  @override
+  String get deleteClassTypeTitle => 'Delete class type?';
+
+  @override
+  String deleteClassTypeQuestion(String name) {
+    return 'Do you want to delete the class type “$name”?';
+  }
+
+  @override
+  String get classTypeCannotDeleteTitle => 'Class type cannot be deleted';
 
   @override
   String get addMeasurementParameter => 'Add parameter';

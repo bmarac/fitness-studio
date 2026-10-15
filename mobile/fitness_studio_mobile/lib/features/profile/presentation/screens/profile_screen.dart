@@ -146,6 +146,8 @@ class _ProfileContent extends StatelessWidget {
             const SizedBox(height: 16),
             const _TrainersCard(),
             const SizedBox(height: 16),
+            const _ClassTypesCard(),
+            const SizedBox(height: 16),
             const _MembershipPlansCard(),
             const SizedBox(height: 16),
             const _MemberPackagesCard(),
@@ -191,6 +193,21 @@ class _StudioSettingsCard extends StatelessWidget {
       subtitle: Text(context.l10n.studioSettingsSubtitle),
       trailing: const Icon(Icons.chevron_right),
       onTap: () => context.push(AppRoutes.studioSettingsPath),
+    ),
+  );
+}
+
+class _ClassTypesCard extends StatelessWidget {
+  const _ClassTypesCard();
+
+  @override
+  Widget build(BuildContext context) => Card(
+    child: ListTile(
+      leading: const Icon(Icons.fitness_center_outlined),
+      title: Text(context.l10n.classTypesSettingsTitle),
+      subtitle: Text(context.l10n.classTypesProfileSubtitle),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => context.push(AppRoutes.classTypesPath),
     ),
   );
 }

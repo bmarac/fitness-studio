@@ -40,6 +40,7 @@ class AppRoutes {
   static const memberPackages = 'clanovi-i-paketi';
   static const notifications = 'obavijesti';
   static const trainers = 'treneri';
+  static const classTypes = 'vrste-treninga';
   static const legacyOnboarding = 'onboarding';
   static const studioSettings = 'postavke-studija';
   static const createTrainer = 'novi-trener';
@@ -50,6 +51,7 @@ class AppRoutes {
   static const memberPackagesPath = '$profile/clanovi-i-paketi';
   static const notificationsPath = '$profile/obavijesti';
   static const trainersPath = '$profile/treneri';
+  static const classTypesPath = '$profile/vrste-treninga';
   static const studioSettingsPath = '$profile/postavke-studija';
   static const createTrainerPath = '$profile/treneri/novi-trener';
 

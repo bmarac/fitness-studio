@@ -1281,6 +1281,9 @@ class AppLocalizationsHr extends AppLocalizations {
   String get classTypesSettingsTitle => 'Vrste treninga';
 
   @override
+  String get classTypesProfileSubtitle => 'Dodaj i uređuj vrste treninga';
+
+  @override
   String classTypesSettingsSummary(int count) {
     return '$count konfiguriranih vrsta';
   }
@@ -1290,6 +1293,41 @@ class AppLocalizationsHr extends AppLocalizations {
 
   @override
   String get addClassType => 'Dodaj vrstu treninga';
+
+  @override
+  String get editClassType => 'Uredi vrstu treninga';
+
+  @override
+  String get noClassTypes => 'Još nema vrsta treninga.';
+
+  @override
+  String classTypeDefaults(int duration, int capacity) {
+    return '$duration min · kapacitet $capacity';
+  }
+
+  @override
+  String get classTypeCreated => 'Vrsta treninga je dodana.';
+
+  @override
+  String get classTypeUpdated => 'Vrsta treninga je ažurirana.';
+
+  @override
+  String get classTypeDeleted => 'Vrsta treninga je obrisana.';
+
+  @override
+  String get classTypeDeactivated => 'Vrsta treninga je označena neaktivnom.';
+
+  @override
+  String get deleteClassTypeTitle => 'Obrisati vrstu treninga?';
+
+  @override
+  String deleteClassTypeQuestion(String name) {
+    return 'Želiš li obrisati vrstu treninga „$name“?';
+  }
+
+  @override
+  String get classTypeCannotDeleteTitle =>
+      'Vrstu treninga nije moguće obrisati';
 
   @override
   String get addMeasurementParameter => 'Dodaj parametar';

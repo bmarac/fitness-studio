@@ -32,6 +32,7 @@ void main() {
     expect(find.text('Tjelesna mjerenja'), findsOneWidget);
     expect(find.byIcon(Icons.monitor_heart_outlined), findsOneWidget);
     expect(find.text('Cjenik'), findsNothing);
+    expect(find.text('Vrste treninga'), findsNothing);
   });
 
   testWidgets('fixed schedules are hidden without an active membership', (
@@ -64,6 +65,7 @@ void main() {
       expect(find.text('Antropometrija članova'), findsOneWidget);
       expect(find.text('O meni'), findsOneWidget);
       expect(find.text('Cjenik'), findsNothing);
+      expect(find.text('Vrste treninga'), findsNothing);
     },
   );
 
@@ -73,15 +75,20 @@ void main() {
     await _pumpProfile(tester, _adminProfile);
 
     expect(find.text('Osobni podaci'), findsNothing);
-    expect(find.text('Postavke studija'), findsOneWidget);
-    expect(find.text('Pristup, naplata i podsjetnici'), findsOneWidget);
     expect(find.text('Postavke plaćanja'), findsNothing);
     expect(find.text('Treneri'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Vrste treninga'), 300);
+    expect(find.text('Vrste treninga'), findsOneWidget);
+    expect(find.text('Dodaj i uređuj vrste treninga'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Cjenik'), 300);
     expect(find.text('Cjenik'), findsOneWidget);
     expect(find.text('Upravljaj cjenikom'), findsOneWidget);
     await tester.scrollUntilVisible(find.text('Članovi i paketi'), 300);
     expect(find.text('Članovi i paketi'), findsOneWidget);
     expect(find.text('Dodijeli ili promijeni paket članu'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Postavke studija'), 300);
+    expect(find.text('Postavke studija'), findsOneWidget);
+    expect(find.text('Pristup, naplata i podsjetnici'), findsOneWidget);
     await tester.scrollUntilVisible(find.text('Naplata članarina'), 300);
     expect(find.text('Naplata članarina'), findsOneWidget);
     expect(find.text('Pregledaj i unaprijed dodaj trenere'), findsOneWidget);

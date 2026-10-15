@@ -30,6 +30,9 @@ import '../features/class_sessions/domain/usecases/cancel_class_session.dart';
 import '../features/class_sessions/domain/usecases/get_class_session.dart';
 import '../features/class_sessions/domain/usecases/get_class_sessions.dart';
 import '../features/class_sessions/domain/usecases/get_my_class_sessions.dart';
+import '../features/class_types/data/class_types_remote_data_source.dart';
+import '../features/class_types/data/class_types_repository_impl.dart';
+import '../features/class_types/domain/repositories/class_types_repository.dart';
 import '../features/membership_plans/data/membership_plans_remote_data_source.dart';
 import '../features/membership_plans/data/membership_plans_repository_impl.dart';
 import '../features/membership_plans/domain/repositories/membership_plans_repository.dart';
@@ -241,6 +244,12 @@ Future<void> configureDependencies() async {
     )
     ..registerLazySingleton<GetMemberProgress>(
       () => GetMemberProgress(serviceLocator<ProgressRepository>()),
+    )
+    ..registerLazySingleton<ClassTypesDataSource>(
+      () => ClassTypesRemoteDataSource(serviceLocator<ApiClient>()),
+    )
+    ..registerLazySingleton<ClassTypesRepository>(
+      () => ClassTypesRepositoryImpl(serviceLocator<ClassTypesDataSource>()),
     )
     ..registerLazySingleton<ConfigurationItemsRemoteDataSource>(
       () => ConfigurationItemsRemoteDataSource(serviceLocator<ApiClient>()),

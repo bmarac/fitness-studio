@@ -6,6 +6,7 @@ import 'package:fitness_studio_mobile/features/bookings/presentation/state/membe
 import 'package:fitness_studio_mobile/features/class_sessions/presentation/state/class_sessions_controller.dart';
 import 'package:fitness_studio_mobile/features/class_sessions/presentation/state/class_sessions_state.dart';
 import 'package:fitness_studio_mobile/features/class_sessions/presentation/state/my_class_sessions_provider.dart';
+import 'package:fitness_studio_mobile/features/class_types/presentation/state/class_types_providers.dart';
 import 'package:fitness_studio_mobile/features/membership_plans/presentation/state/membership_plans_providers.dart';
 import 'package:fitness_studio_mobile/features/member_packages/domain/entities/member_package.dart';
 import 'package:fitness_studio_mobile/features/member_packages/presentation/state/member_packages_providers.dart';
@@ -233,6 +234,33 @@ void main() {
     );
     expect(find.text('Cjenik'), findsOneWidget);
     expect(find.text('Još nema paketa.'), findsOneWidget);
+  });
+
+  testWidgets('admin can open class types route', (tester) async {
+    final container = ProviderContainer(
+      overrides: [
+        loginControllerProvider.overrideWith(_LoggedInAdminController.new),
+        classTypesProvider.overrideWith((ref) async => []),
+      ],
+    );
+    addTearDown(container.dispose);
+    final router = container.read(appRouterProvider);
+    router.go(AppRoutes.classTypesPath);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: localizedRouterTestApp(router: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      AppRoutes.classTypesPath,
+    );
+    expect(find.text('Vrste treninga'), findsOneWidget);
+    expect(find.text('Još nema vrsta treninga.'), findsOneWidget);
   });
 
   testWidgets('only admin can open member packages route', (tester) async {

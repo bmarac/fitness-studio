@@ -2305,6 +2305,12 @@ abstract class AppLocalizations {
   /// **'Vrste treninga'**
   String get classTypesSettingsTitle;
 
+  /// No description provided for @classTypesProfileSubtitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Dodaj i uređuj vrste treninga'**
+  String get classTypesProfileSubtitle;
+
   /// No description provided for @classTypesSettingsSummary.
   ///
   /// In hr, this message translates to:
@@ -2322,6 +2328,66 @@ abstract class AppLocalizations {
   /// In hr, this message translates to:
   /// **'Dodaj vrstu treninga'**
   String get addClassType;
+
+  /// No description provided for @editClassType.
+  ///
+  /// In hr, this message translates to:
+  /// **'Uredi vrstu treninga'**
+  String get editClassType;
+
+  /// No description provided for @noClassTypes.
+  ///
+  /// In hr, this message translates to:
+  /// **'Još nema vrsta treninga.'**
+  String get noClassTypes;
+
+  /// No description provided for @classTypeDefaults.
+  ///
+  /// In hr, this message translates to:
+  /// **'{duration} min · kapacitet {capacity}'**
+  String classTypeDefaults(int duration, int capacity);
+
+  /// No description provided for @classTypeCreated.
+  ///
+  /// In hr, this message translates to:
+  /// **'Vrsta treninga je dodana.'**
+  String get classTypeCreated;
+
+  /// No description provided for @classTypeUpdated.
+  ///
+  /// In hr, this message translates to:
+  /// **'Vrsta treninga je ažurirana.'**
+  String get classTypeUpdated;
+
+  /// No description provided for @classTypeDeleted.
+  ///
+  /// In hr, this message translates to:
+  /// **'Vrsta treninga je obrisana.'**
+  String get classTypeDeleted;
+
+  /// No description provided for @classTypeDeactivated.
+  ///
+  /// In hr, this message translates to:
+  /// **'Vrsta treninga je označena neaktivnom.'**
+  String get classTypeDeactivated;
+
+  /// No description provided for @deleteClassTypeTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Obrisati vrstu treninga?'**
+  String get deleteClassTypeTitle;
+
+  /// No description provided for @deleteClassTypeQuestion.
+  ///
+  /// In hr, this message translates to:
+  /// **'Želiš li obrisati vrstu treninga „{name}“?'**
+  String deleteClassTypeQuestion(String name);
+
+  /// No description provided for @classTypeCannotDeleteTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Vrstu treninga nije moguće obrisati'**
+  String get classTypeCannotDeleteTitle;
 
   /// No description provided for @addMeasurementParameter.
   ///

@@ -13,50 +13,18 @@ class StudioSettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final configuration = ref.watch(studioConfigurationProvider);
-    final classTypes = ref.watch(classTypeConfigurationsProvider);
 
     return Scaffold(
       appBar: AppBar(title: Text(context.l10n.studioSettingsTitle)),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(studioConfigurationProvider);
-          ref.invalidate(classTypeConfigurationsProvider);
-          await Future.wait([
-            ref.read(studioConfigurationProvider.future),
-            ref.read(classTypeConfigurationsProvider.future),
-          ]);
+          await ref.read(studioConfigurationProvider.future);
         },
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-          children: [
-            ..._generalCards(context, ref, configuration),
-            classTypes.when(
-              loading: () => _LoadingSettingsCard(
-                title: context.l10n.classTypesSettingsTitle,
-                icon: Icons.fitness_center_outlined,
-              ),
-              error: (error, _) => _ErrorSettingsCard(
-                title: context.l10n.classTypesSettingsTitle,
-                icon: Icons.fitness_center_outlined,
-                error: localizedError(context, error),
-                onRetry: () => ref.invalidate(classTypeConfigurationsProvider),
-              ),
-              data: (items) => _SettingsCard(
-                key: const ValueKey('class-types-settings-card'),
-                icon: Icons.fitness_center_outlined,
-                title: context.l10n.classTypesSettingsTitle,
-                subtitle: context.l10n.classTypesSettingsSummary(items.length),
-                onTap: () async {
-                  final saved = await showClassTypesModal(context, ref, items);
-                  if (saved && context.mounted) {
-                    ref.invalidate(classTypeConfigurationsProvider);
-                    _saved(context);
-                  }
-                },
-              ),
-            ),
-          ],
+          children: [..._generalCards(context, ref, configuration)],
         ),
       ),
     );

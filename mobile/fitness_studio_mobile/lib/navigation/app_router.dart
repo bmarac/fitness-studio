@@ -12,6 +12,7 @@ import '../features/auth/presentation/state/login_state.dart';
 import '../features/bookings/presentation/screens/my_workouts_screen.dart';
 import '../features/class_sessions/presentation/screens/class_session_details_screen.dart';
 import '../features/class_sessions/presentation/screens/class_sessions_screen.dart';
+import '../features/class_types/presentation/screens/class_types_screen.dart';
 import '../features/membership_plans/presentation/screens/membership_plans_screen.dart';
 import '../features/member_packages/presentation/screens/member_packages_screen.dart';
 import '../features/profile/presentation/screens/profile_screen.dart';
@@ -245,6 +246,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                             const CreateTrainerScreen(),
                       ),
                     ],
+                  ),
+                  GoRoute(
+                    path: AppRoutes.classTypes,
+                    builder: (context, state) {
+                      final authState = ref.read(loginControllerProvider);
+                      final isAdmin =
+                          authState is LoginSuccess &&
+                          authState.session.user.roles.contains('admin');
+                      return isAdmin
+                          ? const ClassTypesScreen()
+                          : const ProfileScreen();
+                    },
                   ),
                   GoRoute(
                     path: AppRoutes.studioSettings,
