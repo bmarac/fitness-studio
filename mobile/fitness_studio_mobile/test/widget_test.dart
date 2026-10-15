@@ -14,7 +14,7 @@ void main() {
     await tester.pumpWidget(const ProviderScope(child: FitnessStudioApp()));
     await tester.pumpAndSettle();
 
-    expect(find.text('Fitness Studio'), findsOneWidget);
+    expect(find.bySemanticsLabel('Ritmiko'), findsOneWidget);
     expect(find.text('Email'), findsOneWidget);
     expect(find.text('Password'), findsOneWidget);
     expect(find.text('Sign in'), findsOneWidget);

@@ -72,31 +72,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: Container(
-                                width: 52,
-                                height: 52,
-                                decoration: BoxDecoration(
-                                  color: theme.colorScheme.primaryContainer,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Icon(
-                                  Icons.fitness_center,
-                                  color: theme.colorScheme.onPrimaryContainer,
-                                ),
+                            Semantics(
+                              label: context.l10n.appTitle,
+                              image: true,
+                              child: Image.asset(
+                                'assets/branding/ritmiko-logo.png',
+                                height: 112,
+                                fit: BoxFit.contain,
+                                excludeFromSemantics: true,
                               ),
                             ),
                             const SizedBox(height: 24),
                             Text(
-                              context.l10n.appTitle,
-                              style: theme.textTheme.headlineMedium?.copyWith(
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
                               context.l10n.loginSubtitle,
+                              textAlign: TextAlign.center,
                               style: theme.textTheme.bodyLarge?.copyWith(
                                 color: theme.colorScheme.onSurfaceVariant,
                               ),

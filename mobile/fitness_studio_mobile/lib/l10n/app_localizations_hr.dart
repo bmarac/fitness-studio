@@ -9,7 +9,7 @@ class AppLocalizationsHr extends AppLocalizations {
   AppLocalizationsHr([String locale = 'hr']) : super(locale);
 
   @override
-  String get appTitle => 'Fitness Studio';
+  String get appTitle => 'Ritmiko';
 
   @override
   String get navClassSessions => 'Termini';
