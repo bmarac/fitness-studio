@@ -29,6 +29,12 @@ tokova pokrece se iz korijena repozitorija:
 ./scripts/verify-fresh-stack.sh
 ```
 
+Izolirana provjera PostgreSQL constrainta pokrece se naredbom:
+
+```bash
+./scripts/verify-database-constraints.sh
+```
+
 Vertikalni test registracije, pridruzivanja i odabira studija kroz Flutter
 klijent, API i privremenu bazu pokrece se rucno:
 
