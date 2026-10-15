@@ -91,7 +91,7 @@ void main() {
     expect(find.text('Pristup, naplata i podsjetnici'), findsOneWidget);
     await tester.scrollUntilVisible(find.text('Naplata članarina'), 300);
     expect(find.text('Naplata članarina'), findsOneWidget);
-    expect(find.text('Pregledaj i unaprijed dodaj trenere'), findsOneWidget);
+    expect(find.text('Dodaj i uređuj trenere'), findsOneWidget);
   });
 }
 

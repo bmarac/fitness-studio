@@ -891,7 +891,7 @@ class AppLocalizationsHr extends AppLocalizations {
   String get trainersTitle => 'Treneri';
 
   @override
-  String get trainerManagementSubtitle => 'Pregledaj i unaprijed dodaj trenere';
+  String get trainerManagementSubtitle => 'Dodaj i uređuj trenere';
 
   @override
   String get membershipPlansTitle => 'Cjenik';
@@ -1074,7 +1074,37 @@ class AppLocalizationsHr extends AppLocalizations {
   String get addTrainer => 'Novi trener';
 
   @override
+  String get editTrainer => 'Uredi trenera';
+
+  @override
   String get noTrainersYet => 'Još nema trenera.';
+
+  @override
+  String get trainerCreated => 'Trener je dodan.';
+
+  @override
+  String get trainerUpdated => 'Trener je ažuriran.';
+
+  @override
+  String get trainerDeleted => 'Trener je obrisan.';
+
+  @override
+  String get trainerDeactivated => 'Trener je označen neaktivnim.';
+
+  @override
+  String get deleteTrainerTitle => 'Obrisati trenera?';
+
+  @override
+  String deleteTrainerQuestion(String name) {
+    return 'Želiš li obrisati trenera „$name“?';
+  }
+
+  @override
+  String get trainerCannotDeleteTitle => 'Trenera nije moguće obrisati';
+
+  @override
+  String get trainerDeleteConflict =>
+      'Trenera s povezanim terminima nije moguće ukloniti. Označi ga neaktivnim.';
 
   @override
   String get firstName => 'Ime';

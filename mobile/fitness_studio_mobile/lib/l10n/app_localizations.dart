@@ -1637,7 +1637,7 @@ abstract class AppLocalizations {
   /// No description provided for @trainerManagementSubtitle.
   ///
   /// In hr, this message translates to:
-  /// **'Pregledaj i unaprijed dodaj trenere'**
+  /// **'Dodaj i uređuj trenere'**
   String get trainerManagementSubtitle;
 
   /// No description provided for @membershipPlansTitle.
@@ -1952,11 +1952,65 @@ abstract class AppLocalizations {
   /// **'Novi trener'**
   String get addTrainer;
 
+  /// No description provided for @editTrainer.
+  ///
+  /// In hr, this message translates to:
+  /// **'Uredi trenera'**
+  String get editTrainer;
+
   /// No description provided for @noTrainersYet.
   ///
   /// In hr, this message translates to:
   /// **'Još nema trenera.'**
   String get noTrainersYet;
+
+  /// No description provided for @trainerCreated.
+  ///
+  /// In hr, this message translates to:
+  /// **'Trener je dodan.'**
+  String get trainerCreated;
+
+  /// No description provided for @trainerUpdated.
+  ///
+  /// In hr, this message translates to:
+  /// **'Trener je ažuriran.'**
+  String get trainerUpdated;
+
+  /// No description provided for @trainerDeleted.
+  ///
+  /// In hr, this message translates to:
+  /// **'Trener je obrisan.'**
+  String get trainerDeleted;
+
+  /// No description provided for @trainerDeactivated.
+  ///
+  /// In hr, this message translates to:
+  /// **'Trener je označen neaktivnim.'**
+  String get trainerDeactivated;
+
+  /// No description provided for @deleteTrainerTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Obrisati trenera?'**
+  String get deleteTrainerTitle;
+
+  /// No description provided for @deleteTrainerQuestion.
+  ///
+  /// In hr, this message translates to:
+  /// **'Želiš li obrisati trenera „{name}“?'**
+  String deleteTrainerQuestion(String name);
+
+  /// No description provided for @trainerCannotDeleteTitle.
+  ///
+  /// In hr, this message translates to:
+  /// **'Trenera nije moguće obrisati'**
+  String get trainerCannotDeleteTitle;
+
+  /// No description provided for @trainerDeleteConflict.
+  ///
+  /// In hr, this message translates to:
+  /// **'Trenera s povezanim terminima nije moguće ukloniti. Označi ga neaktivnim.'**
+  String get trainerDeleteConflict;
 
   /// No description provided for @firstName.
   ///

@@ -885,7 +885,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trainersTitle => 'Trainers';
 
   @override
-  String get trainerManagementSubtitle => 'View and pre-register trainers';
+  String get trainerManagementSubtitle => 'Add and edit trainers';
 
   @override
   String get membershipPlansTitle => 'Pricing';
@@ -1068,7 +1068,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addTrainer => 'New trainer';
 
   @override
+  String get editTrainer => 'Edit trainer';
+
+  @override
   String get noTrainersYet => 'There are no trainers yet.';
+
+  @override
+  String get trainerCreated => 'Trainer added.';
+
+  @override
+  String get trainerUpdated => 'Trainer updated.';
+
+  @override
+  String get trainerDeleted => 'Trainer deleted.';
+
+  @override
+  String get trainerDeactivated => 'Trainer marked inactive.';
+
+  @override
+  String get deleteTrainerTitle => 'Delete trainer?';
+
+  @override
+  String deleteTrainerQuestion(String name) {
+    return 'Do you want to delete the trainer “$name”?';
+  }
+
+  @override
+  String get trainerCannotDeleteTitle => 'Trainer cannot be deleted';
+
+  @override
+  String get trainerDeleteConflict =>
+      'A trainer with linked class sessions cannot be removed. Mark them inactive instead.';
 
   @override
   String get firstName => 'First name';

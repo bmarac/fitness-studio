@@ -9,39 +9,47 @@ import 'package:fitness_studio_mobile/features/trainers/data/trainers_management
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test(
-    'lists and creates trainers through the standard trainers API',
-    () async {
-      final dio = Dio(BaseOptions(baseUrl: 'http://example.test'));
-      final adapter = _TrainerApiAdapter();
-      dio.httpClientAdapter = adapter;
-      final dataSource = TrainersManagementRemoteDataSource(
-        ApiClient(
-          config: const AppConfig(apiBaseUrl: 'http://example.test'),
-          accessTokenProvider: const _NoTokenProvider(),
-          dio: dio,
-        ),
-      );
+  test('delegates trainer CRUD through the standard trainers API', () async {
+    final dio = Dio(BaseOptions(baseUrl: 'http://example.test'));
+    final adapter = _TrainerApiAdapter();
+    dio.httpClientAdapter = adapter;
+    final dataSource = TrainersManagementRemoteDataSource(
+      ApiClient(
+        config: const AppConfig(apiBaseUrl: 'http://example.test'),
+        accessTokenProvider: const _NoTokenProvider(),
+        dio: dio,
+      ),
+    );
 
-      final trainers = await dataSource.getTrainers();
-      final created = await dataSource.createTrainer({
-        'firstName': 'Filip',
-        'lastName': 'Šarić',
-        'email': 'filip@example.com',
-      });
+    final trainers = await dataSource.getTrainers();
+    final created = await dataSource.createTrainer({
+      'firstName': 'Filip',
+      'lastName': 'Šarić',
+      'email': 'filip@example.com',
+    });
+    await dataSource.updateTrainer(7, {
+      'firstName': 'Filip',
+      'lastName': 'Šarić',
+      'email': 'filip@example.com',
+      'status': 'inactive',
+    });
+    await dataSource.deleteTrainer(7);
 
-      expect(trainers.single['email'], 'filip@example.com');
-      expect(created['id'], 7);
-      expect(adapter.requests.map((request) => request.method), [
-        'GET',
-        'POST',
-      ]);
-      expect(adapter.requests.map((request) => request.path), [
-        '/api/trainers',
-        '/api/trainers',
-      ]);
-    },
-  );
+    expect(trainers.single['email'], 'filip@example.com');
+    expect(created['id'], 7);
+    expect(adapter.requests.map((request) => request.method), [
+      'GET',
+      'POST',
+      'PUT',
+      'DELETE',
+    ]);
+    expect(adapter.requests.map((request) => request.path), [
+      '/api/trainers',
+      '/api/trainers',
+      '/api/trainers/7',
+      '/api/trainers/7',
+    ]);
+  });
 }
 
 class _NoTokenProvider implements AccessTokenProvider {
@@ -68,6 +76,9 @@ class _TrainerApiAdapter implements HttpClientAdapter {
               'firstName': 'Filip',
               'lastName': 'Šarić',
               'email': 'filip@example.com',
+              'phone': null,
+              'bio': null,
+              'status': 'active',
             },
           ]
         : {
@@ -75,6 +86,9 @@ class _TrainerApiAdapter implements HttpClientAdapter {
             'firstName': 'Filip',
             'lastName': 'Šarić',
             'email': 'filip@example.com',
+            'phone': null,
+            'bio': null,
+            'status': 'active',
           };
     return ResponseBody.fromString(
       jsonEncode(body),
