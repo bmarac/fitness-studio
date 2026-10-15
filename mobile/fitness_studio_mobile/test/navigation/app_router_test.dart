@@ -73,9 +73,7 @@ void main() {
     );
   });
 
-  testWidgets('admin also starts on the centered My Workouts tab', (
-    tester,
-  ) async {
+  testWidgets('admin starts on the centered schedules tab', (tester) async {
     final repository = _EmptyRecurringSchedulesRepository();
     serviceLocator.registerSingleton<GetRecurringSchedules>(
       GetRecurringSchedules(repository),
@@ -101,9 +99,9 @@ void main() {
 
     expect(
       router.routeInformationProvider.value.uri.path,
-      AppRoutes.myWorkouts,
+      AppRoutes.recurringSchedules,
     );
-    expect(find.text('Moji treninzi'), findsWidgets);
+    expect(find.text('Rasporedi'), findsWidgets);
 
     final navigationBar = tester.widget<NavigationBar>(
       find.byType(NavigationBar),
@@ -112,10 +110,55 @@ void main() {
     expect(navigationBar.destinations[1], isA<NavigationDestination>());
     expect(
       (navigationBar.destinations[1] as NavigationDestination).label,
-      'Moji treninzi',
+      'Rasporedi',
     );
 
-    router.go(AppRoutes.classSessions);
+    await tester.tap(find.text('Moji treninzi'));
+    await tester.pumpAndSettle();
+
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      AppRoutes.myWorkouts,
+    );
+    expect(
+      tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+      0,
+    );
+
+    await tester.tap(find.text('Rasporedi'));
+    await tester.pumpAndSettle();
+
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      AppRoutes.recurringSchedules,
+    );
+    expect(
+      tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+      1,
+    );
+  });
+
+  testWidgets('trainer starts on the centered schedules tab', (tester) async {
+    final repository = _EmptyRecurringSchedulesRepository();
+    serviceLocator.registerSingleton<GetRecurringSchedules>(
+      GetRecurringSchedules(repository),
+    );
+    final container = ProviderContainer(
+      overrides: [
+        loginControllerProvider.overrideWith(_LoggedInTrainerController.new),
+        allClassSessionsProvider.overrideWith((ref) async => []),
+        trainerOptionsProvider.overrideWith((ref) async => []),
+      ],
+    );
+    addTearDown(container.dispose);
+    final router = container.read(appRouterProvider);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: localizedRouterTestApp(router: router),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(
@@ -124,10 +167,14 @@ void main() {
     );
     expect(find.text('Rasporedi'), findsWidgets);
 
-    final schedulesNavigationBar = tester.widget<NavigationBar>(
+    final navigationBar = tester.widget<NavigationBar>(
       find.byType(NavigationBar),
     );
-    expect(schedulesNavigationBar.selectedIndex, 0);
+    expect(navigationBar.selectedIndex, 1);
+    expect(
+      (navigationBar.destinations[1] as NavigationDestination).label,
+      'Rasporedi',
+    );
   });
 
   testWidgets('member schedules root redirects to termini', (tester) async {
@@ -550,6 +597,24 @@ class _LoggedInAdminController extends LoginController {
         trainerId: null,
         email: 'admin@example.com',
         roles: ['admin'],
+      ),
+    ),
+  );
+}
+
+class _LoggedInTrainerController extends LoginController {
+  @override
+  LoginState build() => LoginSuccess(
+    AuthSession(
+      accessToken: 'token',
+      expiresAt: DateTime(2031),
+      user: const AuthenticatedUser(
+        id: 2,
+        studioId: 1,
+        memberId: null,
+        trainerId: 7,
+        email: 'trainer@example.com',
+        roles: ['trainer'],
       ),
     ),
   );

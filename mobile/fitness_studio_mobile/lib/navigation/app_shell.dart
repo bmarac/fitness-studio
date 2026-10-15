@@ -19,42 +19,47 @@ class AppShell extends ConsumerWidget {
         authState is LoginSuccess &&
         (authState.session.user.hasRole('trainer') ||
             authState.session.user.hasRole('admin'));
+    final branchOrder = isStaff ? const [1, 0, 2] : const [0, 1, 2];
+    final destinations = [
+      NavigationDestination(
+        icon: const Icon(Icons.calendar_month_outlined),
+        selectedIcon: const Icon(Icons.calendar_month),
+        label: isStaff
+            ? context.l10n.navRecurringSchedules
+            : context.l10n.navClassSessions,
+      ),
+      NavigationDestination(
+        icon: const Icon(Icons.event_available_outlined),
+        selectedIcon: const Icon(Icons.event_available),
+        label: context.l10n.navMyWorkouts,
+      ),
+      NavigationDestination(
+        icon: const Icon(Icons.person_outline),
+        selectedIcon: const Icon(Icons.person),
+        label: context.l10n.navProfile,
+      ),
+    ];
 
     return Scaffold(
       body: navigationShell,
       bottomNavigationBar: NavigationBar(
-        selectedIndex: navigationShell.currentIndex,
+        selectedIndex: branchOrder.indexOf(navigationShell.currentIndex),
         onDestinationSelected: (index) {
-          if (index == 0) {
+          final branchIndex = branchOrder[index];
+          if (branchIndex == 0) {
             context.go(
               isStaff ? AppRoutes.recurringSchedules : AppRoutes.classSessions,
             );
             return;
           }
           navigationShell.goBranch(
-            index,
-            initialLocation: index == navigationShell.currentIndex,
+            branchIndex,
+            initialLocation: branchIndex == navigationShell.currentIndex,
           );
         },
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.calendar_month_outlined),
-            selectedIcon: const Icon(Icons.calendar_month),
-            label: isStaff
-                ? context.l10n.navRecurringSchedules
-                : context.l10n.navClassSessions,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.event_available_outlined),
-            selectedIcon: const Icon(Icons.event_available),
-            label: context.l10n.navMyWorkouts,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.person_outline),
-            selectedIcon: const Icon(Icons.person),
-            label: context.l10n.navProfile,
-          ),
-        ],
+        destinations: isStaff
+            ? [destinations[1], destinations[0], destinations[2]]
+            : destinations,
       ),
     );
   }

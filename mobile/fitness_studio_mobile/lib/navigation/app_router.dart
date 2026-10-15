@@ -55,7 +55,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             location == AppRoutes.register ||
             location == AppRoutes.studioSelection ||
             location == AppRoutes.splash) {
-          return AppRoutes.myWorkouts;
+          return isStaff ? AppRoutes.recurringSchedules : AppRoutes.myWorkouts;
         }
 
         if (location == AppRoutes.classSessions && isStaff) {
