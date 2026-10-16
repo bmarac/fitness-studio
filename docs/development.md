@@ -168,6 +168,18 @@ Ponovnim citanjem iz baze provjerava novu dodjelu, otkazane buduce rezervacije
 izvornog termina i automatski stvorene rezervacije ciljnog termina. Test je
 rucan i ne ulazi u coverage baseline.
 
+Vertikalna provjera zivotnog ciklusa clanstva pokrece se naredbom:
+
+```bash
+./scripts/verify-fresh-stack.sh membership-client
+```
+
+Test registrira novog clana i pridruzuje ga studiju, administratorskim racunom
+dodjeljuje plan, zatim kroz profil clana potvrduje aktivno clanstvo i uspjesnu
+rezervaciju. Nakon administratorskog zavrsetka clanstva potvrduje stanje u bazi,
+nestanak aktivnog clanstva iz profila i odbijanje nove rezervacije. Test je
+rucan i ne ulazi u coverage baseline.
+
 ## API
 
 ```bash

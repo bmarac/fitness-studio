@@ -5,13 +5,13 @@ set -eu
 repository_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 verification_mode="${1:-full}"
 if [ "$#" -gt 1 ]; then
-  echo "Usage: $0 [account-client|booking-client|fixed-schedule-client|payment-client|progress-client|schedule-client|workouts-client]" >&2
+  echo "Usage: $0 [account-client|booking-client|fixed-schedule-client|membership-client|payment-client|progress-client|schedule-client|workouts-client]" >&2
   exit 2
 fi
 case "$verification_mode" in
-  full|account-client|booking-client|fixed-schedule-client|payment-client|progress-client|schedule-client|workouts-client) ;;
+  full|account-client|booking-client|fixed-schedule-client|membership-client|payment-client|progress-client|schedule-client|workouts-client) ;;
   *)
-    echo "Usage: $0 [account-client|booking-client|fixed-schedule-client|payment-client|progress-client|schedule-client|workouts-client]" >&2
+    echo "Usage: $0 [account-client|booking-client|fixed-schedule-client|membership-client|payment-client|progress-client|schedule-client|workouts-client]" >&2
     exit 2
     ;;
 esac
@@ -97,6 +97,7 @@ require_command jq
 if [ "$verification_mode" = "account-client" ] \
   || [ "$verification_mode" = "booking-client" ] \
   || [ "$verification_mode" = "fixed-schedule-client" ] \
+  || [ "$verification_mode" = "membership-client" ] \
   || [ "$verification_mode" = "payment-client" ] \
   || [ "$verification_mode" = "progress-client" ] \
   || [ "$verification_mode" = "schedule-client" ] \
@@ -319,6 +320,18 @@ if [ "$verification_mode" = "fixed-schedule-client" ]; then
   ) || fail "Flutter fixed-schedule client verification failed"
 
   echo "Fresh-stack fixed-schedule client verification passed."
+  exit 0
+fi
+
+if [ "$verification_mode" = "membership-client" ]; then
+  echo "Verifying the Flutter membership client against the fresh stack..."
+  (
+    cd "$repository_root/mobile/fitness_studio_mobile"
+    FITNESS_STUDIO_TEST_API_BASE_URL="$api_base_url" \
+      dart test integration_test/membership_stack_test.dart
+  ) || fail "Flutter membership client verification failed"
+
+  echo "Fresh-stack membership client verification passed."
   exit 0
 fi
 

@@ -79,6 +79,12 @@ Vertikalni test premjestanja clana izmedu fiksnih rasporeda i rezervacija:
 ./scripts/verify-fresh-stack.sh fixed-schedule-client
 ```
 
+Vertikalni test dodjele i zavrsetka clanstva te utjecaja na rezervacije:
+
+```bash
+./scripts/verify-fresh-stack.sh membership-client
+```
+
 Backend i Flutter testovi, LCOV izvjestaji te coverage pragovi pokrecu se jednom
 naredbom:
 
