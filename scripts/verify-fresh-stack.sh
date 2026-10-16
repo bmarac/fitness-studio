@@ -5,13 +5,13 @@ set -eu
 repository_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 verification_mode="${1:-full}"
 if [ "$#" -gt 1 ]; then
-  echo "Usage: $0 [account-client|booking-client|payment-client|progress-client]" >&2
+  echo "Usage: $0 [account-client|booking-client|payment-client|progress-client|schedule-client|workouts-client]" >&2
   exit 2
 fi
 case "$verification_mode" in
-  full|account-client|booking-client|payment-client|progress-client) ;;
+  full|account-client|booking-client|payment-client|progress-client|schedule-client|workouts-client) ;;
   *)
-    echo "Usage: $0 [account-client|booking-client|payment-client|progress-client]" >&2
+    echo "Usage: $0 [account-client|booking-client|payment-client|progress-client|schedule-client|workouts-client]" >&2
     exit 2
     ;;
 esac
@@ -97,7 +97,9 @@ require_command jq
 if [ "$verification_mode" = "account-client" ] \
   || [ "$verification_mode" = "booking-client" ] \
   || [ "$verification_mode" = "payment-client" ] \
-  || [ "$verification_mode" = "progress-client" ]; then
+  || [ "$verification_mode" = "progress-client" ] \
+  || [ "$verification_mode" = "schedule-client" ] \
+  || [ "$verification_mode" = "workouts-client" ]; then
   require_command dart
 fi
 
@@ -328,6 +330,30 @@ if [ "$verification_mode" = "progress-client" ]; then
   ) || fail "Flutter progress client verification failed"
 
   echo "Fresh-stack progress client verification passed."
+  exit 0
+fi
+
+if [ "$verification_mode" = "workouts-client" ]; then
+  echo "Verifying the Flutter workouts client against the fresh stack..."
+  (
+    cd "$repository_root/mobile/fitness_studio_mobile"
+    FITNESS_STUDIO_TEST_API_BASE_URL="$api_base_url" \
+      dart test integration_test/workouts_stack_test.dart
+  ) || fail "Flutter workouts client verification failed"
+
+  echo "Fresh-stack workouts client verification passed."
+  exit 0
+fi
+
+if [ "$verification_mode" = "schedule-client" ]; then
+  echo "Verifying the Flutter schedule client against the fresh stack..."
+  (
+    cd "$repository_root/mobile/fitness_studio_mobile"
+    FITNESS_STUDIO_TEST_API_BASE_URL="$api_base_url" \
+      dart test integration_test/schedule_stack_test.dart
+  ) || fail "Flutter schedule client verification failed"
+
+  echo "Fresh-stack schedule client verification passed."
   exit 0
 fi
 

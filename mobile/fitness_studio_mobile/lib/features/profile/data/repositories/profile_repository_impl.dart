@@ -18,6 +18,8 @@ class ProfileRepositoryImpl implements ProfileRepository {
       return FailureResult(error.toFailure());
     } on FormatException {
       return const FailureResult(Failure(FailureKind.readApi));
+    } on TypeError {
+      return const FailureResult(Failure(FailureKind.readApi));
     }
   }
 }

@@ -134,6 +134,28 @@ tezine, sprema mjerenje te se zatim prijavljuje kao clan. Ponovnim citanjem
 potvrduje latest vrijednosti, zapis u povijesti i BMI izracunat u API-ju. Test
 je rucan i ne ulazi u coverage baseline.
 
+Vertikalna provjera pregleda treninga pokrece se naredbom:
+
+```bash
+./scripts/verify-fresh-stack.sh workouts-client
+```
+
+Test kroz stvarni Flutter data/domain sloj provjerava filtriranje aktivnih
+treninga po treneru, paginaciju i redoslijed rezultata. Na kraju potvrduje da
+clan ne moze pristupiti staff endpointu. Izvodi se protiv svjeze baze, rucan je
+i ne ulazi u coverage baseline.
+
+Vertikalna provjera lifecyclea ponavljajuceg rasporeda pokrece se naredbom:
+
+```bash
+./scripts/verify-fresh-stack.sh schedule-client
+```
+
+Test potvrduje da clan ne moze mijenjati raspored, zatim administratorskim
+racunom pauzira aktivni raspored, ponovno ga ucitava iz baze, nastavlja ga i
+potvrduje povratak u aktivno stanje. Test je rucan i ne ulazi u coverage
+baseline.
+
 ## API
 
 ```bash

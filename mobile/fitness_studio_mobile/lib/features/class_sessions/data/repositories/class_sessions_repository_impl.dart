@@ -27,6 +27,8 @@ class ClassSessionsRepositoryImpl implements ClassSessionsRepository {
       return FailureResult(error.toFailure());
     } on FormatException {
       return const FailureResult(Failure(FailureKind.readApi));
+    } on TypeError {
+      return const FailureResult(Failure(FailureKind.readApi));
     }
   }
 
@@ -38,6 +40,8 @@ class ClassSessionsRepositoryImpl implements ClassSessionsRepository {
     } on ApiException catch (error) {
       return FailureResult(error.toFailure());
     } on FormatException {
+      return const FailureResult(Failure(FailureKind.readApi));
+    } on TypeError {
       return const FailureResult(Failure(FailureKind.readApi));
     }
   }
@@ -61,6 +65,8 @@ class ClassSessionsRepositoryImpl implements ClassSessionsRepository {
       return FailureResult(error.toFailure());
     } on FormatException {
       return const FailureResult(Failure(FailureKind.readApi));
+    } on TypeError {
+      return const FailureResult(Failure(FailureKind.readApi));
     }
   }
 
@@ -73,6 +79,8 @@ class ClassSessionsRepositoryImpl implements ClassSessionsRepository {
     } on ApiException catch (error) {
       return FailureResult(error.toFailure());
     } on FormatException {
+      return const FailureResult(Failure(FailureKind.readApi));
+    } on TypeError {
       return const FailureResult(Failure(FailureKind.readApi));
     }
   }
