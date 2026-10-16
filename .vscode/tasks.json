@@ -1,0 +1,55 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Dev: Start database",
+      "type": "shell",
+      "command": "if [[ ! -f .env ]]; then cp .env.example .env; fi && docker compose up -d --wait",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "shell": {
+          "executable": "/bin/zsh",
+          "args": [
+            "-l",
+            "-c"
+          ]
+        }
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      }
+    },
+    {
+      "label": "Dev: Build API",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "${workspaceFolder}/api/FitnessStudio.Api/FitnessStudio.Api.csproj"
+      ],
+      "problemMatcher": "$msCompile",
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Dev: Map API port to Android",
+      "type": "process",
+      "command": "adb",
+      "args": [
+        "reverse",
+        "tcp:5146",
+        "tcp:5146"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    }
+  ]
+}

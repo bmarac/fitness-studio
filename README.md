@@ -4,6 +4,20 @@ Aplikacija za upravljanje fitness studijima i grupnim treninzima. Sustav cine AS
 
 ## Brzi pocetak
 
+U VS Codeu otvori **Run and Debug** i pokreni jednu od konfiguracija:
+
+- `Full Stack: iOS / macOS / Web`
+- `Full Stack: Android Emulator`
+- `Full Stack: Physical Android (USB)`
+
+Konfiguracija jednim pokretanjem podize PostgreSQL, builda i pokrece API te
+pokrece Flutter aplikaciju. Ako `.env` ne postoji, automatski se kopira iz
+`.env.example`. Profil za fizicki Android prije pokretanja dodatno izvodi
+`adb reverse tcp:5146 tcp:5146`, pa mobitel spojen USB kabelom moze pristupiti
+lokalnom API-ju preko `http://localhost:5146`.
+
+Isto se moze pokrenuti rucno iz terminala:
+
 ```bash
 cp .env.example .env
 docker compose up -d

@@ -2,6 +2,20 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "API: Fitness Studio",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "Dev: Build API",
+      "program": "${workspaceFolder}/api/FitnessStudio.Api/bin/Debug/net10.0/FitnessStudio.Api.dll",
+      "cwd": "${workspaceFolder}/api/FitnessStudio.Api",
+      "stopAtEntry": false,
+      "console": "integratedTerminal",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5146"
+      }
+    },
+    {
       "name": "Flutter: Fitness Studio Mobile",
       "request": "launch",
       "type": "dart",
@@ -22,6 +36,47 @@
         "--dart-define=API_BASE_URL=http://10.0.2.2:5146",
         "--dart-define=CURRENT_MEMBER_ID=1"
       ]
+    },
+    {
+      "name": "Flutter: Fitness Studio Mobile (Physical Android)",
+      "request": "launch",
+      "type": "dart",
+      "preLaunchTask": "Dev: Map API port to Android",
+      "cwd": "${workspaceFolder}/mobile/fitness_studio_mobile",
+      "program": "lib/main.dart",
+      "toolArgs": [
+        "--dart-define=API_BASE_URL=http://localhost:5146",
+        "--dart-define=CURRENT_MEMBER_ID=1"
+      ]
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full Stack: iOS / macOS / Web",
+      "configurations": [
+        "API: Fitness Studio",
+        "Flutter: Fitness Studio Mobile"
+      ],
+      "preLaunchTask": "Dev: Start database",
+      "stopAll": true
+    },
+    {
+      "name": "Full Stack: Android Emulator",
+      "configurations": [
+        "API: Fitness Studio",
+        "Flutter: Fitness Studio Mobile (Android Emulator)"
+      ],
+      "preLaunchTask": "Dev: Start database",
+      "stopAll": true
+    },
+    {
+      "name": "Full Stack: Physical Android (USB)",
+      "configurations": [
+        "API: Fitness Studio",
+        "Flutter: Fitness Studio Mobile (Physical Android)"
+      ],
+      "preLaunchTask": "Dev: Start database",
+      "stopAll": true
     }
   ]
 }
