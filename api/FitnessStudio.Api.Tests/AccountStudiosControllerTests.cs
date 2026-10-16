@@ -140,6 +140,11 @@ public class AccountStudiosControllerTests
         public Task<ServiceResult<AccountSessionResponse>> RegisterAsync(RegisterRequest request) =>
             throw new NotSupportedException();
 
+        public Task<ServiceResult<AccountSessionResponse>> RefreshAsync(string refreshToken) =>
+            throw new NotSupportedException();
+
+        public Task LogoutAsync(string refreshToken) => Task.CompletedTask;
+
         public Task<ServiceResult<LoginResponse>> CreateStudioSessionAsync(long userId, long studioId)
         {
             SelectArguments = (userId, studioId);

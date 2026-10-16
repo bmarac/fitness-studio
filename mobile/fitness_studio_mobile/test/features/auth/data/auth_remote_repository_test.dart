@@ -184,9 +184,10 @@ void main() {
     });
 
     test('logout unregisters push and clears both saved sessions', () async {
+      final adapter = _AuthApiAdapter();
       final push = _RecordingPushService(_client(_AuthApiAdapter()));
       final repository = AuthRepositoryImpl(
-        AuthRemoteDataSource(_client(_AuthApiAdapter())),
+        AuthRemoteDataSource(_client(adapter)),
         local,
         push,
       );
@@ -199,6 +200,7 @@ void main() {
 
       expect(result, isA<Success<void>>());
       expect(push.unregisterCalls, 1);
+      expect(adapter.requests.last.path, '/api/auth/logout');
       expect(await local.readAccountSession(), isNull);
       expect(await local.readSession(), isNull);
     });
@@ -282,6 +284,8 @@ const _studioJson = <String, dynamic>{
 const _accountJson = <String, dynamic>{
   'accessToken': 'account-token',
   'expiresAt': '2030-01-01T12:00:00Z',
+  'refreshToken': 'refresh-token',
+  'refreshTokenExpiresAt': '2030-02-01T12:00:00Z',
   'user': {'id': 42, 'email': 'member@example.com'},
   'studios': <Map<String, dynamic>>[],
 };

@@ -9,7 +9,7 @@ poslovni endpointi studio-scoped JWT. Podaci se ogranicavaju na studio iz JWT-a.
 
 | Resurs | Endpointi |
 | --- | --- |
-| Auth | `POST /api/auth/register`, `POST /api/auth/login` |
+| Auth | `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/refresh`, `POST /api/auth/logout` |
 | Studiji racuna | `GET`, `lookup`, `join` i `{studioId}/select` na `/api/account/studios` |
 | Profil | `GET /api/profile` |
 | Parametri mjerenja | CRUD na `/api/measurement-parameters` |
@@ -28,6 +28,12 @@ poslovni endpointi studio-scoped JWT. Podaci se ogranicavaju na studio iz JWT-a.
 | Fiksne dodjele | CRUD i prekid dodjele na `/api/member-fixed-schedules` |
 | Termini | CRUD na `/api/class-sessions`; paginirani pregled Moji treninzi na `GET /api/class-sessions/workouts` |
 | Rezervacije | CRUD i statusi na `/api/bookings` |
+
+Prijava i registracija vracaju 15-minutni account JWT te rotirajuci refresh
+token. `POST /api/auth/refresh` prima refresh token i vraca novu account sesiju;
+mobilni klijent nakon toga ponovno bira aktivni studio. Refresh sesija istjece
+nakon 30 dana neaktivnosti ili najkasnije 90 dana od prijave. Odjava opoziva
+samo refresh sesiju trenutnog uredjaja.
 
 `PUT /api/member-memberships/{id}/billing` prima `firstBillingOn`. Odabrani datum
 sprema se kao pocetak ritma naplate, odmah se stvaraju svi dospjeli mjesecni

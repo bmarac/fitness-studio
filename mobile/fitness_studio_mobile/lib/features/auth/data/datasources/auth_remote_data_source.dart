@@ -32,6 +32,13 @@ class AuthRemoteDataSource {
     return AccountSessionModel.fromJson(response.data!);
   }
 
+  Future<void> logout(String refreshToken) async {
+    await _api.post<void>(
+      '/api/auth/logout',
+      data: {'refreshToken': refreshToken},
+    );
+  }
+
   Future<AuthSessionModel> selectStudio(int studioId) async {
     final response = await _api.post<Map<String, dynamic>>(
       '/api/account/studios/$studioId/select',

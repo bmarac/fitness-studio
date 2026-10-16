@@ -1,5 +1,23 @@
 @FitnessStudio.Api_HostAddress = http://localhost:5146
 
+POST {{FitnessStudio.Api_HostAddress}}/api/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+###
+
+POST {{FitnessStudio.Api_HostAddress}}/api/auth/logout
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+###
+
 GET {{FitnessStudio.Api_HostAddress}}/api/profile
 Authorization: Bearer {{accessToken}}
 Accept: application/json

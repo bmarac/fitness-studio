@@ -114,6 +114,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginSuccess => 'You have signed in successfully.';
 
   @override
+  String get sessionExpired =>
+      'Your session has expired. Please sign in again.';
+
+  @override
   String get showPassword => 'Show password';
 
   @override

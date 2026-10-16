@@ -90,6 +90,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 color: theme.colorScheme.onSurfaceVariant,
                               ),
                             ),
+                            if (loginState case LoginInitial(
+                              sessionExpired: true,
+                            )) ...[
+                              const SizedBox(height: 16),
+                              Text(
+                                context.l10n.sessionExpired,
+                                textAlign: TextAlign.center,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.error,
+                                ),
+                              ),
+                            ],
                             const SizedBox(height: 32),
                             TextFormField(
                               controller: _emailController,

@@ -114,6 +114,9 @@ class AppLocalizationsHr extends AppLocalizations {
   String get loginSuccess => 'Prijava je uspješna.';
 
   @override
+  String get sessionExpired => 'Sesija je istekla. Prijavi se ponovno.';
+
+  @override
   String get showPassword => 'Prikaži lozinku';
 
   @override

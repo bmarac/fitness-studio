@@ -35,6 +35,7 @@
   "loginAction": "Prijavi se",
   "loginInProgress": "Prijava...",
   "loginSuccess": "Prijava je uspješna.",
+  "sessionExpired": "Sesija je istekla. Prijavi se ponovno.",
   "showPassword": "Prikaži lozinku",
   "hidePassword": "Sakrij lozinku",
   "invalidEmail": "Unesi ispravnu e-mail adresu.",

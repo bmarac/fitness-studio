@@ -23,6 +23,7 @@ Potpuni pregled tablica, stupaca, kljuceva i veza nalazi se u
 | `membership_payment_obligations` | Mjesecni obracuni clanarine sa snimljenim iznosom i podacima za uplatu |
 | `app_notifications` | In-app podsjetnici clanovima i adminima |
 | `app_user_device_tokens` | Registrirani mobilni uredjaji za buduci FCM transport |
+| `app_user_refresh_sessions` | Rotirajuce refresh sesije pojedinih uredjaja; cuvaju se samo hashevi tajni |
 | `app_users` | Korisnicki racuni za prijavu |
 | `app_user_studios` | Veze globalnog racuna sa studijima i profilima |
 | `app_user_studio_roles` | Uloge racuna unutar pojedinog studija |
@@ -39,6 +40,7 @@ studios
   -> membership_plans -> member_memberships
 
 app_users -> app_user_studios -> studios
+app_users -> app_user_refresh_sessions
 app_user_studios -> app_user_studio_roles
 app_user_studios -> member ili trainer profil
 

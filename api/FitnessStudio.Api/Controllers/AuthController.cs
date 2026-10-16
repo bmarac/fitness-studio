@@ -41,4 +41,24 @@ public class AuthController : ControllerBase
             ? Created("/api/account/studios", result.Value)
             : this.ToActionResult(result);
     }
+
+    [AllowAnonymous]
+    [HttpPost("refresh")]
+    [EnableRateLimiting("auth")]
+    public async Task<ActionResult<AccountSessionResponse>> Refresh(RefreshTokenRequest request)
+    {
+        var result = await _authService.RefreshAsync(request.RefreshToken);
+        return result.Status == ServiceResultStatus.Success
+            ? Ok(result.Value)
+            : this.ToActionResult(result);
+    }
+
+    [AllowAnonymous]
+    [HttpPost("logout")]
+    [EnableRateLimiting("auth")]
+    public async Task<IActionResult> Logout(RefreshTokenRequest request)
+    {
+        await _authService.LogoutAsync(request.RefreshToken);
+        return NoContent();
+    }
 }

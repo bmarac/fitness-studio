@@ -11,7 +11,9 @@ class LoginChecking extends LoginState {
 }
 
 class LoginInitial extends LoginState {
-  const LoginInitial();
+  const LoginInitial({this.sessionExpired = false});
+
+  final bool sessionExpired;
 }
 
 class LoginLoading extends LoginState {

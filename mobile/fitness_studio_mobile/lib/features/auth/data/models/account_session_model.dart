@@ -5,6 +5,8 @@ class AccountSessionModel extends AccountSession {
   const AccountSessionModel({
     required super.accessToken,
     required super.expiresAt,
+    super.refreshToken,
+    super.refreshTokenExpiresAt,
     required super.userId,
     required super.email,
     required super.studios,
@@ -24,6 +26,10 @@ class AccountSessionModel extends AccountSession {
     return AccountSessionModel(
       accessToken: json['accessToken'] as String,
       expiresAt: DateTime.parse(json['expiresAt'] as String),
+      refreshToken: json['refreshToken'] as String?,
+      refreshTokenExpiresAt: json['refreshTokenExpiresAt'] is String
+          ? DateTime.parse(json['refreshTokenExpiresAt'] as String)
+          : null,
       userId: user['id'] as int,
       email: user['email'] as String,
       studios: studios
@@ -38,6 +44,9 @@ class AccountSessionModel extends AccountSession {
   Map<String, dynamic> toJson() => {
     'accessToken': accessToken,
     'expiresAt': expiresAt.toIso8601String(),
+    if (refreshToken != null) 'refreshToken': refreshToken,
+    if (refreshTokenExpiresAt != null)
+      'refreshTokenExpiresAt': refreshTokenExpiresAt!.toIso8601String(),
     'user': {'id': userId, 'email': email},
     'studios': studios.map(StudioMembershipModel.toJson).toList(),
   };

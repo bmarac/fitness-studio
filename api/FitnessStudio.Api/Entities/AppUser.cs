@@ -25,5 +25,7 @@ public partial class AppUser
 
     public virtual ICollection<AppUserDeviceToken> DeviceTokens { get; set; } = new List<AppUserDeviceToken>();
 
+    public virtual ICollection<AppUserRefreshSession> RefreshSessions { get; set; } = new List<AppUserRefreshSession>();
+
     public virtual ICollection<MemberMeasurement> MemberMeasurements { get; set; } = new List<MemberMeasurement>();
 }

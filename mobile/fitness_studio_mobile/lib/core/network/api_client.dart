@@ -23,7 +23,7 @@ class ApiClient {
                },
              ),
            ) {
-    _dio.interceptors.add(AuthInterceptor(accessTokenProvider));
+    _dio.interceptors.add(AuthInterceptor(accessTokenProvider, _dio));
   }
 
   final Dio _dio;

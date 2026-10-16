@@ -28,6 +28,13 @@ Account token sadrzi samo identitet i email. Studio token dodatno sadrzi
 `studio_id`, uloge te opcionalni `member_id` i `trainer_id`. API validira issuer,
 audience, potpis i vrijeme isteka.
 
+Access token traje 15 minuta. Login i registracija uz njega vracaju refresh
+token koji se cuva samo u sigurnoj pohrani mobilnog uredjaja. Refresh token se
+rotira pri svakoj uporabi, vrijedi 30 dana od posljednje aktivnosti i najvise 90
+dana od prijave. Refresh ponovno izdaje account JWT; mobilna aplikacija zatim
+ponovno bira aktivni studio kako bi dobila svjezi studio-scoped JWT. Odjava
+opoziva samo sesiju trenutnog uredjaja.
+
 ## Uloge
 
 - `member`: rezervira i otkazuje vlastite rezervacije

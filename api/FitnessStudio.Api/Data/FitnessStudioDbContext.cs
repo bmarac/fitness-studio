@@ -22,6 +22,8 @@ public partial class FitnessStudioDbContext : DbContext
 
     public virtual DbSet<AppUserDeviceToken> AppUserDeviceTokens { get; set; }
 
+    public virtual DbSet<AppUserRefreshSession> AppUserRefreshSessions { get; set; }
+
     public virtual DbSet<Booking> Bookings { get; set; }
 
     public virtual DbSet<ClassSession> ClassSessions { get; set; }
@@ -54,6 +56,26 @@ public partial class FitnessStudioDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<AppUserRefreshSession>(entity =>
+        {
+            entity.ToTable("app_user_refresh_sessions");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.AppUserId);
+            entity.HasIndex(e => e.IdleExpiresAt);
+            entity.HasIndex(e => new { e.AppUserId, e.RevokedAt });
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.AppUserId).HasColumnName("app_user_id");
+            entity.Property(e => e.CurrentTokenHash).HasMaxLength(64).HasColumnName("current_token_hash");
+            entity.Property(e => e.PreviousTokenHash).HasMaxLength(64).HasColumnName("previous_token_hash");
+            entity.Property(e => e.PreviousTokenValidUntil).HasColumnName("previous_token_valid_until");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.LastUsedAt).HasColumnName("last_used_at");
+            entity.Property(e => e.IdleExpiresAt).HasColumnName("idle_expires_at");
+            entity.Property(e => e.AbsoluteExpiresAt).HasColumnName("absolute_expires_at");
+            entity.Property(e => e.RevokedAt).HasColumnName("revoked_at");
+            entity.HasOne(e => e.AppUser).WithMany(e => e.RefreshSessions).HasForeignKey(e => e.AppUserId);
+        });
+
         modelBuilder.Entity<AppUserStudio>(entity =>
         {
             entity.ToTable("app_user_studios");

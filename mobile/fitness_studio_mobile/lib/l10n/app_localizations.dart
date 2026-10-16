@@ -308,6 +308,12 @@ abstract class AppLocalizations {
   /// **'Prijava je uspješna.'**
   String get loginSuccess;
 
+  /// No description provided for @sessionExpired.
+  ///
+  /// In hr, this message translates to:
+  /// **'Sesija je istekla. Prijavi se ponovno.'**
+  String get sessionExpired;
+
   /// No description provided for @showPassword.
   ///
   /// In hr, this message translates to:

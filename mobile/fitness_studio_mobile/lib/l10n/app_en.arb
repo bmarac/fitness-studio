@@ -35,6 +35,7 @@
   "loginAction": "Sign in",
   "loginInProgress": "Signing in...",
   "loginSuccess": "You have signed in successfully.",
+  "sessionExpired": "Your session has expired. Please sign in again.",
   "showPassword": "Show password",
   "hidePassword": "Hide password",
   "invalidEmail": "Enter a valid email address.",

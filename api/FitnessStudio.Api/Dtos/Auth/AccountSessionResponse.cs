@@ -3,6 +3,8 @@ namespace FitnessStudio.Api.Dtos.Auth;
 public record AccountSessionResponse(
     string AccessToken,
     DateTime ExpiresAt,
+    string? RefreshToken,
+    DateTime? RefreshTokenExpiresAt,
     AccountUserResponse User,
     IReadOnlyCollection<AccountStudioResponse> Studios);
 

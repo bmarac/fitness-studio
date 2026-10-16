@@ -8,7 +8,7 @@ import '../core/notifications/push_notifications_service.dart';
 import '../features/auth/data/datasources/auth_local_data_source.dart';
 import '../features/auth/data/datasources/auth_remote_data_source.dart';
 import '../features/auth/data/repositories/auth_repository_impl.dart';
-import '../features/auth/data/services/secure_access_token_provider.dart';
+import '../features/auth/data/services/auth_session_coordinator.dart';
 import '../features/auth/domain/repositories/auth_repository.dart';
 import '../features/auth/domain/usecases/login.dart';
 import '../features/auth/domain/usecases/logout.dart';
@@ -78,8 +78,14 @@ Future<void> configureDependencies() async {
     ..registerLazySingleton<AuthLocalDataSource>(
       () => AuthLocalDataSource(serviceLocator<FlutterSecureStorage>()),
     )
+    ..registerLazySingleton<AuthSessionCoordinator>(
+      () => AuthSessionCoordinator(
+        config: serviceLocator<AppConfig>(),
+        localDataSource: serviceLocator<AuthLocalDataSource>(),
+      ),
+    )
     ..registerLazySingleton<AccessTokenProvider>(
-      () => SecureAccessTokenProvider(serviceLocator<AuthLocalDataSource>()),
+      () => serviceLocator<AuthSessionCoordinator>(),
     )
     ..registerLazySingleton<ApiClient>(
       () => ApiClient(
@@ -98,6 +104,7 @@ Future<void> configureDependencies() async {
         serviceLocator<AuthRemoteDataSource>(),
         serviceLocator<AuthLocalDataSource>(),
         serviceLocator<PushNotificationsService>(),
+        serviceLocator<AuthSessionCoordinator>(),
       ),
     )
     ..registerLazySingleton<Login>(

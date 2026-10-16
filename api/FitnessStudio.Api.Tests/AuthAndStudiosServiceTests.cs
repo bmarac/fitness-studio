@@ -300,20 +300,169 @@ public class AuthAndStudiosServiceTests
         Assert.Equal([AuthRoles.Admin], adminSession.Value!.User.Roles);
     }
 
+    [Fact]
+    public async Task LoginCreatesHashedDeviceSessionAndRefreshRotatesToken()
+    {
+        await using var db = CreateDatabase();
+        var clock = new TestTimeProvider(new DateTimeOffset(2026, 10, 16, 10, 0, 0, TimeSpan.Zero));
+        var user = CreateUser();
+        db.Add(user);
+        await db.SaveChangesAsync();
+        var service = CreateAuthService(db, clock);
+
+        var login = await service.LoginAsync(new LoginRequest
+        {
+            Email = user.Email,
+            Password = "Password123!"
+        });
+        var firstToken = login.Value!.RefreshToken!;
+        var stored = Assert.Single(db.AppUserRefreshSessions);
+
+        Assert.DoesNotContain(firstToken, stored.CurrentTokenHash);
+        Assert.Equal(64, stored.CurrentTokenHash.Length);
+        Assert.Equal(clock.GetUtcNow().UtcDateTime.AddDays(30), login.Value.RefreshTokenExpiresAt);
+
+        var refreshed = await service.RefreshAsync(firstToken);
+
+        Assert.Equal(ServiceResultStatus.Success, refreshed.Status);
+        Assert.NotEqual(firstToken, refreshed.Value!.RefreshToken);
+        Assert.NotNull(stored.PreviousTokenHash);
+        Assert.Equal(clock.GetUtcNow().UtcDateTime.AddSeconds(30), stored.PreviousTokenValidUntil);
+    }
+
+    [Fact]
+    public async Task ReusingOldRefreshTokenAfterGraceRevokesOnlyThatDevice()
+    {
+        await using var db = CreateDatabase();
+        var clock = new TestTimeProvider(new DateTimeOffset(2026, 10, 16, 10, 0, 0, TimeSpan.Zero));
+        var user = CreateUser();
+        db.Add(user);
+        await db.SaveChangesAsync();
+        var service = CreateAuthService(db, clock);
+        var first = await service.LoginAsync(new LoginRequest { Email = user.Email, Password = "Password123!" });
+        var second = await service.LoginAsync(new LoginRequest { Email = user.Email, Password = "Password123!" });
+        var firstToken = first.Value!.RefreshToken!;
+        var secondToken = second.Value!.RefreshToken!;
+        await service.RefreshAsync(firstToken);
+        clock.Advance(TimeSpan.FromSeconds(31));
+
+        var replay = await service.RefreshAsync(firstToken);
+        var otherDevice = await service.RefreshAsync(secondToken);
+
+        Assert.Equal(ServiceResultStatus.Unauthorized, replay.Status);
+        Assert.Equal(ServiceResultStatus.Success, otherDevice.Status);
+        Assert.Single(db.AppUserRefreshSessions.Where(item => item.RevokedAt != null));
+    }
+
+    [Fact]
+    public async Task LogoutRevokesOnlyPresentedRefreshSession()
+    {
+        await using var db = CreateDatabase();
+        var user = CreateUser();
+        db.Add(user);
+        await db.SaveChangesAsync();
+        var service = CreateAuthService(db);
+        var first = await service.LoginAsync(new LoginRequest { Email = user.Email, Password = "Password123!" });
+        var second = await service.LoginAsync(new LoginRequest { Email = user.Email, Password = "Password123!" });
+
+        await service.LogoutAsync(first.Value!.RefreshToken!);
+
+        Assert.Equal(ServiceResultStatus.Unauthorized,
+            (await service.RefreshAsync(first.Value.RefreshToken!)).Status);
+        Assert.Equal(ServiceResultStatus.Success,
+            (await service.RefreshAsync(second.Value!.RefreshToken!)).Status);
+    }
+
+    [Fact]
+    public async Task ExpiredOrInactiveRefreshSessionIsRejected()
+    {
+        await using var db = CreateDatabase();
+        var clock = new TestTimeProvider(new DateTimeOffset(2026, 10, 16, 10, 0, 0, TimeSpan.Zero));
+        var user = CreateUser();
+        db.Add(user);
+        await db.SaveChangesAsync();
+        var service = CreateAuthService(db, clock);
+        var login = await service.LoginAsync(new LoginRequest { Email = user.Email, Password = "Password123!" });
+        clock.Advance(TimeSpan.FromDays(31));
+
+        Assert.Equal(ServiceResultStatus.Unauthorized,
+            (await service.RefreshAsync(login.Value!.RefreshToken!)).Status);
+
+        var activeLogin = await service.LoginAsync(new LoginRequest { Email = user.Email, Password = "Password123!" });
+        user.Status = "blocked";
+        await db.SaveChangesAsync();
+        Assert.Equal(ServiceResultStatus.Unauthorized,
+            (await service.RefreshAsync(activeLogin.Value!.RefreshToken!)).Status);
+    }
+
+    [Fact]
+    public async Task RefreshNeverExtendsPastAbsoluteExpiry()
+    {
+        await using var db = CreateDatabase();
+        var clock = new TestTimeProvider(new DateTimeOffset(2026, 10, 16, 10, 0, 0, TimeSpan.Zero));
+        var user = CreateUser();
+        db.Add(user);
+        await db.SaveChangesAsync();
+        var service = CreateAuthService(db, clock);
+        var login = await service.LoginAsync(new LoginRequest { Email = user.Email, Password = "Password123!" });
+        var stored = Assert.Single(db.AppUserRefreshSessions);
+        stored.AbsoluteExpiresAt = clock.GetUtcNow().UtcDateTime.AddDays(5);
+
+        var refreshed = await service.RefreshAsync(login.Value!.RefreshToken!);
+
+        Assert.Equal(stored.AbsoluteExpiresAt, refreshed.Value!.RefreshTokenExpiresAt);
+        clock.Advance(TimeSpan.FromDays(5));
+        Assert.Equal(ServiceResultStatus.Unauthorized,
+            (await service.RefreshAsync(refreshed.Value.RefreshToken!)).Status);
+    }
+
+    [Fact]
+    public async Task RefreshDropsInactiveMembershipAndStudioSelectionIsForbidden()
+    {
+        await using var db = CreateDatabase();
+        var studio = CreateStudio();
+        var user = CreateUser();
+        var membership = Membership(user, studio, AuthRoles.Member);
+        db.AddRange(studio, user, membership);
+        await db.SaveChangesAsync();
+        var service = CreateAuthService(db);
+        var login = await service.LoginAsync(new LoginRequest { Email = user.Email, Password = "Password123!" });
+        membership.Status = "inactive";
+        await db.SaveChangesAsync();
+
+        var refreshed = await service.RefreshAsync(login.Value!.RefreshToken!);
+        var selected = await service.CreateStudioSessionAsync(user.Id, studio.Id);
+
+        Assert.Empty(refreshed.Value!.Studios);
+        Assert.Equal(ServiceResultStatus.Forbidden, selected.Status);
+    }
+
     private static FitnessStudioDbContext CreateDatabase() => new(
         new DbContextOptionsBuilder<FitnessStudioDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
 
-    private static AuthService CreateAuthService(FitnessStudioDbContext db) => new(
+    private static AuthService CreateAuthService(
+        FitnessStudioDbContext db,
+        TimeProvider? timeProvider = null) => new(
         db,
         Options.Create(new JwtOptions
         {
             Issuer = "tests",
             Audience = "tests",
             SigningKey = "fitness-studio-tests-signing-key-at-least-32-bytes",
-            ExpirationMinutes = 30
+            AccessTokenExpirationMinutes = 30
         }),
-        new PasswordHasher<AppUser>());
+        new PasswordHasher<AppUser>(),
+        timeProvider);
+
+    private sealed class TestTimeProvider(DateTimeOffset utcNow) : TimeProvider
+    {
+        private DateTimeOffset _utcNow = utcNow;
+
+        public override DateTimeOffset GetUtcNow() => _utcNow;
+
+        public void Advance(TimeSpan duration) => _utcNow += duration;
+    }
 
     private static AppUser CreateUser(long id = 10, string email = "member@example.com")
     {

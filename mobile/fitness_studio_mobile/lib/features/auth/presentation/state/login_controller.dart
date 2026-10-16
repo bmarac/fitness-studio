@@ -9,6 +9,7 @@ import '../../domain/repositories/auth_repository.dart';
 import '../../domain/usecases/login.dart';
 import '../../domain/usecases/logout.dart';
 import '../../domain/usecases/restore_session.dart';
+import '../../data/services/auth_session_coordinator.dart';
 import 'login_state.dart';
 
 final loginControllerProvider = NotifierProvider<LoginController, LoginState>(
@@ -27,8 +28,23 @@ class LoginController extends Notifier<LoginState> {
     _login = serviceLocator<Login>();
     _logout = serviceLocator<Logout>();
     _restoreSession = serviceLocator<RestoreSession>();
+    if (serviceLocator.isRegistered<AuthSessionCoordinator>()) {
+      final subscription = serviceLocator<AuthSessionCoordinator>().changes
+          .listen(_applySessionChange);
+      ref.onDispose(subscription.cancel);
+    }
     Future.microtask(_restoreSavedSession);
     return const LoginChecking();
+  }
+
+  void _applySessionChange(AuthSessionChange change) {
+    if (change.expired) {
+      state = const LoginInitial(sessionExpired: true);
+    } else if (change.studio case final session?) {
+      state = LoginSuccess(session);
+    } else if (change.account case final account?) {
+      state = LoginAccountReady(account);
+    }
   }
 
   Future<void> _restoreSavedSession() async {

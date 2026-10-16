@@ -253,7 +253,10 @@ echo "Starting API against the isolated database..."
   Jwt__Issuer=FitnessStudio.Verify \
   Jwt__Audience=FitnessStudio.Verify \
   Jwt__SigningKey='fitness-studio-verification-signing-key-2026' \
-  Jwt__ExpirationMinutes=30 \
+  Jwt__AccessTokenExpirationMinutes=15 \
+  Jwt__RefreshIdleExpirationDays=30 \
+  Jwt__RefreshAbsoluteExpirationDays=90 \
+  Jwt__RefreshRetryGraceSeconds=30 \
   DevelopmentSeedUser__Enabled=true \
   DevelopmentSeedUser__Accounts__0__StudioId=1 \
   DevelopmentSeedUser__Accounts__0__Email='filip.saric@stayfitjoyful.demo' \
@@ -434,8 +437,15 @@ pilot_plan_id=$(printf '%s' "$response_body" | jq -er '.[0].id')
 request POST /api/auth/register "" '{"email":"pilot.member@example.test","password":"PilotPass123!"}'
 expect_status 201
 pilot_account_token=$(printf '%s' "$response_body" | jq -er '.accessToken')
+pilot_refresh_token=$(printf '%s' "$response_body" | jq -er '.refreshToken')
 [ "$(printf '%s' "$response_body" | jq -r '.studios | length')" = "0" ] \
   || fail "new account unexpectedly belongs to a studio"
+
+refresh_body=$(jq -nc --arg refreshToken "$pilot_refresh_token" '{refreshToken:$refreshToken}')
+request POST /api/auth/refresh "" "$refresh_body"
+expect_status 200
+pilot_account_token=$(printf '%s' "$response_body" | jq -er '.accessToken')
+pilot_refresh_token=$(printf '%s' "$response_body" | jq -er '.refreshToken')
 
 request POST /api/account/studios/lookup "$pilot_account_token" '{"code":"stayfit"}'
 expect_status 200
@@ -551,6 +561,10 @@ expect_status 204
 
 tomorrow=$(date -v+1d '+%Y-%m-%d' 2>/dev/null || date -d '+1 day' '+%Y-%m-%d')
 request PUT "/api/member-memberships/$membership_id/end" "$ana_token" "{\"endsOn\":\"$tomorrow\"}"
+expect_status 204
+
+logout_body=$(jq -nc --arg refreshToken "$pilot_refresh_token" '{refreshToken:$refreshToken}')
+request POST /api/auth/logout "" "$logout_body"
 expect_status 204
 
 echo "Fresh-stack verification passed."

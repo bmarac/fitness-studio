@@ -61,6 +61,35 @@ public class AuthAndPaymentSettingsControllerTests
     }
 
     [Fact]
+    public async Task RefreshAndLogoutForwardRefreshToken()
+    {
+        var response = AccountSessionResponse();
+        var service = new FakeAuthService
+        {
+            Result = ServiceResult<AccountSessionResponse>.Success(response)
+        };
+        var controller = new AuthController(service);
+
+        var refresh = await controller.Refresh(new RefreshTokenRequest { RefreshToken = "refresh-token" });
+        var logout = await controller.Logout(new RefreshTokenRequest { RefreshToken = "refresh-token" });
+
+        Assert.Same(response, Assert.IsType<OkObjectResult>(refresh.Result).Value);
+        Assert.Equal("refresh-token", service.LastRefreshToken);
+        Assert.IsType<NoContentResult>(logout);
+        Assert.Equal("refresh-token", service.LastLogoutToken);
+    }
+
+    [Theory]
+    [InlineData(nameof(AuthController.Refresh))]
+    [InlineData(nameof(AuthController.Logout))]
+    public void RefreshSessionEndpointsAreAnonymous(string methodName)
+    {
+        var method = typeof(AuthController).GetMethod(methodName);
+
+        Assert.NotNull(method?.GetCustomAttribute<AllowAnonymousAttribute>());
+    }
+
+    [Fact]
     public async Task PaymentSettingsGetReturnsServiceResponse()
     {
         var response = PaymentSettingsResponse();
@@ -121,6 +150,8 @@ public class AuthAndPaymentSettingsControllerTests
         return new AccountSessionResponse(
             "access-token",
             new DateTime(2026, 10, 12, 12, 0, 0, DateTimeKind.Utc),
+            "refresh-token",
+            new DateTime(2026, 11, 11, 12, 0, 0, DateTimeKind.Utc),
             new AccountUserResponse(42, "member@example.com"),
             [new AccountStudioResponse(7, "Stay Fit", 11, null, [AuthRoles.Member])]);
     }
@@ -158,6 +189,8 @@ public class AuthAndPaymentSettingsControllerTests
     {
         public ServiceResult<AccountSessionResponse> Result { get; init; } = null!;
         public LoginRequest? LastRequest { get; private set; }
+        public string? LastRefreshToken { get; private set; }
+        public string? LastLogoutToken { get; private set; }
 
         public Task<ServiceResult<AccountSessionResponse>> LoginAsync(LoginRequest request)
         {
@@ -167,6 +200,18 @@ public class AuthAndPaymentSettingsControllerTests
 
         public Task<ServiceResult<AccountSessionResponse>> RegisterAsync(RegisterRequest request) =>
             Task.FromResult(Result);
+
+        public Task<ServiceResult<AccountSessionResponse>> RefreshAsync(string refreshToken)
+        {
+            LastRefreshToken = refreshToken;
+            return Task.FromResult(Result);
+        }
+
+        public Task LogoutAsync(string refreshToken)
+        {
+            LastLogoutToken = refreshToken;
+            return Task.CompletedTask;
+        }
 
         public Task<ServiceResult<LoginResponse>> CreateStudioSessionAsync(long userId, long studioId) =>
             Task.FromResult(ServiceResult<LoginResponse>.Forbidden("Denied", "Denied"));

@@ -306,7 +306,7 @@ erDiagram
 | Cjelina | Glavne tablice |
 | --- | --- |
 | Studio i konfiguracija | `studios`, `studio_settings` |
-| Racuni i ovlasti | `app_users`, `app_user_studios`, `app_user_studio_roles`, `app_user_device_tokens` |
+| Racuni i ovlasti | `app_users`, `app_user_studios`, `app_user_studio_roles`, `app_user_device_tokens`, `app_user_refresh_sessions` |
 | Clanovi i treneri | `members`, `trainers` |
 | Raspored i rezervacije | `class_types`, `recurring_class_schedules`, `class_sessions`, `member_fixed_schedules`, `bookings` |
 | Clanarine i naplata | `membership_plans`, `member_memberships`, `membership_payment_obligations`, `app_notifications` |

@@ -10,5 +10,11 @@ public class JwtOptions
 
     public string SigningKey { get; set; } = null!;
 
-    public int ExpirationMinutes { get; set; } = 60;
+    public int AccessTokenExpirationMinutes { get; set; } = 15;
+
+    public int RefreshIdleExpirationDays { get; set; } = 30;
+
+    public int RefreshAbsoluteExpirationDays { get; set; } = 90;
+
+    public int RefreshRetryGraceSeconds { get; set; } = 30;
 }

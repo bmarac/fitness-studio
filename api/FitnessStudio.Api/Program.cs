@@ -92,6 +92,7 @@ builder.Services.AddAutoMapper(_ => { }, typeof(Program).Assembly);
 builder.Services.AddDbContext<FitnessStudioDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
 builder.Services.AddScoped<ICurrentUserContext, CurrentUserContext>();
 builder.Services.AddScoped<IAuthService, AuthService>();

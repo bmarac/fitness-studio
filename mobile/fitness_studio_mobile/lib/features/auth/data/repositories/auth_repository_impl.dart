@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+
 import '../../../../core/error/failure.dart';
 import '../../../../core/error/result.dart';
 import '../../../../core/network/api_exception.dart';
@@ -9,16 +11,19 @@ import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_local_data_source.dart';
 import '../datasources/auth_remote_data_source.dart';
 import '../models/account_session_model.dart';
+import '../services/auth_session_coordinator.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   const AuthRepositoryImpl(
     this._remote,
     this._local, [
     this._pushNotifications,
+    this._sessionCoordinator,
   ]);
   final AuthRemoteDataSource _remote;
   final AuthLocalDataSource _local;
   final PushNotificationsService? _pushNotifications;
+  final AuthSessionCoordinator? _sessionCoordinator;
 
   @override
   Future<Result<AccountSession>> login({
@@ -98,6 +103,8 @@ class AuthRepositoryImpl implements AuthRepository {
           AccountSessionModel(
             accessToken: account.accessToken,
             expiresAt: account.expiresAt,
+            refreshToken: account.refreshToken,
+            refreshTokenExpiresAt: account.refreshTokenExpiresAt,
             userId: account.userId,
             email: account.email,
             studios: [...account.studios, membership],
@@ -121,29 +128,45 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Result<AuthSession?>> restoreSession() async {
     try {
-      final session = await _local.readSession();
+      var session = await _local.readSession();
       if (session == null ||
           !session.expiresAt.isAfter(DateTime.now().toUtc())) {
-        return const Success(null);
+        if (_sessionCoordinator == null) return const Success(null);
+        await _sessionCoordinator.getAccessToken();
+        session = await _local.readSession();
+        if (session == null ||
+            !session.expiresAt.isAfter(DateTime.now().toUtc())) {
+          return const Success(null);
+        }
       }
       await _pushNotifications?.registerCurrentToken();
       return Success(session);
     } on AuthStorageException {
       return const FailureResult(Failure(FailureKind.restoreSession));
+    } on DioException catch (error) {
+      return FailureResult(ApiException.fromDioException(error).toFailure());
     }
   }
 
   @override
   Future<Result<AccountSession?>> restoreAccountSession() async {
     try {
-      final session = await _local.readAccountSession();
+      var session = await _local.readAccountSession();
       if (session == null ||
           !session.expiresAt.isAfter(DateTime.now().toUtc())) {
-        return const Success(null);
+        if (_sessionCoordinator == null) return const Success(null);
+        await _sessionCoordinator.getAccessToken();
+        session = await _local.readAccountSession();
+        if (session == null ||
+            !session.expiresAt.isAfter(DateTime.now().toUtc())) {
+          return const Success(null);
+        }
       }
       return Success(session);
     } on AuthStorageException {
       return const FailureResult(Failure(FailureKind.restoreSession));
+    } on DioException catch (error) {
+      return FailureResult(ApiException.fromDioException(error).toFailure());
     }
   }
 
@@ -154,6 +177,14 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Result<void>> logout() async {
     try {
       await _pushNotifications?.unregisterCurrentToken();
+      final refreshToken = (await _local.readAccountSession())?.refreshToken;
+      if (refreshToken != null) {
+        try {
+          await _remote.logout(refreshToken);
+        } on ApiException {
+          // Local logout must still complete while the device is offline.
+        }
+      }
       await _local.clearSession();
       return const Success(null);
     } on AuthStorageException {

@@ -42,6 +42,8 @@ Dodatne rute:
 ## Trenutno implementirano
 
 - login i registracija samo emailom i lozinkom
+- automatsko obnavljanje kratkotrajnog JWT-a rotirajucim refresh tokenom,
+  ukljucujuci ponovno uspostavljanje zadnjeg studio konteksta
 - povezivanje kodom nakon prijave, izbor izmedju vise studija i pamcenje zadnjeg
 - promjena ili dodavanje studija iz profila
 - administratorska postavka za promjenu ili iskljucivanje `join_code`

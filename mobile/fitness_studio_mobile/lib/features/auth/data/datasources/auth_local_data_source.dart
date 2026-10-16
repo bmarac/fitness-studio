@@ -58,13 +58,26 @@ class AuthLocalDataSource {
     }
   }
 
-  Future<void> saveAccountSession(AccountSessionModel session) async {
+  Future<void> saveAccountSession(
+    AccountSessionModel session, {
+    bool clearStudioSession = true,
+  }) async {
     try {
-      await _secureStorage.delete(key: _sessionKey);
+      if (clearStudioSession) {
+        await _secureStorage.delete(key: _sessionKey);
+      }
       await _secureStorage.write(
         key: _accountSessionKey,
         value: jsonEncode(session.toJson()),
       );
+    } on PlatformException catch (error) {
+      throw AuthStorageException(error.message);
+    }
+  }
+
+  Future<void> clearStudioSession() async {
+    try {
+      await _secureStorage.delete(key: _sessionKey);
     } on PlatformException catch (error) {
       throw AuthStorageException(error.message);
     }
