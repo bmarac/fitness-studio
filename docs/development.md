@@ -156,6 +156,18 @@ racunom pauzira aktivni raspored, ponovno ga ucitava iz baze, nastavlja ga i
 potvrduje povratak u aktivno stanje. Test je rucan i ne ulazi u coverage
 baseline.
 
+Vertikalna provjera fiksne dodjele clana pokrece se naredbom:
+
+```bash
+./scripts/verify-fresh-stack.sh fixed-schedule-client
+```
+
+Test pronalazi Aninu aktivnu dodjelu i slobodan termin istog dana, potvrduje da
+clan ne smije izvesti premjestanje, a zatim ga izvodi administratorskim racunom.
+Ponovnim citanjem iz baze provjerava novu dodjelu, otkazane buduce rezervacije
+izvornog termina i automatski stvorene rezervacije ciljnog termina. Test je
+rucan i ne ulazi u coverage baseline.
+
 ## API
 
 ```bash
